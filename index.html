@@ -52,39 +52,23 @@
 
     <!-- PWA Manifest & Icons Generator -->
     <script>
-        // Gera o ícone SVG (Activity Pulse verde em fundo branco)
+        // Gera o ícone SVG
         const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" fill="#ffffff" rx="128"/><path d="M469.3 256h-85.3l-64-192-128 384-64-192H42.7" stroke="#10b981" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
         const iconUrl = "data:image/svg+xml;base64," + btoa(iconSvg);
 
-        // Injeta Link Tags para Ícone
-        const linkIcon = document.createElement('link');
-        linkIcon.rel = 'icon'; linkIcon.href = iconUrl;
-        document.head.appendChild(linkIcon);
+        const linkIcon = document.createElement('link'); linkIcon.rel = 'icon'; linkIcon.href = iconUrl; document.head.appendChild(linkIcon);
+        const linkApple = document.createElement('link'); linkApple.rel = 'apple-touch-icon'; linkApple.href = iconUrl; document.head.appendChild(linkApple);
 
-        const linkApple = document.createElement('link');
-        linkApple.rel = 'apple-touch-icon'; linkApple.href = iconUrl;
-        document.head.appendChild(linkApple);
+        const manifest = { name: "ResiFlow", short_name: "ResiFlow", start_url: ".", display: "standalone", background_color: "#ffffff", theme_color: "#0f172a", icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }] };
+        const linkManifest = document.createElement('link'); linkManifest.rel = 'manifest'; linkManifest.href = 'data:application/json;base64,' + btoa(JSON.stringify(manifest)); document.head.appendChild(linkManifest);
 
-        // Gera e Injeta Manifesto PWA
-        const manifest = {
-            name: "ResiFlow",
-            short_name: "ResiFlow",
-            start_url: ".",
-            display: "standalone",
-            background_color: "#ffffff",
-            theme_color: "#0f172a",
-            icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }]
-        };
-        const linkManifest = document.createElement('link');
-        linkManifest.rel = 'manifest';
-        linkManifest.href = 'data:application/json;base64,' + btoa(JSON.stringify(manifest));
-        document.head.appendChild(linkManifest);
-
-        // Registra Service Worker (Fake SW para permitir instalação)
         if ('serviceWorker' in navigator) {
-            const swContent = `self.addEventListener('fetch', e => { return; });`;
-            const swUrl = 'data:text/javascript;base64,' + btoa(swContent);
-            navigator.serviceWorker.register(swUrl).catch(console.error);
+            try {
+                const swContent = `self.addEventListener('fetch', e => { return; });`;
+                const blob = new Blob([swContent], {type: 'text/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(e => {});
+            } catch (e) {}
         }
     </script>
 </head>
@@ -97,10 +81,7 @@
         const LucideIcon = ({ name, size = 24, className = "" }) => {
             const iconData = window.lucide && window.lucide.icons ? window.lucide.icons[name] : null;
             if (!iconData) return <span style={{width: size, height: size, display: 'inline-block'}} />;
-            return React.createElement('svg', {
-                xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none",
-                stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className
-            }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
+            return React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
         };
 
         const Target = (p) => <LucideIcon name="Target" {...p} />;
@@ -129,6 +110,7 @@
         const CloudOff = (p) => <LucideIcon name="CloudOff" {...p} />;
         const Save = (p) => <LucideIcon name="Save" {...p} />;
         const Download = (p) => <LucideIcon name="Download" {...p} />;
+        const Settings = (p) => <LucideIcon name="Settings" {...p} />;
 
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
@@ -161,6 +143,7 @@
             { id: 'hard', label: 'Difícil', weight: 1.3, icon: ThumbsDown },
         ];
 
+        // --- Helpers ---
         const getTodayStr = () => new Date().toISOString().split('T')[0];
         const formatDate = (dateStr) => { const [y, m, d] = dateStr.split('-'); return `${d}/${m}`; };
         const formatFullDate = (dateStr) => { if (!dateStr) return ''; const d = new Date(dateStr + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); };
@@ -189,11 +172,46 @@
             ];
         };
 
+        // --- Lógica de Merge Inteligente ---
+        const mergeTopics = (localList, cloudList) => {
+            const mergedMap = new Map();
+
+            // Adiciona todos os locais ao mapa
+            localList.forEach(item => mergedMap.set(item.id, item));
+
+            // Processa os da nuvem
+            cloudList.forEach(cloudItem => {
+                const localItem = mergedMap.get(cloudItem.id);
+                
+                if (!localItem) {
+                    // Novo item da nuvem
+                    mergedMap.set(cloudItem.id, cloudItem);
+                } else {
+                    // Conflito: vence o mais recente
+                    // Se não tiver updatedAt (legado), assume 0
+                    const localTime = localItem.updatedAt || 0;
+                    const cloudTime = cloudItem.updatedAt || 0;
+
+                    if (cloudTime > localTime) {
+                        mergedMap.set(cloudItem.id, cloudItem);
+                    }
+                    // Se local for mais recente, mantém local (não faz nada)
+                }
+            });
+
+            return Array.from(mergedMap.values());
+        };
+
+        // --- Hooks & Firebase Logic ---
         const useSync = (topics, setTopics) => {
             const [status, setStatus] = useState('offline');
             const [config, setConfig] = useState(() => { const s = localStorage.getItem('resiflow_fb_config'); return s ? JSON.parse(s) : USER_FIREBASE_CONFIG; });
             const [syncKey, setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
             const dbRef = useRef(null);
+            
+            // Ref para manter acesso ao estado mais atual dentro do listener do Firebase
+            const localTopicsRef = useRef(topics);
+            useEffect(() => { localTopicsRef.current = topics; }, [topics]);
 
             useEffect(() => {
                 if (!config || !syncKey || !window.firebaseModules) return;
@@ -204,8 +222,20 @@
                     dbRef.current = db;
                     const docRef = doc(db, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
                     setStatus('syncing');
+                    
                     const unsub = onSnapshot(docRef, (s) => {
-                        if (s.exists()) { const d = s.data(); if (d.topics) setTopics(d.topics); }
+                        if (s.exists()) { 
+                            const d = s.data(); 
+                            if (d.topics) {
+                                // MERGE INTELIGENTE AQUI
+                                const merged = mergeTopics(localTopicsRef.current, d.topics);
+                                
+                                // Só atualiza se houver mudança real para evitar loops
+                                if (JSON.stringify(merged) !== JSON.stringify(localTopicsRef.current)) {
+                                    setTopics(merged);
+                                }
+                            }
+                        }
                         setStatus('online');
                     }, (err) => { console.error(err); setStatus('error'); });
                     return () => unsub();
@@ -310,7 +340,7 @@
             const days = [];
             for (let i = 0; i < startDay; i++) days.push(null);
             for (let i = 1; i <= daysInMonth; i++) days.push(i);
-            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { topic.reviews.forEach(review => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, ...review }); } }); }); return list; };
+            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach(review => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, ...review }); } }); }); return list; };
             return (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
@@ -360,22 +390,28 @@
 
             useEffect(() => { if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('resiflow_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('resiflow_theme', 'light'); } }, [darkMode]);
 
+            // Add: Include updatedAt and deleted:false in new topics
             const handleAdd = (e) => {
                 e.preventDefault();
                 if (!title) return;
                 const schedule = generateSchedule(date, importance);
-                const newTopic = { id: Date.now(), title, area, importance, studyDate: date, reviews: schedule, archived: false };
+                const newTopic = { id: Date.now(), title, area, importance, studyDate: date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
                 setTopics(prev => [newTopic, ...prev]);
                 setTitle('');
             };
 
             const openReview = (topicId, reviewIdx) => { const topic = topics.find(t => t.id === topicId); const review = topic.reviews[reviewIdx]; setSelectedTask({ topicId, topicTitle: topic.title, label: review.label, targetQ: review.targetQ, reviewIdx }); setModalOpen(true); };
-            const completeReview = (data) => { setTopics(prev => prev.map(topic => { if (topic.id !== selectedTask.topicId) return topic; const newReviews = [...topic.reviews]; const currentIdx = selectedTask.reviewIdx; newReviews[currentIdx] = { ...newReviews[currentIdx], done: true, correct: data.correct, total: data.total, favorites: data.favorites, difficulty: data.difficulty }; if (currentIdx + 1 < newReviews.length) { const accuracy = data.total > 0 ? (data.correct / data.total) : 0; const nextLoad = calculateNextLoad(data.total, accuracy, topic.importance, data.difficulty); newReviews[currentIdx + 1].targetQ = nextLoad; } return { ...topic, reviews: newReviews }; })); };
-            const deleteTopic = (id) => setTopics(prev => prev.filter(t => t.id !== id));
+            
+            // Add: Update updatedAt on review
+            const completeReview = (data) => { setTopics(prev => prev.map(topic => { if (topic.id !== selectedTask.topicId) return topic; const newReviews = [...topic.reviews]; const currentIdx = selectedTask.reviewIdx; newReviews[currentIdx] = { ...newReviews[currentIdx], done: true, correct: data.correct, total: data.total, favorites: data.favorites, difficulty: data.difficulty }; if (currentIdx + 1 < newReviews.length) { const accuracy = data.total > 0 ? (data.correct / data.total) : 0; const nextLoad = calculateNextLoad(data.total, accuracy, topic.importance, data.difficulty); newReviews[currentIdx + 1].targetQ = nextLoad; } return { ...topic, reviews: newReviews, updatedAt: Date.now() }; })); };
+            
+            // Change: Soft Delete with Timestamp
+            const deleteTopic = (id) => setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: Date.now() } : t));
 
             const todayStr = getTodayStr();
             const sortedTopics = useMemo(() => {
-                let list = [...topics];
+                // Filter out soft-deleted items for display
+                let list = [...topics].filter(t => !t.deleted);
                 if (filterArea !== 'all') list = list.filter(t => t.area === filterArea);
                 list.sort((a, b) => { const getNextDate = (t) => t.reviews.find(r => !r.done)?.date || '9999-99-99'; const dateA = getNextDate(a); const dateB = getNextDate(b); const aDue = dateA <= todayStr; const bDue = dateB <= todayStr; if (aDue && !bDue) return -1; if (!aDue && bDue) return 1; return dateA.localeCompare(dateB); });
                 if (filterTime === 'today') return list.filter(t => t.reviews.some(r => !r.done && r.date <= todayStr));
