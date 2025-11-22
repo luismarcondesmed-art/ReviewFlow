@@ -130,6 +130,7 @@
         const Layers = (p) => <LucideIcon name="Layers" {...p} />;
         const MonitorPlay = (p) => <LucideIcon name="MonitorPlay" {...p} />;
         const Notebook = (p) => <LucideIcon name="Notebook" {...p} />;
+        const AlertCircle = (p) => <LucideIcon name="AlertCircle" {...p} />;
 
         // --- CONFIG ---
         const USER_FIREBASE_CONFIG = {
@@ -152,9 +153,9 @@
         ];
 
         const IMPORTANCE_LEVELS = [
-            { id: 'high', label: 'Alta', weight: 2.0 },
-            { id: 'medium', label: 'Média', weight: 1.5 },
-            { id: 'low', label: 'Baixa', weight: 1.0 },
+            { id: 'high', label: 'Alta', weight: 2.0, color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800' },
+            { id: 'medium', label: 'Média', weight: 1.5, color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
+            { id: 'low', label: 'Baixa', weight: 1.0, color: 'text-slate-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700' },
         ];
 
         const DIFFICULTY_LEVELS = [
@@ -220,7 +221,6 @@
             const [syncKey, setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
             const dbRef = useRef(null);
             
-            // Ref para estado mais recente
             const stateRef = useRef({ topics, logs });
             useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
 
@@ -343,13 +343,77 @@
             );
         };
 
-        const CalendarDayModal = ({ date, reviews, onClose }) => {
+        // --- NOVO: Modal de Detalhes do Dia Melhorado ---
+        const CalendarDayModal = ({ date, reviews, onClose, onOpenReview }) => {
             if (!date) return null;
+
+            const pendingReviews = reviews.filter(r => !r.done);
+            const doneReviews = reviews.filter(r => r.done);
+            const hasActivity = reviews.length > 0;
+
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-slate-700 max-h-[80vh] flex flex-col">
-                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0"><h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3><button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition"><X size={20} className="text-slate-400"/></button></div>
-                        <div className="overflow-y-auto p-4 space-y-3 flex-1">{reviews.length === 0 ? (<div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>) : (reviews.map((item, idx) => { const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[1]; return (<div key={idx} className={`p-3 rounded-xl border flex gap-3 ${item.done ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30' : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600'}`}><div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${item.done ? 'bg-emerald-500' : 'bg-red-500'}`}></div><div className="flex-1"><div className="flex justify-between items-start"><h4 className={`font-bold text-sm leading-tight ${item.done ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-white'}`}>{item.topicTitle}</h4>{item.done && <Check size={14} className="text-emerald-500"/>}</div><div className="flex items-center gap-2 mt-1"><span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span><span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{item.label.split(':')[0]}</span></div>{item.done ? (<div className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold">{item.correct}/{item.total} acertos ({Math.round((item.correct/item.total)*100)}%)</div>) : item.targetQ && (<div className="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1"><Target size={12}/> Meta: {item.targetQ} questões</div>)}</div></div>) }))}</div>
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
+                            <h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3>
+                            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition"><X size={20} className="text-slate-400"/></button>
+                        </div>
+                        <div className="overflow-y-auto p-4 space-y-4 flex-1">
+                            {!hasActivity ? (
+                                <div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>
+                            ) : (
+                                <>
+                                    {/* Seção Pendentes */}
+                                    {pendingReviews.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4>
+                                            <div className="space-y-2">
+                                                {pendingReviews.map((item, idx) => {
+                                                     const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[1];
+                                                     return (
+                                                        <div key={idx} className="p-3 rounded-xl border bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 flex flex-col gap-2">
+                                                            <div className="flex justify-between items-start">
+                                                                <h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4>
+                                                                <span className="text-xs bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-1">
+                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>
+                                                                {item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}
+                                                            </div>
+                                                            <button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button>
+                                                        </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Seção Concluídos */}
+                                    {doneReviews.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4>
+                                            <div className="space-y-2">
+                                                {doneReviews.map((item, idx) => {
+                                                     const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[1];
+                                                     return (
+                                                        <div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75">
+                                                            <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
+                                                            <div className="flex-1">
+                                                                <h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span>
+                                                                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                     )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )
@@ -397,17 +461,33 @@
         const TopicCard = ({ topic, onOpenReview, onDelete }) => {
             const [expanded, setExpanded] = useState(false);
             const [isDeleting, setIsDeleting] = useState(false);
+            const impInfo = IMPORTANCE_LEVELS.find(i => i.id === topic.importance) || IMPORTANCE_LEVELS[1];
             const areaInfo = AREAS.find(a => a.id === topic.area) || AREAS[1]; 
             const completedReviews = topic.reviews.filter(r => r.done).length;
             const progressPercent = (completedReviews / 4) * 100;
             return (
                 <div className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all overflow-hidden">
-                    <div className="p-5 cursor-pointer flex items-center justify-between" onClick={() => setExpanded(!expanded)}><div className="flex-1"><div className="flex items-center gap-2 mb-1.5 flex-wrap"><span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaInfo.color}`}>{areaInfo.name}</span></div><h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">{topic.title}</h3></div><div className="flex items-center gap-4"><div className="hidden sm:flex flex-col items-end gap-1"><span className="text-xs font-bold text-slate-400">{completedReviews}/4</span><div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${progressPercent}%`}}></div></div></div>{expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}</div></div>
+                    <div className="p-5 cursor-pointer flex items-center justify-between" onClick={() => setExpanded(!expanded)}>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaInfo.color}`}>{areaInfo.name}</span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${impInfo.color}`}>{impInfo.label} Prioridade</span>
+                            </div>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">{topic.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex flex-col items-end gap-1">
+                                <span className="text-xs font-bold text-slate-400">{completedReviews}/4</span>
+                                <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${progressPercent}%`}}></div></div>
+                            </div>
+                            {expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}
+                        </div>
+                    </div>
                     {expanded && (<div className="px-5 pb-5 pt-0 border-t border-slate-50 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30"><div className="mt-4 space-y-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const isLocked = !rev.done && !isNext; const performance = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const dateStr = formatDate(rev.date); return (<div key={idx} className={`relative flex items-center gap-4 p-3 rounded-xl border ${isNext ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-700 shadow-sm ring-1 ring-blue-500/20' : 'border-transparent'} ${isLocked ? 'opacity-50 grayscale' : ''}`}><div className={`w-1 h-10 rounded-full ${isDone ? (performance >= 90 ? 'bg-emerald-500' : 'bg-yellow-500') : (isNext ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700')}`}></div><div className="w-16 text-center"><div className="text-xs font-black text-slate-400 uppercase">{rev.label.split(':')[0]}</div><div className="font-bold text-slate-700 dark:text-slate-300">{dateStr}</div></div><div className="flex-1">{isDone ? (<div><div className="flex items-center gap-2"><span className={`font-bold text-lg ${performance >= 90 ? 'text-emerald-600 dark:text-emerald-400' : 'text-yellow-600 dark:text-yellow-400'}`}>{performance}%</span><span className="text-xs text-slate-400">({rev.correct}/{rev.total})</span></div>{rev.targetQ && <div className="text-[10px] text-slate-400">Meta: {rev.targetQ}</div>}</div>) : (<div><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{rev.label.split(':')[1]}</div>{rev.targetQ && (<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs font-medium mt-0.5"><Target size={12}/> <span>Meta: <span className="font-bold">{rev.targetQ}</span></span></div>)}</div>)}</div><div>{isDone ? (<div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><CheckCircle2 size={16}/></div>) : isNext ? (<button onClick={() => onOpenReview(topic.id, idx)} className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition">Revisar</button>) : (<div className="w-8 h-8 flex items-center justify-center"><Clock size={16} className="text-slate-300 dark:text-slate-600"/></div>)}</div></div>); })}</div><div className="mt-4 flex justify-end">{isDeleting ? (<div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-800 animate-in fade-in zoom-in-95 duration-200"><span className="text-xs font-bold text-red-800 dark:text-red-300">Tem certeza?</span><button onClick={() => onDelete(topic.id)} className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 border-b border-red-200 hover:border-red-600 transition-colors">Sim</button><button onClick={() => setIsDeleting(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancelar</button></div>) : (<button onClick={(e) => { e.stopPropagation(); setIsDeleting(true); }} className="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={12}/> Excluir Tema</button>)}</div></div>)}</div>
             );
         };
 
-        const CalendarView = ({ topics }) => {
+        const CalendarView = ({ topics, onOpenReview }) => {
             const today = new Date();
             const currentMonth = today.getMonth();
             const currentYear = today.getFullYear();
@@ -417,19 +497,18 @@
             const days = [];
             for (let i = 0; i < startDay; i++) days.push(null);
             for (let i = 1; i <= daysInMonth; i++) days.push(i);
-            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach(review => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, ...review }); } }); }); return list; };
+            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach((review, idx) => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, topicId: topic.id, reviewIdx: idx, ...review }); } }); }); return list; };
             return (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
                     <div className="grid grid-cols-7 gap-1 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
                     <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
                     <div className="flex justify-center gap-4 mt-4 text-[10px] text-slate-400"><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> A Fazer</div><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
-                    <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} />
+                    <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} onOpenReview={onOpenReview} />
                 </div>
             );
         };
 
-        // --- MAIN APP ---
         function App() {
             const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('resiflow_v3_data') || '[]'));
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('resiflow_logs') || '[]'));
@@ -437,18 +516,15 @@
             const [viewMode, setViewMode] = useState('list'); 
             const [filterArea, setFilterArea] = useState('all');
             const [filterTime, setFilterTime] = useState('all'); 
-            
             const [title, setTitle] = useState('');
             const [area, setArea] = useState('clinica');
             const [importance, setImportance] = useState('medium');
             const [date, setDate] = useState(getTodayStr());
-            
             const [modalOpen, setModalOpen] = useState(false);
             const [cloudModalOpen, setCloudModalOpen] = useState(false);
             const [pomodoroOpen, setPomodoroOpen] = useState(false);
             const [selectedTask, setSelectedTask] = useState(null);
             const [installPrompt, setInstallPrompt] = useState(null);
-
             const { status, config, setConfig, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
             const todayStr = getTodayStr();
 
@@ -503,19 +579,13 @@
                                 <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg transition border flex items-center gap-2 ${status === 'online' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'}`}>{status === 'online' ? <Cloud size={18}/> : <CloudOff size={18}/>}</button>
                                 <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
                                 <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                                    <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button>
-                                    <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button>
-                                    <button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button>
-                                </div>
+                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg"><button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button><button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button><button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button></div>
                             </div>
                         </div>
                     </header>
 
                     <main className="max-w-4xl mx-auto px-4 mt-6 space-y-6">
-                        {viewMode === 'diary' ? (
-                            <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} />
-                        ) : (
+                        {viewMode === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : (
                             <>
                                 <section className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
                                     <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Plus size={14}/> Novo Conteúdo Teórico</h2>
@@ -527,24 +597,8 @@
                                         <div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center">Add</button></div>
                                     </form>
                                 </section>
-
-                                {viewMode === 'list' && (
-                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                        <button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button>
-                                        <div className="w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                                        {AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}
-                                    </div>
-                                )}
-
-                                <section className="space-y-4">
-                                    {viewMode === 'calendar' ? ( <CalendarView topics={topics} /> ) : (
-                                        <>
-                                            {sortedTopics.length === 0 ? (
-                                                <div className="text-center py-12 text-slate-400 dark:text-slate-600"><BookOpen className="mx-auto mb-2 opacity-50" size={32} /><p>Nenhum tema encontrado com estes filtros.</p></div>
-                                            ) : ( sortedTopics.map(topic => ( <TopicCard key={topic.id} topic={topic} onOpenReview={openReview} onDelete={deleteTopic} /> )) )}
-                                        </>
-                                    )}
-                                </section>
+                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
+                                <section className="space-y-4">{viewMode === 'calendar' ? ( <CalendarView topics={topics} onOpenReview={openReview} /> ) : ( <> {sortedTopics.length === 0 ? ( <div className="text-center py-12 text-slate-400 dark:text-slate-600"><BookOpen className="mx-auto mb-2 opacity-50" size={32} /><p>Nenhum tema encontrado com estes filtros.</p></div> ) : ( sortedTopics.map(topic => ( <TopicCard key={topic.id} topic={topic} onOpenReview={openReview} onDelete={deleteTopic} /> )) )} </> )}</section>
                             </>
                         )}
                     </main>
@@ -554,7 +608,6 @@
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
