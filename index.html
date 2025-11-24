@@ -24,7 +24,7 @@
                 extend: {
                     colors: {
                         slate: { 850: '#1e293b', 950: '#020617' },
-                        zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' } // Paleta mais neutra
+                        zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' }
                     }
                 }
             }
@@ -120,8 +120,10 @@
         const Notebook = (p) => <LucideIcon name="Notebook" {...p} />;
         const AlertCircle = (p) => <LucideIcon name="AlertCircle" {...p} />;
         const Tag = (p) => <LucideIcon name="Tag" {...p} />;
+        const Search = (p) => <LucideIcon name="Search" {...p} />;
+        const BarChart3 = (p) => <LucideIcon name="BarChart3" {...p} />;
 
-        // --- CONFIG & DATA STRUCTURE ---
+        // --- CONFIG ---
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
             authDomain: "med-heklp.firebaseapp.com",
@@ -132,33 +134,12 @@
             measurementId: "G-BLWYTWFFTZ"
         };
 
-        // 1. Subáreas Adicionadas
         const AREAS = [
-            { 
-                id: 'clinica', name: 'Clínica Médica', 
-                color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-                subareas: ['Cardiologia', 'Nefrologia', 'Pneumologia', 'Gastroenterologia', 'Hepatologia', 'Infectologia', 'Reumatologia', 'Hematologia', 'Endocrinologia', 'Neurologia', 'Psiquiatria', 'Dermatologia']
-            },
-            { 
-                id: 'cirurgia', name: 'Cirurgia', 
-                color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800',
-                subareas: ['Cirurgia Geral', 'Trauma', 'Cirurgia Digestiva', 'Cirurgia Vascular', 'Urologia', 'Ortopedia', 'Otorrinolaringologia', 'Oftalmologia', 'Cirurgia Plástica', 'Anestesiologia']
-            },
-            { 
-                id: 'pediatria', name: 'Pediatria', 
-                color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
-                subareas: ['Puericultura', 'Neonatologia', 'Infecto Ped', 'Respiratório', 'Gastro Ped', 'Nefro Ped', 'Emergências Pediátricas']
-            },
-            { 
-                id: 'go', name: 'G.O.', 
-                color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-                subareas: ['Obstetrícia Fisiológica', 'Obstetrícia Patológica', 'Ginecologia Geral', 'Endocrino Ginecológica', 'Oncologia Ginecológica', 'Mastologia']
-            },
-            { 
-                id: 'preventiva', name: 'Preventiva', 
-                color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-                subareas: ['SUS', 'Epidemiologia', 'Saúde do Trabalhador', 'Ética Médica', 'Bioestatística']
-            },
+            { id: 'clinica', name: 'Clínica Médica', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800', subareas: ['Cardiologia', 'Nefrologia', 'Pneumologia', 'Gastroenterologia', 'Hepatologia', 'Infectologia', 'Reumatologia', 'Hematologia', 'Endocrinologia', 'Neurologia', 'Psiquiatria', 'Dermatologia'] },
+            { id: 'cirurgia', name: 'Cirurgia', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800', subareas: ['Cirurgia Geral', 'Trauma', 'Cirurgia Digestiva', 'Cirurgia Vascular', 'Urologia', 'Ortopedia', 'Otorrinolaringologia', 'Oftalmologia', 'Cirurgia Plástica', 'Anestesiologia'] },
+            { id: 'pediatria', name: 'Pediatria', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800', subareas: ['Puericultura', 'Neonatologia', 'Infecto Ped', 'Respiratório', 'Gastro Ped', 'Nefro Ped', 'Emergências Pediátricas'] },
+            { id: 'go', name: 'G.O.', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800', subareas: ['Obstetrícia Fisiológica', 'Obstetrícia Patológica', 'Ginecologia Geral', 'Endocrino Ginecológica', 'Oncologia Ginecológica', 'Mastologia'] },
+            { id: 'preventiva', name: 'Preventiva', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800', subareas: ['SUS', 'Epidemiologia', 'Saúde do Trabalhador', 'Ética Médica', 'Bioestatística'] },
         ];
 
         const IMPORTANCE_LEVELS = [
@@ -167,11 +148,10 @@
             { id: 'low', label: 'Baixa', weight: 1.0, color: 'text-slate-500 dark:text-slate-400' },
         ];
 
-        // 2. Dificuldade Amortecida (Menos reativa)
         const DIFFICULTY_LEVELS = [
-            { id: 'easy', label: 'Fácil', weight: 0.9, icon: ThumbsUp }, // Antes era 0.8
-            { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus }, // Neutro
-            { id: 'hard', label: 'Difícil', weight: 1.1, icon: ThumbsDown }, // Antes era 1.3
+            { id: 'easy', label: 'Fácil', weight: 0.9, icon: ThumbsUp },
+            { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus },
+            { id: 'hard', label: 'Difícil', weight: 1.1, icon: ThumbsDown },
         ];
 
         const LOG_TYPES = [
@@ -182,39 +162,26 @@
             { id: 'other', label: 'Outro', icon: PenTool, color: 'text-slate-500' },
         ];
 
-        // --- HELPERS ---
+        // --- HELPERS & LOGIC ---
         const getTodayStr = () => new Date().toISOString().split('T')[0];
         const formatDate = (dateStr) => { const [y, m, d] = dateStr.split('-'); return `${d}/${m}`; };
         const formatFullDate = (dateStr) => { if (!dateStr) return ''; const d = new Date(dateStr + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); };
         
-        // UUID Seguro para robustez
-        const generateId = () => {
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        };
+        const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+        const safeJSONParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
 
         const SYSTEM_PARAMS = { BASE_QUESTIONS: 20, MIN_QUESTIONS: 15, MAX_QUESTIONS: 80, SPACING_FACTORS: { 'R0': 0.75, 'R1': 2.00, 'R2': 1.25, 'R3': 0.75, 'DEFAULT': 1.0 } };
 
         const calculateNextLoad = (accuracy, importanceId, difficultyId, nextStageType) => {
             const impWeight = IMPORTANCE_LEVELS.find(i => i.id === importanceId)?.weight || 1.0;
             const base = SYSTEM_PARAMS.BASE_QUESTIONS * impWeight;
-            
-            // Fatores fixos
             const spacingFactor = SYSTEM_PARAMS.SPACING_FACTORS[nextStageType] || SYSTEM_PARAMS.SPACING_FACTORS['DEFAULT'];
-            
-            // Fator de performance (Ainda reativo, mas essencial)
             const target = 0.90;
             const gap = Math.max(0, target - accuracy);
             const perfFactor = Math.min(2.2, 1 + (gap / target)); 
-            
-            // Fator de Dificuldade (Agora mais suave: 0.9 a 1.1)
             const diffWeight = DIFFICULTY_LEVELS.find(d => d.id === difficultyId)?.weight || 1.0;
-            
             let n = Math.round(base * perfFactor * spacingFactor * diffWeight);
-            
-            // Regra de Ouro: Se foi mal (<60%), aumenta carga independente do resto
             if (accuracy < 0.60) { n = n + 10; }
-            
             return Math.max(SYSTEM_PARAMS.MIN_QUESTIONS, Math.min(n, SYSTEM_PARAMS.MAX_QUESTIONS));
         };
 
@@ -222,8 +189,6 @@
             const d0 = new Date(studyDate + 'T12:00:00');
             const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
             const getInitialQ = (stage) => calculateNextLoad(1.0, importanceId, 'medium', stage);
-            
-            // Datas Fixas: 0, 7, 30, 60
             return [
                 { type: 'R0', date: studyDate, label: 'R0: Fixação', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: getInitialQ('R0') },
                 { type: 'R1', date: addDays(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: getInitialQ('R1') },
@@ -232,25 +197,10 @@
             ];
         };
 
-        // --- SYNC & STORAGE ---
-        // Proteção contra dados corrompidos
-        const safeJSONParse = (key, fallback) => {
-            try {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : fallback;
-            } catch (e) {
-                console.error(`Erro ao ler ${key}`, e);
-                return fallback;
-            }
-        };
-
         const mergeItems = (local, cloud) => {
             const map = new Map();
             local.forEach(i => map.set(i.id, i));
-            cloud.forEach(c => {
-                const l = map.get(c.id);
-                if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)) map.set(c.id, c);
-            });
+            cloud.forEach(c => { const l = map.get(c.id); if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)) map.set(c.id, c); });
             return Array.from(map.values());
         };
 
@@ -363,15 +313,9 @@
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 dark:border-zinc-800">
-                        <div className="flex justify-between items-start mb-6">
-                            <div><h3 className="text-xl font-bold text-slate-800 dark:text-white">{task.topicTitle}</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wide">{task.label}</span>{task.targetQ && <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded flex items-center gap-1"><Target size={12}/> Meta: {task.targetQ}</span>}</div></div>
-                            <button onClick={onClose}><X className="text-slate-400" /></button>
-                        </div>
+                        <div className="flex justify-between items-start mb-6"><div><h3 className="text-xl font-bold text-slate-800 dark:text-white">{task.topicTitle}</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wide">{task.label}</span>{task.targetQ && <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded flex items-center gap-1"><Target size={12}/> Meta: {task.targetQ}</span>}</div></div><button onClick={onClose}><X className="text-slate-400" /></button></div>
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Acertos</label><input type="number" required autoFocus min="0" className="w-full p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-100 dark:border-emerald-800 rounded-xl text-2xl font-bold text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none text-center" value={correct} onChange={e => setCorrect(e.target.value)} /></div>
-                                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Total</label><input type="number" required min="1" className="w-full p-4 bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-100 dark:border-zinc-700 rounded-xl text-2xl font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-center" value={total} onChange={e => setTotal(e.target.value)} /></div>
-                            </div>
+                            <div className="grid grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Acertos</label><input type="number" required autoFocus min="0" className="w-full p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-100 dark:border-emerald-800 rounded-xl text-2xl font-bold text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none text-center" value={correct} onChange={e => setCorrect(e.target.value)} /></div><div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Total</label><input type="number" required min="1" className="w-full p-4 bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-100 dark:border-zinc-700 rounded-xl text-2xl font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-center" value={total} onChange={e => setTotal(e.target.value)} /></div></div>
                             <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-xl p-4 flex items-center justify-between border border-slate-100 dark:border-zinc-700"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">Aproveitamento</span><div className={`text-3xl font-black ${percentage >= 90 ? 'text-emerald-500' : percentage >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{percentage}%</div></div>
                             <div className="space-y-2"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Dificuldade</label><div className="grid grid-cols-3 gap-2">{DIFFICULTY_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => setDifficulty(lvl.id)} className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all border-2 ${difficulty === lvl.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-slate-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-400 hover:border-slate-200 dark:hover:border-zinc-600'}`}><lvl.icon size={20} /> <span className="text-xs font-bold">{lvl.label}</span></button>))}</div></div>
                             <div className="relative"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-1"><Star size={12} className="fill-yellow-400 text-yellow-400"/> Favoritas</label><input type="number" className="w-full p-3 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="0" value={favorites} onChange={e => setFavorites(e.target.value)} /></div>
@@ -382,20 +326,63 @@
             );
         };
 
+        // --- RESTORED AND IMPROVED COMPONENT ---
         const CalendarDayModal = ({ date, reviews, onClose, onOpenReview }) => {
             if (!date) return null;
             const pendingReviews = reviews.filter(r => !r.done);
             const doneReviews = reviews.filter(r => r.done);
             const hasActivity = reviews.length > 0;
+
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-zinc-800 max-h-[80vh] flex flex-col">
-                        <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-950 shrink-0"><h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3><button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition"><X size={20} className="text-slate-400"/></button></div>
+                        <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-950 shrink-0">
+                            <h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3>
+                            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition"><X size={20} className="text-slate-400"/></button>
+                        </div>
                         <div className="overflow-y-auto p-4 space-y-4 flex-1">
                             {!hasActivity ? (<div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>) : (
                                 <>
-                                    {pendingReviews.length > 0 && (<div><h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4><div className="space-y-2">{pendingReviews.map((item, idx) => { const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[0]; return (<div key={idx} className="p-3 rounded-xl border bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 flex flex-col gap-2"><div className="flex justify-between items-start"><h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4><span className="text-xs bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span></div><div className="flex items-center justify-between mt-1"><span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>{item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}</div><button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button></div>) })}</div></div>)}
-                                    {doneReviews.length > 0 && (<div><h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4><div className="space-y-2">{doneReviews.map((item, idx) => { return (<div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75"><div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div><div className="flex-1"><h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4><div className="flex items-center gap-2 mt-1"><span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span><span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span></div></div></div>) })}</div></div>)}
+                                    {pendingReviews.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4>
+                                            <div className="space-y-2">{pendingReviews.map((item, idx) => { 
+                                                const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[0]; 
+                                                return (
+                                                    <div key={idx} className="p-3 rounded-xl border bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 flex flex-col gap-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4>
+                                                            <span className="text-xs bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between mt-1">
+                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>
+                                                            {item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}
+                                                        </div>
+                                                        <button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button>
+                                                    </div>
+                                                ) 
+                                            })}</div>
+                                        </div>
+                                    )}
+                                    {doneReviews.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4>
+                                            <div className="space-y-2">{doneReviews.map((item, idx) => { 
+                                                return (
+                                                    <div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75">
+                                                        <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span>
+                                                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) 
+                                            })}</div>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -419,6 +406,80 @@
             );
         };
 
+        const DashboardView = ({ topics }) => {
+            const totalTopics = topics.filter(t => !t.deleted).length;
+            const totalReviewsDone = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).length, 0);
+            const totalQuestions = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
+            const totalCorrect = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0), 0);
+            const globalAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+            const areaStats = AREAS.filter(a => a.id !== 'all').map(area => {
+                const areaTopics = topics.filter(t => !t.deleted && t.area === area.id);
+                const areaTotalQ = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
+                const areaCorrect = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0), 0);
+                const accuracy = areaTotalQ > 0 ? Math.round((areaCorrect / areaTotalQ) * 100) : 0;
+                return { ...area, accuracy, count: areaTopics.length };
+            }).sort((a, b) => b.accuracy - a.accuracy);
+            const weakTopics = topics.filter(t => !t.deleted).map(t => {
+                const tTotal = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0);
+                const tCorrect = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0);
+                const acc = tTotal > 0 ? (tCorrect/tTotal) : 1;
+                return { ...t, acc };
+            }).filter(t => t.acc < 0.6 && t.acc > 0).slice(0, 5);
+            return (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Aproveitamento Global</div><div className={`text-4xl font-black mt-1 ${globalAccuracy >= 80 ? 'text-emerald-500' : globalAccuracy >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{globalAccuracy}%</div><div className="text-xs text-slate-400 mt-1">{totalCorrect} acertos de {totalQuestions} questões</div></div>
+                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Volume de Estudo</div><div className="text-4xl font-black mt-1 text-slate-800 dark:text-white">{totalReviewsDone}</div><div className="text-xs text-slate-400 mt-1">Revisões concluídas em {totalTopics} tópicos</div></div>
+                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col justify-center"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase mb-2">Pontos de Atenção</div>{weakTopics.length === 0 ? <div className="text-emerald-500 text-sm font-bold">Nenhum tema crítico! 🎉</div> : <div className="space-y-1">{weakTopics.map(t => (<div key={t.id} className="flex justify-between text-xs"><span className="truncate max-w-[150px] text-slate-700 dark:text-slate-300">{t.title}</span><span className="text-red-500 font-bold">{Math.round(t.acc*100)}%</span></div>))}</div>}</div>
+                    </div>
+                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-blue-500"/> Desempenho por Área</h3><div className="space-y-4">{areaStats.map(area => (<div key={area.id}><div className="flex justify-between text-xs mb-1 font-medium"><span className="text-slate-700 dark:text-slate-300">{area.name} <span className="text-slate-400">({area.count} temas)</span></span><span className={area.accuracy >= 80 ? 'text-emerald-500' : 'text-slate-500'}>{area.accuracy}%</span></div><div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${area.accuracy >= 80 ? 'bg-emerald-500' : area.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${area.accuracy}%`}}></div></div></div>))}</div></div>
+                </div>
+            )
+        }
+
+        // --- RESTORED AND IMPROVED: CalendarView ---
+        const CalendarView = ({ topics, onOpenReview }) => {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const [selectedDate, setSelectedDate] = useState(null);
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = new Date(currentYear, currentMonth, 1).getDay(); 
+            const days = [];
+            for (let i = 0; i < startDay; i++) days.push(null);
+            for (let i = 1; i <= daysInMonth; i++) days.push(i);
+            
+            const getReviewsForDate = (dateStr) => { 
+                const list = []; 
+                topics.forEach(topic => { 
+                    if(topic.deleted) return; 
+                    topic.reviews.forEach((review, idx) => { 
+                        if (review.date === dateStr) { 
+                            list.push({ 
+                                topicTitle: topic.title, 
+                                area: topic.area, 
+                                topicId: topic.id, 
+                                reviewIdx: idx, 
+                                importance: topic.importance, // Passa a prioridade para o modal
+                                ...review 
+                            }); 
+                        } 
+                    }); 
+                }); 
+                return list; 
+            };
+
+            return (
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+                    <div className="grid grid-cols-7 gap-1 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
+                    <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
+                    <div className="flex justify-center gap-4 mt-4 text-[10px] text-slate-400"><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> A Fazer</div><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
+                    <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} onOpenReview={onOpenReview} />
+                </div>
+            );
+        };
+
         const TopicCard = ({ topic, onOpenReview, onDelete }) => {
             const [expanded, setExpanded] = useState(false);
             const [isDeleting, setIsDeleting] = useState(false);
@@ -432,6 +493,7 @@
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaInfo.color}`}>{areaInfo.name}</span>
+                                {/* Exibe a Prioridade no Card */}
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border bg-transparent border-current opacity-80 ${impInfo.color}`}>{impInfo.label}</span>
                                 {topic.subarea && <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-950 flex items-center gap-1"><Tag size={10}/> {topic.subarea}</span>}
                             </div>
@@ -443,28 +505,6 @@
             );
         };
 
-        const CalendarView = ({ topics, onOpenReview }) => {
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            const [selectedDate, setSelectedDate] = useState(null);
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const startDay = new Date(currentYear, currentMonth, 1).getDay(); 
-            const days = [];
-            for (let i = 0; i < startDay; i++) days.push(null);
-            for (let i = 1; i <= daysInMonth; i++) days.push(i);
-            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach((review, idx) => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, topicId: topic.id, reviewIdx: idx, ...review }); } }); }); return list; };
-            return (
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
-                    <div className="grid grid-cols-7 gap-1 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
-                    <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
-                    <div className="flex justify-center gap-4 mt-4 text-[10px] text-slate-400"><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> A Fazer</div><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
-                    <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} onOpenReview={onOpenReview} />
-                </div>
-            );
-        };
-
         function App() {
             const [topics, setTopics] = useState(() => safeJSONParse('resiflow_v3_data', []));
             const [logs, setLogs] = useState(() => safeJSONParse('resiflow_logs', []));
@@ -472,6 +512,7 @@
             const [viewMode, setViewMode] = useState('list'); 
             const [filterArea, setFilterArea] = useState('all');
             const [filterTime, setFilterTime] = useState('all'); 
+            const [searchTerm, setSearchTerm] = useState('');
             const [title, setTitle] = useState('');
             const [area, setArea] = useState('clinica');
             const [subarea, setSubarea] = useState('');
@@ -514,11 +555,20 @@
 
             const sortedTopics = useMemo(() => {
                 let list = [...topics].filter(t => !t.deleted);
+                
+                // Filtro de Busca
+                if (searchTerm) {
+                    const lowerTerm = searchTerm.toLowerCase();
+                    list = list.filter(t => t.title.toLowerCase().includes(lowerTerm) || (t.subarea && t.subarea.toLowerCase().includes(lowerTerm)));
+                }
+
                 if (filterArea !== 'all') list = list.filter(t => t.area === filterArea);
+                
                 list.sort((a, b) => { const getNextDate = (t) => t.reviews.find(r => !r.done)?.date || '9999-99-99'; const dateA = getNextDate(a); const dateB = getNextDate(b); const aDue = dateA <= todayStr; const bDue = dateB <= todayStr; if (aDue && !bDue) return -1; if (!aDue && bDue) return 1; return dateA.localeCompare(dateB); });
+                
                 if (filterTime === 'today') return list.filter(t => t.reviews.some(r => !r.done && r.date <= todayStr));
                 return list;
-            }, [topics, filterArea, filterTime, todayStr]);
+            }, [topics, filterArea, filterTime, todayStr, searchTerm]);
 
             // Atualiza subareas quando area muda
             const currentSubareas = useMemo(() => {
@@ -530,30 +580,47 @@
                 <div className="min-h-screen pb-12 transition-colors duration-300">
                     <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 py-4 px-4 sticky top-0 z-40 transition-colors shadow-sm dark:shadow-none">
                         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div><h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow <span className="text-xs bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 font-normal">v5.0</span></h1></div>
+                            <div><h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow <span className="text-xs bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 font-normal">v6.0</span></h1></div>
                             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                                 {installPrompt && (<button onClick={handleInstall} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 border flex items-center gap-2 font-bold text-xs"><Download size={16}/> App</button>)}
                                 <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 border flex items-center gap-2 font-bold text-xs"><Timer size={16}/></button>
                                 <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg transition border flex items-center gap-2 ${status === 'online' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'}`}>{status === 'online' ? <Cloud size={18}/> : <CloudOff size={18}/>}</button>
                                 <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
                                 <div className="h-6 w-px bg-slate-200 dark:bg-zinc-700 mx-1"></div>
-                                <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg"><button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button><button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button><button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button></div>
+                                <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg">
+                                    <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button>
+                                    <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button>
+                                    <button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button>
+                                    <button onClick={() => setViewMode('dashboard')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'dashboard' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><BarChart3 size={14}/> <span className="hidden sm:inline">Análise</span></button>
+                                </div>
                             </div>
                         </div>
                     </header>
 
                     <main className="max-w-4xl mx-auto px-4 mt-6 space-y-6">
-                        {viewMode === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : (
+                        {viewMode === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : 
+                         viewMode === 'dashboard' ? ( <DashboardView topics={topics} /> ) : (
                             <>
+                                {/* Search Bar - Only in List View */}
+                                {viewMode === 'list' && (
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-3 text-slate-400 pointer-events-none" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar por assunto ou subárea..." 
+                                            value={searchTerm}
+                                            onChange={e => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                                        />
+                                    </div>
+                                )}
+
                                 <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 transition-colors">
                                     <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Plus size={14}/> Novo Conteúdo Teórico</h2>
                                     <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                                         <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-11" value={title} onChange={e => setTitle(e.target.value)} /></div>
                                         <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Área</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                                        
-                                        {/* Novo Campo Subárea */}
                                         <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Subárea</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Selecione...</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-
                                         <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Prioridade</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
                                         <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Aula</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-11" value={date} onChange={e => setDate(e.target.value)} /></div>
                                         <div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center">Add</button></div>
