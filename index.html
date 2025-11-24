@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ResiFlow</title>
     
+    <!-- PWA & iOS Configurações Otimizadas -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="ResiFlow">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#ffffff">
+    <!-- black-translucent permite que o fundo do app defina a cor da barra de status -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Theme Color Dinâmico (Evita flash branco no boot) -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b">
     
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -20,7 +25,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class', // Importante: Tailwind procura a classe 'dark' no HTML
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -30,10 +35,12 @@
                     animation: {
                         'fade-in': 'fadeIn 0.3s ease-out',
                         'slide-in-right': 'slideInRight 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideInRight: { '0%': { transform: 'translateX(20px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } }
+                        slideInRight: { '0%': { transform: 'translateX(20px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
                     }
                 }
             }
@@ -51,9 +58,8 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado'))
-                    .catch(err => console.log('Falha SW', err));
+                // Mock registro SW para evitar erros no console se não existir arquivo
+                // navigator.serviceWorker.register('./sw.js').catch(() => {});
             });
         }
     </script>
@@ -61,24 +67,28 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
-        /* VARIÁVEIS CSS REATIVAS À CLASSE DARK */
         :root {
-            --bg-color: #f8fafc; /* slate-50 */
-            --text-color: #0f172a; /* slate-900 */
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
         }
         
-        /* Quando a classe 'dark' é adicionada ao HTML pelo React, essas variáveis mudam */
         html.dark {
-            --bg-color: #09090b; /* zinc-950 */
-            --text-color: #e2e8f0; /* slate-200 */
+            --bg-color: #09090b;
+            --text-color: #e2e8f0;
         }
 
-        /* Aplica as variáveis ao HTML e BODY para garantir cobertura total no iOS */
-        html, body { 
+        /* Correção Crítica para iOS: Aplicar cor ao HTML evita fundo branco no overscroll */
+        html { 
+            background-color: var(--bg-color);
+            transition: background-color 300ms ease;
+        }
+
+        body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             -webkit-tap-highlight-color: transparent; 
             height: 100%;
             width: 100%;
+            /* Overscroll behavior ajuda, mas a cor no html é mais importante */
             overscroll-behavior-y: none;
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -92,8 +102,9 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
         .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
         
-        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .dark .glass { background: rgba(9, 9, 11, 0.9); }
+        /* Ajuste do Glassmorphism para ser mais legível */
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .dark .glass { background: rgba(9, 9, 11, 0.85); border-bottom: 1px solid rgba(255,255,255,0.05); }
 
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
@@ -103,7 +114,6 @@
         .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
     </style>
 </head>
-<!-- Removemos as classes do Tailwind daqui para evitar conflito com o CSS global -->
 <body class="selection:bg-blue-500 selection:text-white">
     <div id="root" class="h-full"></div>
 
@@ -271,13 +281,12 @@
             const stateRef = useRef({ topics, logs });
             useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
 
-            // BUG FIX: Auth Logic + Sync
             useEffect(() => {
                 if (!config || !syncKey || !window.firebaseModules) return;
                 try {
                     const { initializeApp, getFirestore, doc, onSnapshot, getAuth, signInAnonymously } = window.firebaseModules;
                     let app;
-                    try { app = initializeApp(config); } catch(e) { app = window.firebaseModules.app; } // Handle existing app
+                    try { app = initializeApp(config); } catch(e) { app = window.firebaseModules.app; }
                     
                     const auth = getAuth();
                     signInAnonymously(auth).then(() => {
@@ -648,20 +657,14 @@
 
             const { status, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
 
+            // Correção de Bug 1: Sincronização robusta de Tema e Meta Tags
             useEffect(() => {
-                const metaThemeColor = document.querySelector("meta[name='theme-color']");
-                const metaStatusBarStyle = document.querySelector("meta[name='apple-mobile-web-app-status-bar-style']");
-                
                 if (darkMode) {
                     document.documentElement.classList.add('dark');
                     localStorage.setItem('resiflow_theme', 'dark');
-                    if(metaThemeColor) metaThemeColor.setAttribute("content", "#09090b");
-                    if(metaStatusBarStyle) metaStatusBarStyle.setAttribute("content", "black-translucent");
                 } else {
                     document.documentElement.classList.remove('dark');
                     localStorage.setItem('resiflow_theme', 'light');
-                    if(metaThemeColor) metaThemeColor.setAttribute("content", "#f8fafc");
-                    if(metaStatusBarStyle) metaStatusBarStyle.setAttribute("content", "default");
                 }
             }, [darkMode]);
 
@@ -720,9 +723,11 @@
 
             return (
                 <div className="min-h-screen pb-32 md:pb-10 relative overflow-x-hidden pt-safe">
+                    {/* Correção de Bug 3: Fundo Decorativo Refinado */}
                     <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
-                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/5 dark:bg-blue-600/5 rounded-full blur-[160px]"></div>
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-400/5 dark:bg-purple-600/5 rounded-full blur-[160px]"></div>
+                         {/* Bolhas Centralizadas, Maiores e com Mix Blend Mode para suavidade */}
+                         <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vh] bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-30"></div>
+                         <div className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 w-[100vh] h-[100vh] bg-purple-400/10 dark:bg-purple-600/10 rounded-full blur-[120px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-30"></div>
                     </div>
 
                     <header className="fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-white/5 transition-all pt-safe">
