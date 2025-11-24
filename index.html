@@ -5,24 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ResiFlow</title>
     
-    <!-- PWA Setup -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="ResiFlow">
-    
-    <!-- Status Bar Style: Default inicial -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
-    <!-- Theme Color: Única tag, controlada pelo React -->
     <meta name="theme-color" content="#ffffff">
     
-    <!-- Link para o Manifesto Externo -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Ícones -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="apple-touch-icon" href="icon.svg">
     
-    <!-- Bibliotecas Externas -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -38,11 +29,11 @@
                     },
                     animation: {
                         'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'slide-in-right': 'slideInRight 0.3s ease-out',
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                        slideInRight: { '0%': { transform: 'translateX(20px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } }
                     }
                 }
             }
@@ -50,20 +41,20 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Firebase -->
+    <!-- Firebase: Added Auth Module -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        window.firebaseModules = { initializeApp, getFirestore, doc, onSnapshot, setDoc, collection };
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        window.firebaseModules = { initializeApp, getFirestore, doc, onSnapshot, setDoc, collection, getAuth, signInAnonymously };
     </script>
 
-    <!-- Registro do Service Worker Externo -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado:', reg.scope))
-                    .catch(err => console.log('Falha no SW:', err));
+                    .then(reg => console.log('SW registrado'))
+                    .catch(err => console.log('Falha SW', err));
             });
         }
     </script>
@@ -74,21 +65,26 @@
         html, body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             -webkit-tap-highlight-color: transparent; 
-            height: 100%; /* Garante altura total para o fundo */
+            height: 100%;
+            overscroll-behavior-y: none;
         }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        input, select, textarea { font-size: 16px !important; }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
         .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
         
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .dark .glass { background: rgba(9, 9, 11, 0.85); }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .dark .glass { background: rgba(9, 9, 11, 0.9); }
 
-        /* Safe Area Utilities */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-slate-200 transition-colors duration-300 selection:bg-blue-500 selection:text-white">
@@ -103,7 +99,6 @@
             return React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
         };
 
-        // Icons Mapping
         const Icons = {
             Target: (p) => <LucideIcon name="Target" {...p} />,
             Calendar: (p) => <LucideIcon name="Calendar" {...p} />,
@@ -144,9 +139,25 @@
             PenTool: (p) => <LucideIcon name="PenTool" {...p} />,
             MonitorPlay: (p) => <LucideIcon name="MonitorPlay" {...p} />,
             AlertTriangle: (p) => <LucideIcon name="AlertTriangle" {...p} />,
+            ArrowLeft: (p) => <LucideIcon name="ArrowLeft" {...p} />,
         };
 
-        // --- CONFIG & CONSTANTS ---
+        // --- UTILS ---
+        const vibrate = (pattern = 10) => {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(pattern);
+        };
+
+        // BUG FIX: Get Local Date instead of UTC
+        const getTodayStr = () => {
+            const d = new Date();
+            return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        };
+
+        const formatDate = (d) => { if(!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}`; };
+        const formatFullDate = (d) => { if (!d) return ''; const dateObj = new Date(d + 'T12:00:00'); return dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'long' }); };
+        const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+        const safeJSONParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
+
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
             authDomain: "med-heklp.firebaseapp.com",
@@ -189,13 +200,6 @@
 
         const SYSTEM_PARAMS = { BASE_QUESTIONS: 20, MIN_QUESTIONS: 15, MAX_QUESTIONS: 100, TARGET_ACCURACY: 0.90, SPACING_FACTORS: { 'R0': 1.0, 'R1': 2.5, 'R2': 1.25, 'R3': 1.0, 'DEFAULT': 1.0 }, PERF_CAP: 2.2 };
         
-        // --- HELPERS ---
-        const getTodayStr = () => new Date().toISOString().split('T')[0];
-        const formatDate = (d) => { if(!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}`; };
-        const formatFullDate = (d) => { if (!d) return ''; return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'long' }); };
-        const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-        const safeJSONParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
-
         const calculateNextLoad = (importanceId, diffId, stage, acc) => {
             const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
             const base = impObj.baseQ;
@@ -215,11 +219,9 @@
             const d0 = new Date(date + 'T12:00:00');
             const add = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
             const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
-            
             const q1 = calculateNextLoad(importanceId, 'medium', 'R1', null);
             const q2 = calculateNextLoad(importanceId, 'medium', 'R2', null);
             const q3 = calculateNextLoad(importanceId, 'medium', 'R3', null);
-
             return [
                 { type: 'R0', date: date, label: 'R0: Fixação', done: false, correct: 0, total: 0, difficulty: null, targetQ: impObj.baseQ },
                 { type: 'R1', date: add(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, difficulty: null, targetQ: q1 },
@@ -238,7 +240,6 @@
             return Array.from(map.values());
         };
 
-        // --- HOOKS ---
         const useSync = (topics, logs, setTopics, setLogs) => {
             const [status, setStatus] = useState('offline');
             const [config, setConfig] = useState(() => safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG));
@@ -254,30 +255,37 @@
             const stateRef = useRef({ topics, logs });
             useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
 
+            // BUG FIX: Auth Logic + Sync
             useEffect(() => {
                 if (!config || !syncKey || !window.firebaseModules) return;
                 try {
-                    const { initializeApp, getFirestore, doc, onSnapshot } = window.firebaseModules;
-                    try { initializeApp(config); } catch(e) {}
-                    const db = getFirestore();
-                    dbRef.current = db;
-                    const docRef = doc(db, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
-                    setStatus('syncing');
-                    const unsub = onSnapshot(docRef, (s) => {
-                        if (s.exists()) { 
-                            const d = s.data(); 
-                            if (d.topics) {
-                                const mergedTopics = mergeItems(stateRef.current.topics, d.topics);
-                                if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) setTopics(mergedTopics);
+                    const { initializeApp, getFirestore, doc, onSnapshot, getAuth, signInAnonymously } = window.firebaseModules;
+                    let app;
+                    try { app = initializeApp(config); } catch(e) { app = window.firebaseModules.app; } // Handle existing app
+                    
+                    const auth = getAuth();
+                    signInAnonymously(auth).then(() => {
+                        const db = getFirestore();
+                        dbRef.current = db;
+                        const docRef = doc(db, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
+                        setStatus('syncing');
+                        const unsub = onSnapshot(docRef, (s) => {
+                            if (s.exists()) { 
+                                const d = s.data(); 
+                                if (d.topics) {
+                                    const mergedTopics = mergeItems(stateRef.current.topics, d.topics);
+                                    if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) setTopics(mergedTopics);
+                                }
+                                if (d.logs) {
+                                    const mergedLogs = mergeItems(stateRef.current.logs, d.logs);
+                                    if (JSON.stringify(mergedLogs) !== JSON.stringify(stateRef.current.logs)) setLogs(mergedLogs);
+                                }
                             }
-                            if (d.logs) {
-                                const mergedLogs = mergeItems(stateRef.current.logs, d.logs);
-                                if (JSON.stringify(mergedLogs) !== JSON.stringify(stateRef.current.logs)) setLogs(mergedLogs);
-                            }
-                        }
-                        setStatus('online');
-                    }, (err) => { console.error(err); setStatus('error'); });
-                    return () => unsub();
+                            setStatus('online');
+                        }, (err) => { console.error(err); setStatus('error'); });
+                        return () => unsub();
+                    }).catch((e) => { console.error("Auth failed", e); setStatus('error'); });
+
                 } catch (e) { console.error(e); setStatus('error'); }
             }, [config, syncKey]);
 
@@ -300,7 +308,7 @@
                 <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center sm:p-4 pb-safe">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
                     <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 md:rounded-2xl rounded-t-2xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh] mb-safe md:mb-0">
-                        <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-t-2xl z-10">
+                        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-t-2xl z-10">
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h3>
                             <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.X size={20} className="text-slate-400"/></button>
                         </div>
@@ -314,7 +322,6 @@
         const SettingsModal = ({ isOpen, onClose, topics, logs, setTopics, setLogs, syncKey, setSyncKey, status }) => {
             const [tempKey, setTempKey] = useState(syncKey);
             useEffect(() => setTempKey(syncKey), [syncKey]);
-
             const handleExport = () => {
                 const dataStr = JSON.stringify({ topics, logs }, null, 2);
                 const blob = new Blob([dataStr], { type: "application/json" });
@@ -322,7 +329,6 @@
                 const a = document.createElement('a'); a.href = url; a.download = `resiflow_bkp_${getTodayStr()}.json`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
             };
-
             const handleImport = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -337,7 +343,6 @@
                 };
                 reader.readAsText(file);
             };
-
             return (
                 <ModalWrapper isOpen={isOpen} onClose={onClose} title="Configurações">
                     <div className="p-6 space-y-6">
@@ -357,238 +362,90 @@
             );
         };
 
-        // 2. Pomodoro Timer
         const PomodoroTimer = ({ isOpen, onClose }) => {
             if(!isOpen) return null;
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
-            const [mode, setMode] = useState('focus'); // focus, short, long
-            
+            const [mode, setMode] = useState('focus');
             useEffect(() => {
                 let interval = null;
                 if (isActive && timeLeft > 0) interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
                 else if (timeLeft === 0) setIsActive(false);
                 return () => clearInterval(interval);
             }, [isActive, timeLeft]);
-
             const modes = { focus: 25*60, short: 5*60, long: 15*60 };
             const changeMode = (m) => { setMode(m); setIsActive(false); setTimeLeft(modes[m]); };
             const fmt = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
             const progress = ((modes[mode] - timeLeft) / modes[mode]) * 100;
-
             return (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
                      <div className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
                         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Icons.X size={24}/></button>
                         <h3 className="font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 text-lg"><Icons.Timer className="text-emerald-500"/> Foco & Fluxo</h3>
-                        
-                        <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-zinc-950 p-1.5 rounded-xl">
-                            {Object.keys(modes).map(m => (
-                                <button key={m} onClick={() => changeMode(m)} className={`px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${mode === m ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400'}`}>
-                                    {m === 'focus' ? 'Foco' : m === 'short' ? 'Pausa Curta' : 'Pausa Longa'}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="relative w-56 h-56 flex items-center justify-center mb-8">
-                            <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90">
-                                <circle cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-zinc-800"/>
-                                <circle cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={628} strokeDashoffset={628 - (628 * progress) / 100} className="text-emerald-500 transition-all duration-1000 ease-linear" strokeLinecap="round"/>
-                            </svg>
-                            <div className="text-6xl font-black text-slate-800 dark:text-white tracking-widest font-mono">{fmt(timeLeft)}</div>
-                        </div>
-
-                        <div className="flex gap-4">
-                            <button onClick={() => setIsActive(!isActive)} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-lg transition-transform active:scale-95 ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white shadow-emerald-500/30'}`}>
-                                {isActive ? <Icons.Pause fill="currentColor"/> : <Icons.Play fill="currentColor" className="ml-1"/>}
-                            </button>
-                            <button onClick={() => changeMode(mode)} className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                <Icons.RotateCcw/>
-                            </button>
-                        </div>
+                        <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-zinc-950 p-1.5 rounded-xl">{Object.keys(modes).map(m => (<button key={m} onClick={() => { vibrate(5); changeMode(m); }} className={`px-4 py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${mode === m ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400'}`}>{m === 'focus' ? 'Foco' : m === 'short' ? 'Pausa Curta' : 'Pausa Longa'}</button>))}</div>
+                        <div className="relative w-56 h-56 flex items-center justify-center mb-8"><svg className="absolute top-0 left-0 w-full h-full transform -rotate-90"><circle cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-zinc-800"/><circle cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={628} strokeDashoffset={628 - (628 * progress) / 100} className="text-emerald-500 transition-all duration-1000 ease-linear" strokeLinecap="round"/></svg><div className="text-6xl font-black text-slate-800 dark:text-white tracking-widest font-mono">{fmt(timeLeft)}</div></div>
+                        <div className="flex gap-4"><button onClick={() => { vibrate(10); setIsActive(!isActive); }} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-lg transition-transform active:scale-95 ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white shadow-emerald-500/30'}`}>{isActive ? <Icons.Pause fill="currentColor"/> : <Icons.Play fill="currentColor" className="ml-1"/>}</button><button onClick={() => { vibrate(5); changeMode(mode); }} className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><Icons.RotateCcw/></button></div>
                      </div>
                 </div>
             );
         };
 
-        // 3. Diary View
         const DiaryView = ({ logs, onAddLog, onDeleteLog }) => {
             const [type, setType] = useState('questions');
             const [desc, setDesc] = useState('');
             const [val, setVal] = useState('');
             const [date, setDate] = useState(getTodayStr());
-
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (!desc || !val) return;
+                vibrate(15);
                 onAddLog({ id: generateId(), date, type, desc, val, updatedAt: Date.now(), deleted: false });
                 setDesc(''); setVal('');
             };
-
             const groupedLogs = useMemo(() => {
                 const groups = {};
                 logs.filter(l => !l.deleted).forEach(l => { if (!groups[l.date]) groups[l.date] = []; groups[l.date].push(l); });
                 return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
             }, [logs]);
-
             return (
                 <div className="space-y-6 animate-fade-in pb-32">
-                     <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
+                     <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-white/5">
                         <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><Icons.Notebook size={14}/> Novo Registro Diário</h2>
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                            <div className="md:col-span-3">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Atividade</label>
-                                <div className="relative">
-                                    <select className="w-full p-2.5 pl-9 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 appearance-none outline-none focus:border-blue-500" value={type} onChange={e => setType(e.target.value)}>
-                                        {LOG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                                    </select>
-                                    <div className="absolute left-3 top-3 pointer-events-none text-slate-400">
-                                        {(() => { const T = LOG_TYPES.find(t => t.id === type); const I = T ? T.icon : Icons.Target; return <I size={16}/> })()}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="md:col-span-5">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label>
-                                <input type="text" placeholder="Ex: Aula de ECG" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 outline-none focus:border-blue-500" value={desc} onChange={e => setDesc(e.target.value)} />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Qtd/Tempo</label>
-                                <input type="text" placeholder="Ex: 50 ou 30min" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 outline-none focus:border-blue-500" value={val} onChange={e => setVal(e.target.value)} />
-                            </div>
-                            <div className="md:col-span-2">
-                                <button type="submit" className="h-11 w-full bg-slate-900 dark:bg-white dark:text-black text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"><Icons.Plus size={18}/> Salvar</button>
-                            </div>
+                            <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Atividade</label><div className="relative"><select className="w-full p-2.5 pl-9 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 appearance-none outline-none focus:border-blue-500" value={type} onChange={e => setType(e.target.value)}>{LOG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select><div className="absolute left-3 top-3 pointer-events-none text-slate-400">{(() => { const T = LOG_TYPES.find(t => t.id === type); const I = T ? T.icon : Icons.Target; return <I size={16}/> })()}</div></div></div>
+                            <div className="md:col-span-5"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><input type="text" placeholder="Ex: Aula de ECG" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 outline-none focus:border-blue-500" value={desc} onChange={e => setDesc(e.target.value)} /></div>
+                            <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Qtd/Tempo</label><input type="text" placeholder="Ex: 50 ou 30min" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 outline-none focus:border-blue-500" value={val} onChange={e => setVal(e.target.value)} /></div>
+                            <div className="md:col-span-2"><button type="submit" className="h-11 w-full bg-slate-900 dark:bg-white dark:text-black text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"><Icons.Plus size={18}/> Salvar</button></div>
                         </form>
                     </section>
-
                     <div className="space-y-6">
-                        {groupedLogs.length === 0 ? (
-                            <div className="text-center py-12 text-slate-400 opacity-60">
-                                <Icons.Notebook className="mx-auto mb-2" size={32}/>
-                                <p>Nenhum registro ainda.</p>
-                            </div>
-                        ) : (
-                            groupedLogs.map(([dateStr, dayLogs]) => (
-                                <div key={dateStr}>
-                                    <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider sticky top-20 bg-slate-50/90 dark:bg-black/0 py-2 backdrop-blur-sm z-10">{formatFullDate(dateStr)}</h3>
-                                    <div className="space-y-2">
-                                        {dayLogs.map(log => {
-                                            const logType = LOG_TYPES.find(t => t.id === log.type) || LOG_TYPES[4];
-                                            const Icon = logType.icon;
-                                            return (
-                                                <div key={log.id} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 flex items-center gap-3 shadow-sm group">
-                                                    <div className={`p-2 rounded-lg bg-slate-100 dark:bg-zinc-950 ${logType.color} dark:opacity-90`}><Icon size={18}/></div>
-                                                    <div className="flex-1">
-                                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{log.desc}</div>
-                                                        <div className="text-xs text-slate-500 dark:text-slate-400">{logType.label}</div>
-                                                    </div>
-                                                    <div className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-zinc-950 px-2.5 py-1 rounded-lg text-xs">{log.val}</div>
-                                                    <button onClick={() => onDeleteLog(log.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition"><Icons.Trash2 size={14}/></button>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                        {groupedLogs.length === 0 ? (<div className="text-center py-12 text-slate-400 opacity-60"><Icons.Notebook className="mx-auto mb-2" size={32}/><p>Nenhum registro ainda.</p></div>) : (groupedLogs.map(([dateStr, dayLogs]) => (<div key={dateStr}><h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider sticky top-20 bg-slate-50/90 dark:bg-black/0 py-2 backdrop-blur-sm z-10">{formatFullDate(dateStr)}</h3><div className="space-y-2">{dayLogs.map(log => { const logType = LOG_TYPES.find(t => t.id === log.type) || LOG_TYPES[4]; const Icon = logType.icon; return (<div key={log.id} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-white/5 flex items-center gap-3 shadow-sm group"><div className={`p-2 rounded-lg bg-slate-100 dark:bg-zinc-950 ${logType.color} dark:opacity-90`}><Icon size={18}/></div><div className="flex-1"><div className="font-bold text-slate-800 dark:text-white text-sm">{log.desc}</div><div className="text-xs text-slate-500 dark:text-slate-400">{logType.label}</div></div><div className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-zinc-950 px-2.5 py-1 rounded-lg text-xs">{log.val}</div><button onClick={() => onDeleteLog(log.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition"><Icons.Trash2 size={14}/></button></div>)})}</div></div>)))}
                     </div>
                 </div>
             );
         };
 
-        // 4. Calendar View (Improved)
         const CalendarView = ({ topics, onOpenReview }) => {
             const [displayDate, setDisplayDate] = useState(new Date());
             const [selectedDate, setSelectedDate] = useState(null);
-            
             const currentMonth = displayDate.getMonth();
             const currentYear = displayDate.getFullYear();
-            
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const startDay = new Date(currentYear, currentMonth, 1).getDay();
             const days = Array(startDay).fill(null).concat([...Array(daysInMonth).keys()].map(i => i + 1));
-
             const prevMonth = () => setDisplayDate(new Date(currentYear, currentMonth - 1, 1));
             const nextMonth = () => setDisplayDate(new Date(currentYear, currentMonth + 1, 1));
             const goToday = () => setDisplayDate(new Date());
-
-            const getReviewsForDate = (dateStr) => {
-                const list = [];
-                topics.forEach(t => {
-                    if (t.deleted) return;
-                    t.reviews.forEach((r, idx) => {
-                        if (r.date === dateStr) list.push({ topic: t, review: r, idx });
-                    });
-                });
-                return list;
-            };
-
+            const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(t => { if (t.deleted) return; t.reviews.forEach((r, idx) => { if (r.date === dateStr) list.push({ topic: t, review: r, idx }); }); }); return list; };
             return (
                 <div className="animate-fade-in pb-32">
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white capitalize flex items-center gap-2">
-                                {displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                            </h3>
-                            <div className="flex gap-1">
-                                <button onClick={prevMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronLeft size={20}/></button>
-                                <button onClick={goToday} className="px-3 py-1 text-xs font-bold bg-slate-100 dark:bg-zinc-800 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700">Hoje</button>
-                                <button onClick={nextMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronRight size={20}/></button>
-                            </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-7 gap-2 mb-2">
-                            {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}
-                        </div>
-                        <div className="grid grid-cols-7 gap-2">
-                            {days.map((day, idx) => {
-                                if (!day) return <div key={idx} className="aspect-square"></div>;
-                                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                const reviews = getReviewsForDate(dateStr);
-                                const isToday = dateStr === getTodayStr();
-                                const pending = reviews.filter(x => !x.review.done).length;
-                                const done = reviews.filter(x => x.review.done).length;
-                                const hasDots = pending > 0 || done > 0;
-
-                                return (
-                                    <button key={idx} onClick={() => reviews.length && setSelectedDate(dateStr)} className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${isToday ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-50 dark:bg-zinc-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800'}`}>
-                                        <span className={`text-sm font-bold`}>{day}</span>
-                                        {hasDots && (
-                                            <div className="flex gap-0.5 mt-1 max-w-[80%] flex-wrap justify-center">
-                                                {[...Array(Math.min(3, pending))].map((_, i) => <div key={`p${i}`} className={`w-1 h-1 rounded-full ${isToday ? 'bg-white/70' : 'bg-blue-500'}`}></div>)}
-                                                {[...Array(Math.min(3, done))].map((_, i) => <div key={`d${i}`} className={`w-1 h-1 rounded-full ${isToday ? 'bg-emerald-300' : 'bg-emerald-500'}`}></div>)}
-                                            </div>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="flex justify-center gap-4 mt-6 text-xs text-slate-500">
-                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div> A Fazer</div>
-                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div>
-                        </div>
+                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-slate-800 dark:text-white capitalize flex items-center gap-2">{displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3><div className="flex gap-1"><button onClick={prevMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronLeft size={20}/></button><button onClick={goToday} className="px-3 py-1 text-xs font-bold bg-slate-100 dark:bg-zinc-800 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700">Hoje</button><button onClick={nextMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronRight size={20}/></button></div></div>
+                        <div className="grid grid-cols-7 gap-2 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
+                        <div className="grid grid-cols-7 gap-2">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviews = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pending = reviews.filter(x => !x.review.done).length; const done = reviews.filter(x => x.review.done).length; const hasDots = pending > 0 || done > 0; return (<button key={idx} onClick={() => reviews.length && setSelectedDate(dateStr)} className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${isToday ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-50 dark:bg-zinc-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800'}`}><span className={`text-sm font-bold`}>{day}</span>{hasDots && (<div className="flex gap-0.5 mt-1 max-w-[80%] flex-wrap justify-center">{[...Array(Math.min(3, pending))].map((_, i) => <div key={`p${i}`} className={`w-1 h-1 rounded-full ${isToday ? 'bg-white/70' : 'bg-blue-500'}`}></div>)}{[...Array(Math.min(3, done))].map((_, i) => <div key={`d${i}`} className={`w-1 h-1 rounded-full ${isToday ? 'bg-emerald-300' : 'bg-emerald-500'}`}></div>)}</div>)}</button>); })}</div>
+                        <div className="flex justify-center gap-4 mt-6 text-xs text-slate-500"><div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500"></div> A Fazer</div><div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
                     </div>
-
-                    {/* Day Details Modal */}
-                    {selectedDate && (
-                         <ModalWrapper isOpen={!!selectedDate} onClose={() => setSelectedDate(null)} title={formatFullDate(selectedDate)}>
-                            <div className="p-4 space-y-3">
-                                {getReviewsForDate(selectedDate).length === 0 ? <p className="text-center text-slate-400 py-4">Nada agendado.</p> : getReviewsForDate(selectedDate).map((item, i) => (
-                                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${item.review.done ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 opacity-70' : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'}`}>
-                                        <div>
-                                            <div className="font-bold text-sm text-slate-800 dark:text-white">{item.topic.title}</div>
-                                            <div className="text-xs text-slate-500">{item.review.label}</div>
-                                        </div>
-                                        {!item.review.done ? (
-                                            <button onClick={() => { setSelectedDate(null); onOpenReview(item.topic.id, item.idx); }} className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg">Revisar</button>
-                                        ) : (
-                                            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1"><Icons.CheckCircle2 size={14}/> Feito</span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                         </ModalWrapper>
-                    )}
+                    {selectedDate && (<ModalWrapper isOpen={!!selectedDate} onClose={() => setSelectedDate(null)} title={formatFullDate(selectedDate)}><div className="p-4 space-y-3">{getReviewsForDate(selectedDate).length === 0 ? <p className="text-center text-slate-400 py-4">Nada agendado.</p> : getReviewsForDate(selectedDate).map((item, i) => (<div key={i} className={`p-3 rounded-xl border flex items-center justify-between ${item.review.done ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 opacity-70' : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700'}`}><div><div className="font-bold text-sm text-slate-800 dark:text-white">{item.topic.title}</div><div className="text-xs text-slate-500">{item.review.label}</div></div>{!item.review.done ? (<button onClick={() => { setSelectedDate(null); onOpenReview(item.topic.id, item.idx); }} className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg">Revisar</button>) : (<span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1"><Icons.CheckCircle2 size={14}/> Feito</span>)}</div>))}</div></ModalWrapper>)}
                 </div>
             );
         };
@@ -601,10 +458,10 @@
             const [importance, setImportance] = useState('medium');
             const [date, setDate] = useState(getTodayStr());
             const [link, setLink] = useState('');
-
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if(!title) return;
+                vibrate(15);
                 onSave({ title, area, subarea, importance, date, link });
                 setTitle(''); setSubarea(''); setLink(''); onClose();
             };
@@ -614,7 +471,7 @@
                         <div className="p-6 space-y-5">
                             <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">O que você estudou?</label><input autoFocus type="text" placeholder="Ex: Insuficiência Cardíaca" className="w-full text-lg font-semibold bg-transparent border-b-2 border-slate-200 dark:border-zinc-700 focus:border-blue-500 outline-none py-2 placeholder-slate-300 dark:placeholder-zinc-600 dark:text-white transition-colors" value={title} onChange={e => setTitle(e.target.value)} /></div>
                             <div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Área</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}</select></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Subárea</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{subAreaOptions.map(s => <option key={s} value={s}>{s}</option>)}</select></div></div>
-                            <div className="space-y-3"><label className="block text-xs font-bold text-slate-500 uppercase">Prioridade</label><div className="grid grid-cols-3 gap-3">{IMPORTANCE_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => setImportance(lvl.id)} className={`py-3 rounded-xl text-sm font-bold border transition-all ${importance === lvl.id ? `border-${lvl.color.split('-')[1]}-500 bg-${lvl.color.split('-')[1]}-50 dark:bg-${lvl.color.split('-')[1]}-900/30 ${lvl.color}` : 'border-slate-200 dark:border-zinc-700 text-slate-400 hover:border-slate-300'}`}>{lvl.label}</button>))}</div></div>
+                            <div className="space-y-3"><label className="block text-xs font-bold text-slate-500 uppercase">Prioridade</label><div className="grid grid-cols-3 gap-3">{IMPORTANCE_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => { vibrate(5); setImportance(lvl.id); }} className={`py-3 rounded-xl text-sm font-bold border transition-all ${importance === lvl.id ? `border-${lvl.color.split('-')[1]}-500 bg-${lvl.color.split('-')[1]}-50 dark:bg-${lvl.color.split('-')[1]}-900/30 ${lvl.color}` : 'border-slate-200 dark:border-zinc-700 text-slate-400 hover:border-slate-300'}`}>{lvl.label}</button>))}</div></div>
                             <div className="grid grid-cols-1 gap-4"><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Data</label><input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={date} onChange={e => setDate(e.target.value)} /></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Link (Opcional)</label><input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={link} onChange={e => setLink(e.target.value)} /></div></div>
                         </div>
                         <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 rounded-b-2xl"><button onClick={handleSubmit} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"><Icons.Plus size={20}/> Criar Plano</button></div>
@@ -633,7 +490,7 @@
             const isLate = nextReview && nextReview.date < getTodayStr();
 
             return (
-                <div className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-zinc-800`}>
+                <div className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-white/5`}>
                     <div className="p-4 cursor-pointer" onClick={() => setExpanded(!expanded)}>
                         <div className="flex justify-between items-start">
                             <div className="flex-1 pr-4">
@@ -652,7 +509,7 @@
                     </div>
                     {expanded && (
                         <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-zinc-950/30 border-t border-slate-100 dark:border-zinc-800 animate-fade-in">
-                            <div className="space-y-2 mt-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const acc = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const isLateItem = !isDone && rev.date < getTodayStr(); return ( <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl transition-colors ${isNext ? 'bg-white dark:bg-zinc-800 shadow-sm border border-blue-100 dark:border-blue-900/30' : 'opacity-70'}`}> <div className="flex items-center gap-3"> <div className={`font-black text-xs w-6 ${isDone ? 'text-slate-400' : isNext ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300'}`}>{rev.label.split(':')[0]}</div> <div className="flex flex-col"> <span className={`text-xs font-medium ${isLateItem ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{formatDate(rev.date)} {isLateItem && '(Atrasado)'}</span> {rev.targetQ && !isDone && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1"><Icons.Target size={10}/> Meta: {rev.targetQ}q</span>} </div> </div> {isDone ? ( <div className={`font-bold text-sm ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</div> ) : isNext ? ( <button onClick={(e) => {e.stopPropagation(); onOpenReview(topic.id, idx)}} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-md shadow-blue-500/20 active:scale-95 transition-transform">Revisar</button> ) : (<Icons.Lock size={14} className="text-slate-300 dark:text-zinc-700"/>)} </div> ) })}</div>
+                            <div className="space-y-2 mt-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const acc = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const isLateItem = !isDone && rev.date < getTodayStr(); return ( <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl transition-colors ${isNext ? 'bg-white dark:bg-zinc-800 shadow-sm border border-blue-100 dark:border-blue-900/30' : 'opacity-70'}`}> <div className="flex items-center gap-3"> <div className={`font-black text-xs w-6 ${isDone ? 'text-slate-400' : isNext ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300'}`}>{rev.label.split(':')[0]}</div> <div className="flex flex-col"> <span className={`text-xs font-medium ${isLateItem ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{formatDate(rev.date)} {isLateItem && '(Atrasado)'}</span> {rev.targetQ && !isDone && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1"><Icons.Target size={10}/> Meta: {rev.targetQ}q</span>} </div> </div> {isDone ? ( <div className={`font-bold text-sm ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</div> ) : isNext ? ( <button onClick={(e) => {e.stopPropagation(); onOpenReview(topic.id, idx); vibrate(5);}} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-md shadow-blue-500/20 active:scale-95 transition-transform">Revisar</button> ) : (<Icons.Lock size={14} className="text-slate-300 dark:text-zinc-700"/>)} </div> ) })}</div>
                             <div className="mt-4 pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-between items-center">{topic.materialLink ? ( <a href={topic.materialLink} target="_blank" className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1"><Icons.LinkIcon size={12}/> Material</a> ) : <div></div>} <button onClick={(e) => { e.stopPropagation(); onDelete(topic.id); }} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><Icons.Trash2 size={12}/> Excluir</button></div>
                         </div>
                     )}
@@ -661,7 +518,61 @@
             );
         };
 
-        const BentoDashboard = ({ topics }) => {
+        const AreaDetailView = ({ areaId, onBack, topics }) => {
+            const area = AREAS.find(a => a.id === areaId);
+            const areaTopics = topics.filter(t => t.area === areaId && !t.deleted);
+            
+            const stats = useMemo(() => {
+                const totalQ = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.total || 0), 0), 0);
+                const totalC = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.correct || 0), 0), 0);
+                const globalAcc = totalQ > 0 ? Math.round((totalC/totalQ)*100) : 0;
+                return { totalQ, globalAcc };
+            }, [areaTopics]);
+
+            return (
+                <div className="animate-slide-in-right pb-32">
+                    <div className="flex items-center gap-3 mb-6">
+                        <button onClick={onBack} className="p-2 rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300">
+                            <Icons.ArrowLeft size={20}/>
+                        </button>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{area.full}</h2>
+                            <p className="text-xs text-slate-500">{areaTopics.length} tópicos cadastrados</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <div className="text-xs text-slate-500 uppercase font-bold mb-1">Aproveitamento</div>
+                            <div className={`text-3xl font-black ${stats.globalAcc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{stats.globalAcc}%</div>
+                        </div>
+                        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <div className="text-xs text-slate-500 uppercase font-bold mb-1">Questões</div>
+                            <div className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalQ}</div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        {areaTopics.length === 0 ? <div className="text-center text-slate-400 py-10">Nenhum tópico nesta área.</div> : 
+                        areaTopics.map(t => {
+                            const done = t.reviews.filter(r => r.done);
+                            const tAcc = done.length > 0 ? Math.round(done.reduce((a,b)=>a+(b.correct/b.total),0)/done.length*100) : 0;
+                            return (
+                                <div key={t.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-white/5 flex justify-between items-center active:scale-[0.98] transition-transform cursor-pointer">
+                                    <div className="flex-1 pr-2 overflow-hidden">
+                                        <div className="font-bold text-slate-800 dark:text-slate-200 truncate">{t.title}</div>
+                                        <div className="text-xs text-slate-500">{done.length}/4 Revisões</div>
+                                    </div>
+                                    <div className={`font-bold text-lg ${tAcc >= 80 ? 'text-emerald-500' : tAcc >= 60 ? 'text-amber-500' : 'text-slate-400'}`}>{done.length > 0 ? tAcc + '%' : '-'}</div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )
+        };
+
+        const BentoDashboard = ({ topics, onSelectArea }) => {
             const stats = useMemo(() => {
                 const active = topics.filter(t => !t.deleted);
                 const reviewsDone = active.reduce((acc, t) => acc + t.reviews.filter(r => r.done).length, 0);
@@ -679,34 +590,47 @@
                             <Icons.Activity className="absolute right-4 top-4 opacity-20" size={80}/>
                             <div className="relative z-10"><div className="text-blue-100 text-sm font-medium mb-1 uppercase tracking-wide">Aproveitamento</div><div className="text-5xl font-black tracking-tight">{stats.globalAcc}%</div><div className="text-blue-100 text-xs mt-2 font-medium">{stats.totalQ} questões respondidas</div></div>
                         </div>
-                        <div className="col-span-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col justify-center"><div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3"><Icons.CheckCircle2 size={20}/></div><div className="text-2xl font-bold text-slate-800 dark:text-white">{stats.reviewsDone}</div><div className="text-xs text-slate-400 font-medium">Revisões Feitas</div></div>
-                        <div className="col-span-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-100 dark:border-zinc-800 shadow-sm flex flex-col justify-center"><div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3"><Icons.Layers size={20}/></div><div className="text-2xl font-bold text-slate-800 dark:text-white">{stats.active}</div><div className="text-xs text-slate-400 font-medium">Tópicos Ativos</div></div>
+                        <div className="col-span-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-center"><div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3"><Icons.CheckCircle2 size={20}/></div><div className="text-2xl font-bold text-slate-800 dark:text-white">{stats.reviewsDone}</div><div className="text-xs text-slate-400 font-medium">Revisões Feitas</div></div>
+                        <div className="col-span-1 bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-center"><div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3"><Icons.Layers size={20}/></div><div className="text-2xl font-bold text-slate-800 dark:text-white">{stats.active}</div><div className="text-xs text-slate-400 font-medium">Tópicos Ativos</div></div>
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-100 dark:border-zinc-800 shadow-sm p-6"><h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Icons.BarChart3 size={20} className="text-slate-400"/> Performance por Área</h3><div className="space-y-4">{stats.areaStats.map(area => (<div key={area.id} className="relative"><div className="flex justify-between text-xs mb-1.5 font-bold"><span className="text-slate-600 dark:text-slate-300">{area.name}</span><span className={area.acc >= 80 ? 'text-emerald-500' : area.acc >= 60 ? 'text-amber-500' : 'text-slate-400'}>{area.acc}%</span></div><div className="h-2.5 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${area.acc >= 80 ? 'bg-emerald-500' : area.acc >= 60 ? 'bg-amber-500' : 'bg-slate-300 dark:bg-zinc-700'}`} style={{width: `${area.acc}%`}}></div></div></div>))}</div></div>
+                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm p-6">
+                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><Icons.BarChart3 size={20} className="text-slate-400"/> Performance por Área</h3>
+                        <div className="space-y-4">
+                            {stats.areaStats.map(area => (
+                                <div key={area.id} onClick={() => onSelectArea(area.id)} className="relative cursor-pointer group active:scale-[0.99] transition-transform">
+                                    <div className="flex justify-between text-xs mb-1.5 font-bold">
+                                        <span className="text-slate-600 dark:text-slate-300 group-hover:text-blue-500 transition-colors flex items-center gap-1">{area.name} <Icons.ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity"/></span>
+                                        <span className={area.acc >= 80 ? 'text-emerald-500' : area.acc >= 60 ? 'text-amber-500' : 'text-slate-400'}>{area.acc}%</span>
+                                    </div>
+                                    <div className="h-2.5 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full transition-all duration-500 ${area.acc >= 80 ? 'bg-emerald-500' : area.acc >= 60 ? 'bg-amber-500' : 'bg-slate-300 dark:bg-zinc-700'}`} style={{width: `${area.acc}%`}}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             );
         };
 
-        // 5. Main App Layout
         function App() {
             const [topics, setTopics] = useState(() => safeJSONParse('resiflow_v3_data', []));
             const [logs, setLogs] = useState(() => safeJSONParse('resiflow_logs', []));
             const [view, setView] = useState('list');
             const [filter, setFilter] = useState('all');
+            const [areaFilter, setAreaFilter] = useState('all');
             const [searchTerm, setSearchTerm] = useState('');
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('resiflow_theme') === 'dark');
             
-            // Modals State
             const [modalAddOpen, setModalAddOpen] = useState(false);
             const [reviewModalData, setReviewModalData] = useState(null);
             const [settingsOpen, setSettingsOpen] = useState(false);
             const [pomodoroOpen, setPomodoroOpen] = useState(false);
             const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+            const [selectedDashboardArea, setSelectedDashboardArea] = useState(null);
 
-            // Sync Hook
             const { status, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
 
-            // Update Theme Color Dynamically for Mobile Status Bar
             useEffect(() => {
                 const metaThemeColor = document.querySelector("meta[name='theme-color']");
                 const metaStatusBarStyle = document.querySelector("meta[name='apple-mobile-web-app-status-bar-style']");
@@ -715,7 +639,7 @@
                     document.documentElement.classList.add('dark');
                     localStorage.setItem('resiflow_theme', 'dark');
                     if(metaThemeColor) metaThemeColor.setAttribute("content", "#09090b");
-                    if(metaStatusBarStyle) metaStatusBarStyle.setAttribute("content", "black-translucent"); // Allows dark bg to show
+                    if(metaStatusBarStyle) metaStatusBarStyle.setAttribute("content", "black-translucent");
                 } else {
                     document.documentElement.classList.remove('dark');
                     localStorage.setItem('resiflow_theme', 'light');
@@ -734,9 +658,11 @@
                 let list = topics.filter(t => !t.deleted);
                 if(searchTerm) list = list.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
                 if(filter === 'today') list = list.filter(t => t.reviews.some(r => !r.done && r.date <= getTodayStr()));
+                if(areaFilter !== 'all') list = list.filter(t => t.area === areaFilter);
+                
                 list.sort((a,b) => { const nextA = a.reviews.find(r => !r.done)?.date || '9999'; const nextB = b.reviews.find(r => !r.done)?.date || '9999'; return nextA.localeCompare(nextB); });
                 return list;
-            }, [topics, searchTerm, filter]);
+            }, [topics, searchTerm, filter, areaFilter]);
 
             const handleAddTopic = (data) => {
                 const schedule = generateSchedule(data.date, data.importance);
@@ -748,6 +674,7 @@
 
             const confirmDelete = () => {
                 if (deleteConfirmId) {
+                    vibrate(15);
                     setTopics(prev => prev.map(t => t.id === deleteConfirmId ? {...t, deleted: true, updatedAt: Date.now()} : t));
                     setDeleteConfirmId(null);
                 }
@@ -758,6 +685,7 @@
 
             const handleReviewSave = (data) => {
                 if(!reviewModalData) return;
+                vibrate(20);
                 const { topicId, reviewIdx } = reviewModalData;
                 setTopics(prev => prev.map(t => {
                     if(t.id !== topicId) return t;
@@ -775,57 +703,63 @@
 
             return (
                 <div className="min-h-screen pb-32 md:pb-10 relative overflow-x-hidden pt-safe">
-                    {/* Background */}
                     <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
                         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[100px]"></div>
                         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-400/10 dark:bg-purple-600/10 rounded-full blur-[100px]"></div>
                     </div>
 
-                    {/* Header */}
                     <header className="fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-white/5 transition-all pt-safe">
                         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
                             <h1 className="text-xl font-bold flex items-center gap-2 tracking-tight text-slate-800 dark:text-white">
                                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><Icons.Activity size={18}/></div> ResiFlow
                             </h1>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => setPomodoroOpen(true)} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Timer size={20}/></button>
-                                <button onClick={() => setSettingsOpen(true)} className={`p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
-                                <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition-colors">{darkMode ? <Icons.Sun size={20}/> : <Icons.Moon size={20}/>}</button>
+                                <button onClick={() => { vibrate(5); setPomodoroOpen(true); }} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Timer size={20}/></button>
+                                <button onClick={() => { vibrate(5); setSettingsOpen(true); }} className={`p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
+                                <button onClick={() => { vibrate(5); setDarkMode(!darkMode); }} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition-colors">{darkMode ? <Icons.Sun size={20}/> : <Icons.Moon size={20}/>}</button>
                             </div>
                         </div>
                     </header>
 
-                    {/* Main Content */}
                     <main className="max-w-3xl mx-auto px-4 mt-24">
-                        {/* Mobile Bottom Nav - Improved with Safe Area */}
                         <nav className="md:hidden fixed bottom-0 left-0 w-full glass border-t border-slate-200/50 dark:border-white/5 z-50 flex justify-around items-center py-4 px-4 pb-safe mb-safe">
                             {[{id:'list',i:Icons.Home},{id:'calendar',i:Icons.Calendar},{id:'dashboard',i:Icons.PieChart},{id:'diary',i:Icons.Notebook}].map(item => (
-                                <button key={item.id} onClick={() => setView(item.id)} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all active:scale-95 ${view === item.id ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}>
+                                <button key={item.id} onClick={() => { vibrate(5); setView(item.id); setSelectedDashboardArea(null); }} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all active:scale-95 ${view === item.id ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}>
                                     <item.i size={24} strokeWidth={view === item.id ? 2.5 : 2}/>
                                 </button>
                             ))}
                         </nav>
 
-                        {/* FAB */}
                         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:translate-x-0 md:bottom-6 md:static md:mb-6 z-[55] mb-safe">
-                             <button onClick={() => setModalAddOpen(true)} className="w-14 h-14 md:w-full md:h-12 md:rounded-xl rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95"><Icons.Plus size={24}/><span className="hidden md:inline font-bold">Novo Tópico</span></button>
+                             <button onClick={() => { vibrate(5); setModalAddOpen(true); }} className="w-14 h-14 md:w-full md:h-12 md:rounded-xl rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95"><Icons.Plus size={24}/><span className="hidden md:inline font-bold">Novo Tópico</span></button>
                         </div>
 
-                        {/* Desktop Tabs */}
                         <div className="hidden md:flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-zinc-900/50 rounded-xl w-fit backdrop-blur-sm">
                             {[{id:'list',l:'Lista',i:Icons.List},{id:'calendar',l:'Calendário',i:Icons.Calendar},{id:'diary',l:'Diário',i:Icons.Notebook},{id:'dashboard',l:'Análise',i:Icons.PieChart}].map(tab => (
-                                <button key={tab.id} onClick={() => setView(tab.id)} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${view === tab.id ? 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}><tab.i size={16}/> {tab.l}</button>
+                                <button key={tab.id} onClick={() => { setView(tab.id); setSelectedDashboardArea(null); }} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${view === tab.id ? 'bg-white dark:bg-zinc-800 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}><tab.i size={16}/> {tab.l}</button>
                             ))}
                         </div>
 
                         <div className="animate-fade-in">
-                            {view === 'dashboard' ? ( <BentoDashboard topics={topics} /> ) : 
+                            {view === 'dashboard' ? ( 
+                                selectedDashboardArea ? 
+                                <AreaDetailView areaId={selectedDashboardArea} onBack={() => setSelectedDashboardArea(null)} topics={topics} /> : 
+                                <BentoDashboard topics={topics} onSelectArea={setSelectedDashboardArea} /> 
+                            ) : 
                              view === 'calendar' ? ( <CalendarView topics={topics} onOpenReview={(tid, idx) => { const t=topics.find(x=>x.id===tid); setReviewModalData({topicId:tid,reviewIdx:idx,title:t.title,label:t.reviews[idx].label,target:t.reviews[idx].targetQ}) }} /> ) : 
                              view === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : (
                                 <>
-                                    <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                                        <div className="relative flex-1"><Icons.Search className="absolute left-3 top-3 text-slate-400" size={18}/><input type="text" placeholder="Buscar assunto..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-                                        <button onClick={() => setFilter(filter === 'today' ? 'all' : 'today')} className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filter === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800'}`}>{filter === 'today' ? '📅 Hoje' : '📅 Todos'}</button>
+                                    <div className="flex flex-col gap-3 mb-4">
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <div className="relative flex-1"><Icons.Search className="absolute left-3 top-3 text-slate-400" size={18}/><input type="text" placeholder="Buscar assunto..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                                            <button onClick={() => { vibrate(5); setFilter(filter === 'today' ? 'all' : 'today'); }} className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filter === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{filter === 'today' ? '📅 Hoje' : '📅 Todos'}</button>
+                                        </div>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                            <button onClick={() => setAreaFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-black border-transparent' : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>Todos</button>
+                                            {AREAS.map(a => (
+                                                <button key={a.id} onClick={() => setAreaFilter(a.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === a.id ? `${a.color} border-transparent` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{a.name}</button>
+                                            ))}
+                                        </div>
                                     </div>
                                     {visibleTopics.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-20 text-center opacity-60"><div className="w-20 h-20 bg-slate-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-zinc-700"><Icons.BookOpen size={32}/></div><h3 className="font-bold text-slate-700 dark:text-slate-300">Nada por aqui</h3><p className="text-sm text-slate-500">Adicione um novo tópico para começar.</p></div>
@@ -841,16 +775,13 @@
                     <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} setTopics={setTopics} setLogs={setLogs} syncKey={syncKey} setSyncKey={setSyncKey} status={status} />
                     <PomodoroTimer isOpen={pomodoroOpen} onClose={() => setPomodoroOpen(false)} />
                     
-                    {/* Delete Confirmation Modal */}
                     {deleteConfirmId && (
                         <ModalWrapper isOpen={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} title="Confirmar Exclusão">
                             <div className="p-6">
                                 <div className="flex flex-col items-center text-center mb-6">
-                                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-500 mb-4">
-                                        <Icons.AlertTriangle size={32}/>
-                                    </div>
+                                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-500 mb-4"><Icons.AlertTriangle size={32}/></div>
                                     <h4 className="font-bold text-lg text-slate-800 dark:text-white">Tem certeza?</h4>
-                                    <p className="text-sm text-slate-500 mt-2">Você está prestes a excluir este tópico e todo o seu histórico de revisões. Esta ação não pode ser desfeita.</p>
+                                    <p className="text-sm text-slate-500 mt-2">Você está prestes a excluir este tópico e todo o seu histórico de revisões.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl">Cancelar</button>
