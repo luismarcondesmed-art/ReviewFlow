@@ -1,0 +1,713 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+    Target, Calendar as CalendarIcon, Plus, CheckCircle2, 
+    Clock, BookOpen, Star, TrendingUp, X, ChevronDown, ChevronUp, 
+    Activity, ThumbsUp, ThumbsDown, Minus, Moon, Sun, 
+    Filter, LayoutGrid, List, Trash2, Check,
+    Cloud, Save, Download, Settings, Timer, Play, Pause, RotateCcw,
+    PenTool, Layers, MonitorPlay, Notebook, AlertCircle, Tag, Search,
+    BarChart3, ChevronRight, Info, Link as LinkIcon, Upload, FileJson,
+    PlusCircle
+} from 'lucide-react';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// --- CONFIG ---
+const USER_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
+    authDomain: "med-heklp.firebaseapp.com",
+    projectId: "med-heklp",
+    storageBucket: "med-heklp.firebasestorage.app",
+    messagingSenderId: "675054342845",
+    appId: "1:675054342845:web:91e53e21060a087123ddd4",
+    measurementId: "G-BLWYTWFFTZ"
+};
+
+const AREAS = [
+    { id: 'clinica', name: 'Clínica Médica', color: 'border-blue-500 bg-blue-50 dark:bg-blue-900/10', text: 'text-blue-700 dark:text-blue-300', subareas: ['Cardiologia', 'Nefrologia', 'Pneumologia', 'Gastroenterologia', 'Hepatologia', 'Infectologia', 'Reumatologia', 'Hematologia', 'Endocrinologia', 'Neurologia', 'Psiquiatria', 'Dermatologia'] },
+    { id: 'cirurgia', name: 'Cirurgia', color: 'border-red-500 bg-red-50 dark:bg-red-900/10', text: 'text-red-700 dark:text-red-300', subareas: ['Cirurgia Geral', 'Trauma', 'Cirurgia Digestiva', 'Cirurgia Vascular', 'Urologia', 'Ortopedia', 'Otorrinolaringologia', 'Oftalmologia', 'Cirurgia Plástica', 'Anestesiologia'] },
+    { id: 'pediatria', name: 'Pediatria', color: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10', text: 'text-yellow-700 dark:text-yellow-300', subareas: ['Puericultura', 'Neonatologia', 'Infecto Ped', 'Respiratório', 'Gastro Ped', 'Nefro Ped', 'Emergências Pediátricas'] },
+    { id: 'go', name: 'G.O.', color: 'border-purple-500 bg-purple-50 dark:bg-purple-900/10', text: 'text-purple-700 dark:text-purple-300', subareas: ['Obstetrícia Fisiológica', 'Obstetrícia Patológica', 'Ginecologia Geral', 'Endocrino Ginecológica', 'Oncologia Ginecológica', 'Mastologia'] },
+    { id: 'preventiva', name: 'Preventiva', color: 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10', text: 'text-emerald-700 dark:text-emerald-300', subareas: ['SUS', 'Epidemiologia', 'Saúde do Trabalhador', 'Ética Médica', 'Bioestatística'] },
+];
+
+const IMPORTANCE_LEVELS = [
+    { id: 'high', label: 'Alta', weight: 2.0, color: 'text-red-600 dark:text-red-400', baseQ: 30 },
+    { id: 'medium', label: 'Média', weight: 1.5, color: 'text-yellow-600 dark:text-yellow-400', baseQ: 25 },
+    { id: 'low', label: 'Baixa', weight: 1.0, color: 'text-slate-500 dark:text-slate-400', baseQ: 20 },
+];
+
+const DIFFICULTY_LEVELS = [
+    { id: 'easy', label: 'Fácil', weight: 0.9, icon: ThumbsUp },
+    { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus },
+    { id: 'hard', label: 'Difícil', weight: 1.1, icon: ThumbsDown },
+];
+
+const LOG_TYPES = [
+    { id: 'questions', label: 'Questões', icon: Target, color: 'text-blue-500' },
+    { id: 'anki', label: 'Anki', icon: Layers, color: 'text-purple-500' },
+    { id: 'class', label: 'Aula', icon: MonitorPlay, color: 'text-red-500' },
+    { id: 'reading', label: 'Leitura', icon: BookOpen, color: 'text-emerald-500' },
+    { id: 'other', label: 'Outro', icon: PenTool, color: 'text-slate-500' },
+];
+
+// --- HELPERS ---
+const getTodayStr = () => new Date().toISOString().split('T')[0];
+const formatDate = (dateStr) => { const [y, m, d] = dateStr.split('-'); return `${d}/${m}`; };
+const formatFullDate = (dateStr) => { if (!dateStr) return ''; const d = new Date(dateStr + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); };
+const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+const safeJSONParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
+
+// Função auxiliar para mesclar dados (usada no sync e no import)
+const mergeItems = (local, incoming) => {
+    const map = new Map();
+    local.forEach(i => map.set(i.id, i));
+    incoming.forEach(c => {
+        const l = map.get(c.id);
+        if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)) map.set(c.id, c);
+    });
+    return Array.from(map.values());
+};
+
+// --- CÁLCULO DE CARGA ---
+const SYSTEM_PARAMS = { 
+    BASE_QUESTIONS: 15, 
+    MIN_QUESTIONS: 15, 
+    MAX_QUESTIONS: 100,
+    TARGET_ACCURACY: 0.80,
+    SPACING_FACTORS: { 'R0': 1.0, 'R1': 2.5, 'R2': 1.25, 'R3': 1.0, 'DEFAULT': 1.0 },
+    PERF_CAP: 2.2
+};
+
+const calculateNextLoad = (importanceId, difficultyId, nextStageType, accuracy) => {
+    const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
+    const base = impObj.baseQ; 
+    const stageFactor = SYSTEM_PARAMS.SPACING_FACTORS[nextStageType] || SYSTEM_PARAMS.SPACING_FACTORS['DEFAULT'];
+    const diffWeight = DIFFICULTY_LEVELS.find(d => d.id === difficultyId)?.weight || 1.0;
+
+    let perfFactor = 1.0;
+    if (accuracy !== null) {
+        if (accuracy >= 1.0) perfFactor = 0.9; 
+        else if (accuracy >= 0.85) perfFactor = 1.0; 
+        else {
+            const target = SYSTEM_PARAMS.TARGET_ACCURACY;
+            const gap = Math.max(0, target - accuracy);
+            perfFactor = Math.min(SYSTEM_PARAMS.PERF_CAP, 1 + (gap * 2.0));
+        }
+    }
+
+    let n = Math.round(base * stageFactor * diffWeight * perfFactor);
+    if (accuracy !== null && accuracy < 0.60) n += 10;
+
+    return Math.max(SYSTEM_PARAMS.MIN_QUESTIONS, Math.min(n, SYSTEM_PARAMS.MAX_QUESTIONS));
+};
+
+const generateSchedule = (studyDate, importanceId) => {
+    const d0 = new Date(studyDate + 'T12:00:00');
+    const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
+    
+    const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
+    const qR0 = impObj.baseQ;
+
+    const qR1 = calculateNextLoad(importanceId, 'medium', 'R1', null);
+    const qR2 = calculateNextLoad(importanceId, 'medium', 'R2', null);
+    const qR3 = calculateNextLoad(importanceId, 'medium', 'R3', null);
+
+    return [
+        { type: 'R0', date: studyDate, label: 'R0: Fixação', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: qR0 },
+        { type: 'R1', date: addDays(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: qR1 }, 
+        { type: 'R2', date: addDays(d0, 30), label: 'R2: Manutenção', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: qR2 }, 
+        { type: 'R3', date: addDays(d0, 60), label: 'R3: Longo Prazo', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: qR3 } 
+    ];
+};
+
+// --- SYNC ---
+const useSync = (topics, logs, setTopics, setLogs) => {
+    const [status, setStatus] = useState('offline');
+    const [config, setConfig] = useState(() => safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG));
+    const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
+    
+    const setSyncKey = (newKey) => {
+        if (newKey !== syncKey) { setTopics([]); setLogs([]); }
+        _setSyncKey(newKey);
+        localStorage.setItem('resiflow_sync_key', newKey);
+    };
+
+    const dbRef = useRef(null);
+    const stateRef = useRef({ topics, logs });
+    useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
+
+    useEffect(() => {
+        if (!config || !syncKey) return;
+        try {
+            // Assume firebase modules are loaded via CDN in index.html or imported if bundler
+            // For this single file React context we rely on window.firebaseModules if available or imports
+            // Since we imported at top, we use those.
+            try { initializeApp(config); } catch(e) {}
+            const db = getFirestore();
+            dbRef.current = db;
+            const docRef = doc(db, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
+            setStatus('syncing');
+            const unsub = onSnapshot(docRef, (s) => {
+                if (s.exists()) { 
+                    const d = s.data(); 
+                    if (d.topics) {
+                        const mergedTopics = mergeItems(stateRef.current.topics, d.topics);
+                        if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) setTopics(mergedTopics);
+                    }
+                    if (d.logs) {
+                        const mergedLogs = mergeItems(stateRef.current.logs, d.logs);
+                        if (JSON.stringify(mergedLogs) !== JSON.stringify(stateRef.current.logs)) setLogs(mergedLogs);
+                    }
+                }
+                setStatus('online');
+            }, (err) => { console.error(err); setStatus('error'); });
+            return () => unsub();
+        } catch (e) { console.error(e); setStatus('error'); }
+    }, [config, syncKey]);
+
+    const saveToCloud = async (newTopics, newLogs) => {
+        if (!dbRef.current || !syncKey) return;
+        try {
+            const docRef = doc(dbRef.current, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
+            await setDoc(docRef, { topics: newTopics, logs: newLogs, updatedAt: new Date().toISOString() }, { merge: true });
+        } catch (e) { console.error(e); setStatus('error'); }
+    };
+    return { status, config, setConfig, syncKey, setSyncKey, saveToCloud };
+};
+
+// --- COMPONENTS ---
+
+// SettingsModal (Restored)
+const SettingsModal = ({ isOpen, onClose, topics, logs, setTopics, setLogs, syncKey, setSyncKey, status }) => {
+    if (!isOpen) return null;
+    const [tempKey, setTempKey] = useState(syncKey);
+    
+    useEffect(() => setTempKey(syncKey), [syncKey]);
+
+    const handleSyncSave = () => {
+        setSyncKey(tempKey);
+        onClose();
+    };
+
+    const handleExport = () => {
+        const dataStr = JSON.stringify({ topics, logs }, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `resiflow_backup_${getTodayStr()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    const handleImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (data.topics) setTopics(prev => mergeItems(prev, data.topics));
+                if (data.logs) setLogs(prev => mergeItems(prev, data.logs));
+                alert('Backup importado com sucesso!');
+                onClose();
+            } catch (err) {
+                alert('Erro ao importar arquivo JSON.');
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><Settings size={20} className="text-slate-500"/> Configurações</h3><button onClick={onClose} className="p-2"><X className="text-slate-400" size={24}/></button></div>
+                <div className="space-y-6">
+                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/50">
+                        <h4 className="font-bold text-sm text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2"><Cloud size={16}/> Sincronização Nuvem</h4>
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Chave de Acesso</label><div className="flex gap-2"><input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Crie uma senha única" className="flex-1 p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-700 text-sm dark:text-white font-mono" /><button onClick={handleSyncSave} className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-lg font-bold text-xs">Salvar</button></div></div>
+                            <div className="flex items-center gap-2 text-xs"><div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div><span className="text-slate-500 dark:text-slate-400">{status === 'online' ? 'Conectado e Sincronizando' : 'Desconectado'}</span></div>
+                        </div>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700">
+                        <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><FileJson size={16}/> Backup Local (.json)</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Salve seus dados manualmente ou restaure de um arquivo.</p>
+                        <div className="flex gap-2">
+                            <button onClick={handleExport} className="flex-1 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-700 dark:text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><Download size={14}/> Exportar</button>
+                            <label className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"><Upload size={14}/> Importar <input type="file" accept=".json" className="hidden" onChange={handleImport}/></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ModalReview = ({ isOpen, onClose, task, onSave }) => {
+    if (!isOpen || !task) return null;
+    const [correct, setCorrect] = useState('');
+    const [total, setTotal] = useState('');
+    const [favorites, setFavorites] = useState('');
+    const [difficulty, setDifficulty] = useState('medium');
+    const numCorrect = parseInt(correct) || 0;
+    const numTotal = parseInt(total) || 0;
+    const percentage = numTotal > 0 ? Math.round((numCorrect / numTotal) * 100) : 0;
+    const handleSubmit = (e) => { e.preventDefault(); onSave({ correct: numCorrect, total: numTotal, favorites: parseInt(favorites) || 0, difficulty }); setCorrect(''); setTotal(''); setFavorites(''); setDifficulty('medium'); onClose(); };
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 dark:border-zinc-800" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-start mb-6"><div><h3 className="text-xl font-bold text-slate-800 dark:text-white">{task.topicTitle}</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wide">{task.label}</span>{task.targetQ && <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded flex items-center gap-1"><Target size={12}/> Meta: {task.targetQ}</span>}</div></div><button onClick={onClose} className="p-2"><X className="text-slate-400" size={24}/></button></div>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Acertos</label><input type="number" required autoFocus min="0" className="w-full p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-100 dark:border-emerald-800 rounded-xl text-2xl font-bold text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none text-center" value={correct} onChange={e => setCorrect(e.target.value)} /></div><div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Total</label><input type="number" required min="1" className="w-full p-4 bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-100 dark:border-zinc-700 rounded-xl text-2xl font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-center" value={total} onChange={e => setTotal(e.target.value)} /></div></div>
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-xl p-4 flex items-center justify-between border border-slate-100 dark:border-zinc-700"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">Aproveitamento</span><div className={`text-3xl font-black ${percentage >= 90 ? 'text-emerald-500' : percentage >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{percentage}%</div></div>
+                    <div className="space-y-2"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Dificuldade</label><div className="grid grid-cols-3 gap-2">{DIFFICULTY_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => setDifficulty(lvl.id)} className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all border-2 ${difficulty === lvl.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-slate-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-400 hover:border-slate-200 dark:hover:border-zinc-600'}`}><lvl.icon size={20} /> <span className="text-xs font-bold">{lvl.label}</span></button>))}</div></div>
+                    <div className="relative"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-1"><Star size={12} className="fill-yellow-400 text-yellow-400"/> Favoritas</label><input type="number" className="w-full p-3 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="0" value={favorites} onChange={e => setFavorites(e.target.value)} /></div>
+                    <button type="submit" className="w-full bg-slate-900 dark:bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-blue-700 transition flex items-center justify-center gap-2"><CheckCircle2 size={20} /> Concluir</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const CalendarDayModal = ({ date, reviews, onClose, onOpenReview }) => {
+    if (!date) return null;
+    const pendingReviews = reviews.filter(r => !r.done);
+    const doneReviews = reviews.filter(r => r.done);
+    const hasActivity = reviews.length > 0;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-zinc-800 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-950 shrink-0">
+                    <h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition"><X size={24} className="text-slate-400"/></button>
+                </div>
+                <div className="overflow-y-auto p-4 space-y-4 flex-1">
+                    {!hasActivity ? (<div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>) : (
+                        <>
+                            {pendingReviews.length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4>
+                                    <div className="space-y-2">{pendingReviews.map((item, idx) => { 
+                                        const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[0]; 
+                                        const impInfo = IMPORTANCE_LEVELS.find(i => i.id === item.importance) || IMPORTANCE_LEVELS[1];
+                                        return (
+                                            <div key={idx} className="p-3 rounded-xl border bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 flex flex-col gap-2">
+                                                <div className="flex justify-between items-start">
+                                                    <h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4>
+                                                    <span className="text-xs bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1">
+                                                    <div className="flex gap-1">
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded border bg-transparent border-current opacity-70 ${impInfo.color}`}>{impInfo.label}</span>
+                                                    </div>
+                                                    {item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}
+                                                </div>
+                                                <button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button>
+                                            </div>
+                                        ) 
+                                    })}</div>
+                                </div>
+                            )}
+                            {doneReviews.length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4>
+                                    <div className="space-y-2">{doneReviews.map((item, idx) => { 
+                                        return (
+                                            <div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75">
+                                                <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
+                                                <div className="flex-1">
+                                                    <h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span>
+                                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) 
+                                    })}</div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ... (Other components DiaryView, DashboardView, CalendarView, TopicCard, PomodoroTimer remain similar)
+// Re-paste them if needed, but for conciseness, I focused on SettingsModal logic.
+// Assuming standard implementations for these unless changes requested.
+// I will include them in the full file output below to be safe.
+
+const PomodoroTimer = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+    const [timeLeft, setTimeLeft] = useState(25 * 60);
+    const [isActive, setIsActive] = useState(false);
+    const [mode, setMode] = useState('focus');
+    useEffect(() => { let i = null; if (isActive && timeLeft > 0) i = setInterval(() => setTimeLeft(t => t - 1), 1000); else if (timeLeft === 0) setIsActive(false); return () => clearInterval(i); }, [isActive, timeLeft]);
+    const toggle = () => setIsActive(!isActive);
+    const reset = () => { setIsActive(false); setTimeLeft(mode === 'focus' ? 25 * 60 : mode === 'short' ? 5 * 60 : 15 * 60); };
+    const setM = (m) => { setMode(m); setIsActive(false); setTimeLeft(m === 'focus' ? 25 * 60 : m === 'short' ? 5 * 60 : 15 * 60); };
+    const fmt = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+    const prog = ((mode === 'focus' ? 1500 : mode === 'short' ? 300 : 900) - timeLeft) / (mode === 'focus' ? 1500 : mode === 'short' ? 300 : 900) * 100;
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-zinc-800 flex flex-col items-center relative" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><X size={20} className="text-slate-400"/></button>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2"><Timer size={22} className="text-emerald-500"/> Pomodoro</h3>
+                <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-zinc-950 p-1 rounded-xl">
+                    {['focus', 'short', 'long'].map(m => <button key={m} onClick={() => setM(m)} className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize ${mode === m ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>{m}</button>)}
+                </div>
+                <div className="relative w-48 h-48 flex items-center justify-center mb-8">
+                    <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90"><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-zinc-800"/><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * prog) / 100} className="text-emerald-500 transition-all duration-1000 ease-linear" strokeLinecap="round"/></svg>
+                    <div className="text-5xl font-black text-slate-800 dark:text-white tracking-wider font-mono">{fmt(timeLeft)}</div>
+                </div>
+                <div className="flex gap-4"><button onClick={toggle} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600' : 'bg-emerald-500 text-white'}`}>{isActive ? <Pause/> : <Play/>}</button><button onClick={reset} className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-400"><RotateCcw/></button></div>
+            </div>
+        </div>
+    );
+};
+
+const DiaryView = ({ logs, onAddLog, onDeleteLog }) => {
+    const [type, setType] = useState('questions');
+    const [desc, setDesc] = useState('');
+    const [val, setVal] = useState('');
+    const [date, setDate] = useState(getTodayStr());
+    const handleSubmit = (e) => { e.preventDefault(); if (!desc || !val) return; onAddLog({ id: generateId(), date, type, desc, val, updatedAt: Date.now(), deleted: false }); setDesc(''); setVal(''); };
+    const groupedLogs = useMemo(() => { const groups = {}; logs.filter(l => !l.deleted).forEach(l => { if (!groups[l.date]) groups[l.date] = []; groups[l.date].push(l); }); return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0])); }, [logs]);
+    return (
+        <div className="space-y-6">
+            <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Notebook size={14}/> Novo Registro Diário</h2><form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"><div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={date} onChange={e => setDate(e.target.value)} /></div><div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Atividade</label><div className="relative"><select className="w-full p-2.5 pl-9 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 appearance-none" value={type} onChange={e => setType(e.target.value)}>{LOG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select><div className="absolute left-3 top-3 pointer-events-none text-slate-400">{(() => { const T = LOG_TYPES.find(t => t.id === type); const I = T ? T.icon : Target; return <I size={16}/> })()}</div></div></div><div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><input type="text" placeholder="Ex: Aula de ECG" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={desc} onChange={e => setDesc(e.target.value)} /></div><div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Valor/Qtd</label><input type="text" placeholder="Ex: 50 / 30min" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={val} onChange={e => setVal(e.target.value)} /></div><div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center"><Plus size={20}/></button></div></form></section>
+            <div className="space-y-6">{groupedLogs.length === 0 ? (<div className="text-center py-12 text-slate-400 dark:text-slate-600"><Notebook className="mx-auto mb-2 opacity-50" size={32}/><p>Nenhum registro ainda.</p></div>) : (groupedLogs.map(([dateStr, dayLogs]) => (<div key={dateStr}><h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider sticky top-20 bg-slate-50/90 dark:bg-zinc-950/90 py-2 backdrop-blur-sm z-10">{formatFullDate(dateStr)}</h3><div className="space-y-2">{dayLogs.map(log => { const logType = LOG_TYPES.find(t => t.id === log.type) || LOG_TYPES[4]; const Icon = logType.icon; return (<div key={log.id} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 flex items-center gap-3 shadow-sm group"><div className={`p-2 rounded-lg bg-slate-100 dark:bg-zinc-950 ${logType.color} dark:opacity-90`}><Icon size={18}/></div><div className="flex-1"><div className="font-bold text-slate-800 dark:text-white text-sm">{log.desc}</div><div className="text-xs text-slate-500 dark:text-slate-400">{logType.label}</div></div><div className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-zinc-950 px-2 py-1 rounded text-xs">{log.val}</div><button onClick={() => onDeleteLog(log.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition"><Trash2 size={14}/></button></div>) })}</div></div>)))}</div>
+        </div>
+    );
+};
+
+const DashboardView = ({ topics }) => {
+    const [selectedArea, setSelectedArea] = useState(null);
+    const totalTopics = topics.filter(t => !t.deleted).length;
+    const totalReviewsDone = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).length, 0);
+    const totalQuestions = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
+    const totalCorrect = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0), 0);
+    const globalAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const areaStats = AREAS.filter(a => a.id !== 'all').map(area => {
+        const areaTopics = topics.filter(t => !t.deleted && t.area === area.id);
+        const areaTotalQ = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
+        const areaCorrect = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0), 0);
+        const accuracy = areaTotalQ > 0 ? Math.round((areaCorrect / areaTotalQ) * 100) : 0;
+        return { ...area, accuracy, totalQ: areaTotalQ, count: areaTopics.length };
+    }).sort((a, b) => b.accuracy - a.accuracy);
+    const weakTopics = topics.filter(t => !t.deleted).map(t => {
+        const tTotal = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0);
+        const tCorrect = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0);
+        const acc = tTotal > 0 ? (tCorrect/tTotal) : 1;
+        return { ...t, acc };
+    }).filter(t => t.acc < 0.6 && t.acc > 0).slice(0, 5);
+    const selectedAreaTopics = selectedArea ? topics.filter(t => !t.deleted && t.area === selectedArea).map(t => {
+        const tTotal = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0);
+        const tCorrect = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0);
+        const acc = tTotal > 0 ? Math.round((tCorrect/tTotal)*100) : 0;
+        return { ...t, tTotal, acc };
+    }) : [];
+
+    if (selectedArea) {
+        const areaInfo = AREAS.find(a => a.id === selectedArea);
+        return (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <button onClick={() => setSelectedArea(null)} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center gap-2 mb-2"><X size={16}/> Voltar para Visão Geral</button>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{areaInfo.name} - Detalhes</h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+                    {selectedAreaTopics.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400">Nenhum tópico cadastrado nesta área.</div>
+                    ) : (
+                        <div className="overflow-x-auto"><table className="w-full text-sm text-left text-slate-600 dark:text-slate-300"><thead className="text-xs text-slate-400 uppercase bg-slate-50 dark:bg-zinc-950"><tr><th className="px-4 py-3">Assunto</th><th className="px-4 py-3">Qtd. Questões</th><th className="px-4 py-3">Acerto</th></tr></thead><tbody>{selectedAreaTopics.map(t => (<tr key={t.id} className="border-b border-slate-100 dark:border-zinc-800 last:border-0"><td className="px-4 py-3 font-medium">{t.title} <span className="text-[10px] text-slate-400 block">{t.subarea}</span></td><td className="px-4 py-3">{t.tTotal}</td><td className={`px-4 py-3 font-bold ${t.acc >= 80 ? 'text-emerald-500' : t.acc >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{t.acc}%</td></tr>))}</tbody></table></div>
+                    )}
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Aproveitamento Global</div><div className={`text-4xl font-black mt-1 ${globalAccuracy >= 80 ? 'text-emerald-500' : globalAccuracy >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{globalAccuracy}%</div><div className="text-xs text-slate-400 mt-1">{totalCorrect} acertos de {totalQuestions} questões</div></div><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Volume de Estudo</div><div className="text-4xl font-black mt-1 text-slate-800 dark:text-white">{totalReviewsDone}</div><div className="text-xs text-slate-400 mt-1">Revisões concluídas em {totalTopics} tópicos</div></div><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col justify-center"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase mb-2">Pontos de Atenção</div>{weakTopics.length === 0 ? <div className="text-emerald-500 text-sm font-bold">Nenhum tema crítico! 🎉</div> : <div className="space-y-1">{weakTopics.map(t => (<div key={t.id} className="flex justify-between text-xs"><span className="truncate max-w-[150px] text-slate-700 dark:text-slate-300">{t.title}</span><span className="text-red-500 font-bold">{Math.round(t.acc*100)}%</span></div>))}</div>}</div></div>
+            <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-blue-500"/> Desempenho por Área</h3><div className="space-y-4">{areaStats.map(area => (<div key={area.id} onClick={() => setSelectedArea(area.id)} className="group cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/50 p-2 rounded-lg transition-colors -mx-2"><div className="flex justify-between text-xs mb-1 font-medium"><span className="text-slate-700 dark:text-slate-300 flex items-center gap-1">{area.name} <span className="text-slate-400">({area.count} temas)</span> <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity"/></span><div className="flex gap-3"><span className="text-slate-400 font-normal">{area.totalQ}q feitas</span><span className={area.accuracy >= 80 ? 'text-emerald-500' : 'text-slate-500'}>{area.accuracy}%</span></div></div><div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${area.accuracy >= 80 ? 'bg-emerald-500' : area.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${area.accuracy}%`}}></div></div></div>))}</div></div>
+        </div>
+    )
+}
+
+const CalendarView = ({ topics, onOpenReview }) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const [selectedDate, setSelectedDate] = useState(null);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const startDay = new Date(currentYear, currentMonth, 1).getDay(); 
+    const days = [];
+    for (let i = 0; i < startDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach((review, idx) => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, topicId: topic.id, reviewIdx: idx, importance: topic.importance, ...review }); } }); }); return list; };
+    return (
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+            <div className="grid grid-cols-7 gap-1 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
+            <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
+            <div className="flex justify-center gap-4 mt-4 text-[10px] text-slate-400"><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> A Fazer</div><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
+            <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} onOpenReview={onOpenReview} />
+        </div>
+    );
+};
+
+const TopicCard = ({ topic, onOpenReview, onDelete }) => {
+    const [expanded, setExpanded] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const impInfo = IMPORTANCE_LEVELS.find(i => i.id === topic.importance) || IMPORTANCE_LEVELS[1];
+    const areaInfo = AREAS.find(a => a.id === topic.area) || AREAS[0]; 
+    const completedReviews = topic.reviews.filter(r => r.done).length;
+    const progressPercent = (completedReviews / 4) * 100;
+    return (
+        <div className={`bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all overflow-hidden border-l-4 ${areaInfo.color.replace('bg-', 'border-').split(' ')[0]}`}>
+            <div className="p-5 cursor-pointer flex items-center justify-between" onClick={() => setExpanded(!expanded)}>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border bg-transparent border-current opacity-80 ${impInfo.color}`}>{impInfo.label}</span>
+                        {topic.subarea && <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-950 flex items-center gap-1"><Tag size={10}/> {topic.subarea}</span>}
+                        {topic.materialLink && <a href={topic.materialLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 flex items-center gap-1 hover:opacity-80"><LinkIcon size={10}/> Material</a>}
+                    </div>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">{topic.title}</h3>
+                </div>
+                <div className="flex items-center gap-4"><div className="hidden sm:flex flex-col items-end gap-1"><span className="text-xs font-bold text-slate-400">{completedReviews}/4</span><div className="w-16 h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${progressPercent}%`}}></div></div></div>{expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}</div>
+            </div>
+            {expanded && (<div className="px-5 pb-5 pt-0 border-t border-slate-50 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/30"><div className="mt-4 space-y-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const isLocked = !rev.done && !isNext; const performance = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const dateStr = formatDate(rev.date); return (<div key={idx} className={`relative flex items-center gap-4 p-3 rounded-xl border ${isNext ? 'bg-white dark:bg-zinc-900 border-blue-200 dark:border-blue-900 shadow-sm ring-1 ring-blue-500/20' : 'border-transparent'} ${isLocked ? 'opacity-50 grayscale' : ''}`}><div className={`w-1 h-10 rounded-full ${isDone ? (performance >= 90 ? 'bg-emerald-500' : 'bg-yellow-500') : (isNext ? 'bg-blue-500' : 'bg-slate-200 dark:bg-zinc-700')}`}></div><div className="w-16 text-center"><div className="text-xs font-black text-slate-400 uppercase">{rev.label.split(':')[0]}</div><div className="font-bold text-slate-700 dark:text-slate-300">{dateStr}</div></div><div className="flex-1">{isDone ? (<div><div className="flex items-center gap-2"><span className={`font-bold text-lg ${performance >= 90 ? 'text-emerald-600 dark:text-emerald-400' : 'text-yellow-600 dark:text-yellow-400'}`}>{performance}%</span><span className="text-xs text-slate-400">({rev.correct}/{rev.total})</span></div>{rev.targetQ && <div className="text-[10px] text-slate-400">Meta: {rev.targetQ}</div>}</div>) : (<div><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{rev.label.split(':')[1]}</div>{rev.targetQ && (<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs font-medium mt-0.5"><Target size={12}/> <span>Meta: <span className="font-bold">{rev.targetQ}</span></span></div>)}</div>)}</div><div>{isDone ? (<div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><CheckCircle2 size={16}/></div>) : isNext ? (<button onClick={() => onOpenReview(topic.id, idx)} className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition">Revisar</button>) : (<div className="w-8 h-8 flex items-center justify-center"><Clock size={16} className="text-slate-300 dark:text-slate-600"/></div>)}</div></div>); })}</div><div className="mt-4 flex justify-end">{isDeleting ? (<div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-800 animate-in fade-in zoom-in-95 duration-200"><span className="text-xs font-bold text-red-800 dark:text-red-300">Tem certeza?</span><button onClick={() => onDelete(topic.id)} className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 border-b border-red-200 hover:border-red-600 transition-colors">Sim</button><button onClick={() => setIsDeleting(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancelar</button></div>) : (<button onClick={(e) => { e.stopPropagation(); setIsDeleting(true); }} className="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={12}/> Excluir Tema</button>)}</div></div>)}</div>
+            );
+        };
+
+        const AddTopicModal = ({ isOpen, onClose, onAdd }) => {
+            if(!isOpen) return null;
+            const [title, setTitle] = useState('');
+            const [area, setArea] = useState('clinica');
+            const [subarea, setSubarea] = useState('');
+            const [importance, setImportance] = useState('medium');
+            const [date, setDate] = useState(getTodayStr());
+            const [link, setLink] = useState('');
+
+            const currentSubareas = useMemo(() => { const selectedArea = AREAS.find(a => a.id === area); return selectedArea ? selectedArea.subareas : []; }, [area]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if(!title) return;
+                onAdd({ title, area, subarea, importance, date, link });
+                setTitle(''); setSubarea(''); setLink('');
+                onClose();
+            }
+
+            return (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end md:items-center justify-center z-[60] p-0 md:p-4" onClick={onClose}>
+                    <div className="bg-white dark:bg-zinc-900 w-full md:max-w-lg md:rounded-2xl rounded-t-2xl p-6 border-t md:border border-slate-200 dark:border-zinc-800 animate-in slide-in-from-bottom-10 fade-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><Plus size={20} className="text-blue-500"/> Novo Conteúdo</h3><button onClick={onClose} className="p-2"><X className="text-slate-400" size={24}/></button></div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                             <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={title} onChange={e => setTitle(e.target.value)} autoFocus /></div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Área</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Subárea</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Prioridade</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Data Aula</label><input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-12" value={date} onChange={e => setDate(e.target.value)} /></div>
+                             </div>
+                             <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block ml-1">Link Material</label><input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={link} onChange={e => setLink(e.target.value)} /></div>
+                             <button type="submit" className="h-12 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center shadow-lg shadow-blue-600/20 mt-4">Adicionar Conteúdo</button>
+                        </form>
+                    </div>
+                </div>
+            )
+        }
+
+        function App() {
+            const [topics, setTopics] = useState(() => safeJSONParse('resiflow_v3_data', []));
+            const [logs, setLogs] = useState(() => safeJSONParse('resiflow_logs', []));
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('resiflow_theme') === 'dark');
+            const [viewMode, setViewMode] = useState('list'); 
+            const [filterArea, setFilterArea] = useState('all');
+            const [filterTime, setFilterTime] = useState('all'); 
+            const [searchTerm, setSearchTerm] = useState('');
+            const [title, setTitle] = useState('');
+            const [area, setArea] = useState('clinica');
+            const [subarea, setSubarea] = useState('');
+            const [importance, setImportance] = useState('medium');
+            const [date, setDate] = useState(getTodayStr());
+            const [link, setLink] = useState('');
+            const [modalOpen, setModalOpen] = useState(false);
+            const [cloudModalOpen, setCloudModalOpen] = useState(false);
+            const [settingsOpen, setSettingsOpen] = useState(false);
+            const [pomodoroOpen, setPomodoroOpen] = useState(false);
+            const [addModalOpen, setAddModalOpen] = useState(false); 
+            const [selectedTask, setSelectedTask] = useState(null);
+            const [installPrompt, setInstallPrompt] = useState(null);
+            const { status, config, setConfig, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
+            const todayStr = getTodayStr();
+
+            useEffect(() => { const h = (e) => { e.preventDefault(); setInstallPrompt(e); }; window.addEventListener('beforeinstallprompt', h); return () => window.removeEventListener('beforeinstallprompt', h); }, []);
+            const handleInstall = () => { if (installPrompt) { installPrompt.prompt(); installPrompt.userChoice.then((c) => { if(c.outcome === 'accepted') setInstallPrompt(null); }); } };
+
+            useEffect(() => {
+                localStorage.setItem('resiflow_v3_data', JSON.stringify(topics));
+                localStorage.setItem('resiflow_logs', JSON.stringify(logs));
+                if (status === 'online') { const t = setTimeout(() => saveToCloud(topics, logs), 1000); return () => clearTimeout(t); }
+            }, [topics, logs, status]);
+
+            useEffect(() => { if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('resiflow_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('resiflow_theme', 'light'); } }, [darkMode]);
+
+            const handleAdd = (data) => {
+                const schedule = generateSchedule(data.date, data.importance);
+                const newTopic = { id: generateId(), title: data.title, area: data.area, subarea: data.subarea, importance: data.importance, materialLink: data.link, studyDate: data.date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
+                setTopics(prev => [newTopic, ...prev]);
+            };
+
+            // Desktop Inline Form Handler
+            const handleDesktopAdd = (e) => {
+                e.preventDefault();
+                if (!title) return;
+                handleAdd({ title, area, subarea, importance, date, link });
+                setTitle(''); setSubarea(''); setLink(''); // Clear Desktop Form State
+            };
+
+            // Mobile Modal Form Handler
+            const handleMobileAdd = (data) => {
+                handleAdd(data);
+            };
+
+            const handleAddLog = (log) => { setLogs(prev => [log, ...prev]); };
+            const handleDeleteLog = (id) => { setLogs(prev => prev.map(l => l.id === id ? { ...l, deleted: true, updatedAt: Date.now() } : l)); };
+
+            const openReview = (topicId, reviewIdx) => { const topic = topics.find(t => t.id === topicId); const review = topic.reviews[reviewIdx]; setSelectedTask({ topicId, topicTitle: topic.title, label: review.label, targetQ: review.targetQ, reviewIdx }); setModalOpen(true); };
+            
+            const completeReview = (data) => { 
+                setTopics(prev => prev.map(topic => { 
+                    if (topic.id !== selectedTask.topicId) return topic; 
+                    const newReviews = [...topic.reviews]; 
+                    const currentIdx = selectedTask.reviewIdx; 
+                    newReviews[currentIdx] = { ...newReviews[currentIdx], done: true, correct: data.correct, total: data.total, favorites: data.favorites, difficulty: data.difficulty }; 
+                    if (currentIdx + 1 < newReviews.length) { 
+                        const accuracy = data.total > 0 ? (data.correct / data.total) : 0; 
+                        const nextReviewType = newReviews[currentIdx + 1].type; 
+                        const nextLoad = calculateNextLoad(topic.importance, data.difficulty, nextReviewType, accuracy); 
+                        newReviews[currentIdx + 1].targetQ = nextLoad; 
+                    } 
+                    return { ...topic, reviews: newReviews, updatedAt: Date.now() }; 
+                })); 
+            };
+            
+            const deleteTopic = (id) => setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: Date.now() } : t));
+
+            const toggleFilterArea = (id) => {
+                setFilterArea(prev => prev === id ? 'all' : id);
+            };
+
+            const sortedTopics = useMemo(() => {
+                let list = [...topics].filter(t => !t.deleted);
+                if (searchTerm) { const lowerTerm = searchTerm.toLowerCase(); list = list.filter(t => t.title.toLowerCase().includes(lowerTerm) || (t.subarea && t.subarea.toLowerCase().includes(lowerTerm))); }
+                if (filterArea !== 'all') list = list.filter(t => t.area === filterArea);
+                list.sort((a, b) => { const getNextDate = (t) => t.reviews.find(r => !r.done)?.date || '9999-99-99'; const dateA = getNextDate(a); const dateB = getNextDate(b); const aDue = dateA <= todayStr; const bDue = dateB <= todayStr; if (aDue && !bDue) return -1; if (!aDue && bDue) return 1; return dateA.localeCompare(dateB); });
+                if (filterTime === 'today') return list.filter(t => t.reviews.some(r => !r.done && r.date <= todayStr));
+                return list;
+            }, [topics, filterArea, filterTime, todayStr, searchTerm]);
+
+            const currentSubareas = useMemo(() => { const selectedArea = AREAS.find(a => a.id === area); return selectedArea ? selectedArea.subareas : []; }, [area]);
+
+            return (
+                <div className="min-h-screen pb-24 md:pb-12 transition-colors duration-300">
+                    <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 py-4 px-4 sticky top-0 z-40 transition-colors shadow-sm dark:shadow-none">
+                        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex-1 w-full md:w-auto relative flex items-center justify-between md:justify-start">
+                                <div className="flex items-center gap-3 md:hidden">
+                                    <button onClick={() => setSettingsOpen(true)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400"><Settings size={18}/></button>
+                                    <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"><Timer size={18}/></button>
+                                </div>
+                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
+                                    <h1 className="text-xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow</h1>
+                                </div>
+                                <div className="flex items-center gap-3 md:hidden ml-auto">
+                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400"><Moon size={18}/></button>
+                                </div>
+                            </div>
+                            
+                             {/* Desktop Utils */}
+                             <div className="hidden md:flex items-center gap-4">
+                                <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg">
+                                    <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> Lista</button>
+                                    <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> Cal.</button>
+                                    <button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> Diário</button>
+                                    <button onClick={() => setViewMode('dashboard')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'dashboard' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><BarChart3 size={14}/> Análise</button>
+                                </div>
+                                <div className="h-6 w-px bg-slate-200 dark:bg-zinc-700"></div>
+                                <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Timer size={20}/></button>
+                                <button onClick={() => setSettingsOpen(true)} className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Settings size={20}/></button>
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Moon size={20}/></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto px-4 mt-6 space-y-6 pb-20 md:pb-0">
+                        {viewMode === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : 
+                         viewMode === 'dashboard' ? ( <DashboardView topics={topics} /> ) : (
+                            <>
+                                {viewMode === 'list' && (
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-3 text-slate-400 pointer-events-none" size={18} />
+                                        <input type="text" placeholder="Buscar por assunto ou subárea..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
+                                    </div>
+                                )}
+                                
+                                <button onClick={() => setAddModalOpen(true)} className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center z-50"><Plus size={28}/></button>
+
+                                <div className="hidden md:block">
+                                     <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 transition-colors">
+                                        <div className="flex items-center justify-between mb-6"><h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><Plus size={16} className="text-blue-500"/> Novo Conteúdo Teórico</h2></div>
+                                        <form onSubmit={handleDesktopAdd}> {/* Changed from handleAdd to handleDesktopAdd */}
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                <div className="md:col-span-8"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={title} onChange={e => setTitle(e.target.value)} /></div>
+                                                <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Data Aula</label><input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-12" value={date} onChange={e => setDate(e.target.value)} /></div>
+                                                <div className="md:col-span-12"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Link do Material (Opcional)</label><input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={link} onChange={e => setLink(e.target.value)} /></div>
+                                                <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Área</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                                                <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Subárea</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                                                <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Prioridade</label><select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
+                                                <div className="md:col-span-3 flex items-end"><button type="submit" className="h-12 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center shadow-lg shadow-blue-600/20">Adicionar</button></div>
+                                            </div>
+                                        </form>
+                                    </section>
+                                </div>
+
+                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-zinc-800 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => toggleFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
+                                <section className="space-y-4">{viewMode === 'calendar' ? ( <CalendarView topics={topics} onOpenReview={openReview} /> ) : ( <> {sortedTopics.length === 0 ? ( <div className="text-center py-12 text-slate-400 dark:text-slate-600"><BookOpen className="mx-auto mb-2 opacity-50" size={32} /><p>Nenhum tema encontrado com estes filtros.</p></div> ) : ( sortedTopics.map(topic => ( <TopicCard key={topic.id} topic={topic} onOpenReview={openReview} onDelete={deleteTopic} /> )) )} </> )}</section>
+                            </>
+                        )}
+                    </main>
+
+                    <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 pb-safe z-50">
+                        <div className="grid grid-cols-4 h-16">
+                            <button onClick={() => setViewMode('list')} className={`flex flex-col items-center justify-center w-full h-full ${viewMode === 'list' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}><List size={20}/><span className="text-[10px] font-medium mt-1">Lista</span></button>
+                            <button onClick={() => setViewMode('calendar')} className={`flex flex-col items-center justify-center w-full h-full ${viewMode === 'calendar' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}><CalendarIcon size={20}/><span className="text-[10px] font-medium mt-1">Calendário</span></button>
+                            <button onClick={() => setViewMode('diary')} className={`flex flex-col items-center justify-center w-full h-full ${viewMode === 'diary' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}><Notebook size={20}/><span className="text-[10px] font-medium mt-1">Diário</span></button>
+                            <button onClick={() => setViewMode('dashboard')} className={`flex flex-col items-center justify-center w-full h-full ${viewMode === 'dashboard' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}><BarChart3 size={20}/><span className="text-[10px] font-medium mt-1">Análise</span></button>
+                        </div>
+                    </nav>
+
+                    <ModalReview isOpen={modalOpen} onClose={() => setModalOpen(false)} task={selectedTask} onSave={completeReview} />
+                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} setTopics={setTopics} setLogs={setLogs} syncKey={syncKey} setSyncKey={setSyncKey} status={status} />
+                    <PomodoroTimer isOpen={pomodoroOpen} onClose={() => setPomodoroOpen(false)} />
+                    <AddTopicModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} onAdd={handleMobileAdd} />
+                </div>
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
