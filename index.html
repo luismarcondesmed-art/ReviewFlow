@@ -229,14 +229,12 @@
         const useSync = (topics, logs, setTopics, setLogs) => {
             const [status, setStatus] = useState('offline');
             const [config, setConfig] = useState(() => safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG));
-            // Corrigido: Usando um nome interno para o estado e uma função wrapper
             const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
             
-            // Wrapper function para limpar dados ao trocar a chave
             const setSyncKey = (newKey) => {
                 if (newKey !== syncKey) {
-                    setTopics([]); // Limpa tópicos
-                    setLogs([]);   // Limpa logs
+                    setTopics([]); 
+                    setLogs([]);   
                 }
                 _setSyncKey(newKey);
             };
@@ -284,7 +282,6 @@
         };
 
         // --- COMPONENTS ---
-
         const PomodoroTimer = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -318,13 +315,7 @@
             const [tempKey, setTempKey] = useState(syncKey);
             useEffect(() => setTempKey(syncKey), [syncKey]);
             if (!isOpen) return null;
-            
-            const handleSave = () => { 
-                localStorage.setItem('resiflow_sync_key', tempKey); 
-                setSyncKey(tempKey); // Agora chama a função do hook que limpa os dados
-                onClose(); 
-            };
-
+            const handleSave = () => { localStorage.setItem('resiflow_sync_key', tempKey); setSyncKey(tempKey); onClose(); };
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-zinc-800">
@@ -450,15 +441,11 @@
 
         const DashboardView = ({ topics }) => {
             const [selectedArea, setSelectedArea] = useState(null);
-
-            // Métricas Gerais
             const totalTopics = topics.filter(t => !t.deleted).length;
             const totalReviewsDone = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).length, 0);
             const totalQuestions = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
             const totalCorrect = topics.filter(t => !t.deleted).reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0), 0);
             const globalAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-            // Por Área
             const areaStats = AREAS.filter(a => a.id !== 'all').map(area => {
                 const areaTopics = topics.filter(t => !t.deleted && t.area === area.id);
                 const areaTotalQ = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0), 0);
@@ -466,16 +453,12 @@
                 const accuracy = areaTotalQ > 0 ? Math.round((areaCorrect / areaTotalQ) * 100) : 0;
                 return { ...area, accuracy, totalQ: areaTotalQ, count: areaTopics.length };
             }).sort((a, b) => b.accuracy - a.accuracy);
-
-            // Pontos de Atenção (Baixo Desempenho)
             const weakTopics = topics.filter(t => !t.deleted).map(t => {
                 const tTotal = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0);
                 const tCorrect = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0);
                 const acc = tTotal > 0 ? (tCorrect/tTotal) : 1;
                 return { ...t, acc };
             }).filter(t => t.acc < 0.6 && t.acc > 0).slice(0, 5);
-
-            // Detalhes da Área Selecionada
             const selectedAreaTopics = selectedArea ? topics.filter(t => !t.deleted && t.area === selectedArea).map(t => {
                 const tTotal = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.total || 0), 0);
                 const tCorrect = t.reviews.filter(r => r.done).reduce((sum, r) => sum + (r.correct || 0), 0);
@@ -493,26 +476,7 @@
                             {selectedAreaTopics.length === 0 ? (
                                 <div className="p-8 text-center text-slate-400">Nenhum tópico cadastrado nesta área.</div>
                             ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left text-slate-600 dark:text-slate-300">
-                                        <thead className="text-xs text-slate-400 uppercase bg-slate-50 dark:bg-zinc-950">
-                                            <tr>
-                                                <th className="px-4 py-3">Assunto</th>
-                                                <th className="px-4 py-3">Qtd. Questões</th>
-                                                <th className="px-4 py-3">Acerto</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {selectedAreaTopics.map(t => (
-                                                <tr key={t.id} className="border-b border-slate-100 dark:border-zinc-800 last:border-0">
-                                                    <td className="px-4 py-3 font-medium">{t.title} <span className="text-[10px] text-slate-400 block">{t.subarea}</span></td>
-                                                    <td className="px-4 py-3">{t.tTotal}</td>
-                                                    <td className={`px-4 py-3 font-bold ${t.acc >= 80 ? 'text-emerald-500' : t.acc >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{t.acc}%</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <div className="overflow-x-auto"><table className="w-full text-sm text-left text-slate-600 dark:text-slate-300"><thead className="text-xs text-slate-400 uppercase bg-slate-50 dark:bg-zinc-950"><tr><th className="px-4 py-3">Assunto</th><th className="px-4 py-3">Qtd. Questões</th><th className="px-4 py-3">Acerto</th></tr></thead><tbody>{selectedAreaTopics.map(t => (<tr key={t.id} className="border-b border-slate-100 dark:border-zinc-800 last:border-0"><td className="px-4 py-3 font-medium">{t.title} <span className="text-[10px] text-slate-400 block">{t.subarea}</span></td><td className="px-4 py-3">{t.tTotal}</td><td className={`px-4 py-3 font-bold ${t.acc >= 80 ? 'text-emerald-500' : t.acc >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{t.acc}%</td></tr>))}</tbody></table></div>
                             )}
                         </div>
                     </div>
@@ -521,58 +485,12 @@
 
             return (
                 <div className="space-y-6">
-                    {/* KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
-                            <div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Aproveitamento Global</div>
-                            <div className={`text-4xl font-black mt-1 ${globalAccuracy >= 80 ? 'text-emerald-500' : globalAccuracy >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{globalAccuracy}%</div>
-                            <div className="text-xs text-slate-400 mt-1">{totalCorrect} acertos de {totalQuestions} questões</div>
-                        </div>
-                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
-                            <div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Volume de Estudo</div>
-                            <div className="text-4xl font-black mt-1 text-slate-800 dark:text-white">{totalReviewsDone}</div>
-                            <div className="text-xs text-slate-400 mt-1">Revisões concluídas em {totalTopics} tópicos</div>
-                        </div>
-                        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col justify-center">
-                            <div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase mb-2">Pontos de Atenção</div>
-                            {weakTopics.length === 0 ? <div className="text-emerald-500 text-sm font-bold">Nenhum tema crítico! 🎉</div> : 
-                                <div className="space-y-1">
-                                    {weakTopics.map(t => (
-                                        <div key={t.id} className="flex justify-between text-xs">
-                                            <span className="truncate max-w-[150px] text-slate-700 dark:text-slate-300">{t.title}</span>
-                                            <span className="text-red-500 font-bold">{Math.round(t.acc*100)}%</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    {/* Desempenho por Área */}
-                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-blue-500"/> Desempenho por Área</h3>
-                        <div className="space-y-4">
-                            {areaStats.map(area => (
-                                <div key={area.id} onClick={() => setSelectedArea(area.id)} className="group cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/50 p-2 rounded-lg transition-colors -mx-2">
-                                    <div className="flex justify-between text-xs mb-1 font-medium">
-                                        <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1">{area.name} <span className="text-slate-400">({area.count} temas)</span> <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity"/></span>
-                                        <div className="flex gap-3">
-                                             <span className="text-slate-400 font-normal">{area.totalQ}q feitas</span>
-                                             <span className={area.accuracy >= 80 ? 'text-emerald-500' : 'text-slate-500'}>{area.accuracy}%</span>
-                                        </div>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                        <div className={`h-full rounded-full ${area.accuracy >= 80 ? 'bg-emerald-500' : area.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${area.accuracy}%`}}></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Aproveitamento Global</div><div className={`text-4xl font-black mt-1 ${globalAccuracy >= 80 ? 'text-emerald-500' : globalAccuracy >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{globalAccuracy}%</div><div className="text-xs text-slate-400 mt-1">{totalCorrect} acertos de {totalQuestions} questões</div></div><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase">Volume de Estudo</div><div className="text-4xl font-black mt-1 text-slate-800 dark:text-white">{totalReviewsDone}</div><div className="text-xs text-slate-400 mt-1">Revisões concluídas em {totalTopics} tópicos</div></div><div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 flex flex-col justify-center"><div className="text-sm text-slate-500 dark:text-slate-400 font-bold uppercase mb-2">Pontos de Atenção</div>{weakTopics.length === 0 ? <div className="text-emerald-500 text-sm font-bold">Nenhum tema crítico! 🎉</div> : <div className="space-y-1">{weakTopics.map(t => (<div key={t.id} className="flex justify-between text-xs"><span className="truncate max-w-[150px] text-slate-700 dark:text-slate-300">{t.title}</span><span className="text-red-500 font-bold">{Math.round(t.acc*100)}%</span></div>))}</div>}</div></div>
+                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-blue-500"/> Desempenho por Área</h3><div className="space-y-4">{areaStats.map(area => (<div key={area.id} onClick={() => setSelectedArea(area.id)} className="group cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800/50 p-2 rounded-lg transition-colors -mx-2"><div className="flex justify-between text-xs mb-1 font-medium"><span className="text-slate-700 dark:text-slate-300 flex items-center gap-1">{area.name} <span className="text-slate-400">({area.count} temas)</span> <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity"/></span><div className="flex gap-3"><span className="text-slate-400 font-normal">{area.totalQ}q feitas</span><span className={area.accuracy >= 80 ? 'text-emerald-500' : 'text-slate-500'}>{area.accuracy}%</span></div></div><div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className={`h-full rounded-full ${area.accuracy >= 80 ? 'bg-emerald-500' : area.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${area.accuracy}%`}}></div></div></div>))}</div></div>
                 </div>
             )
         }
 
-        // --- RESTORED AND IMPROVED: CalendarView ---
         const CalendarView = ({ topics, onOpenReview }) => {
             const today = new Date();
             const currentMonth = today.getMonth();
@@ -590,19 +508,13 @@
                     if(topic.deleted) return; 
                     topic.reviews.forEach((review, idx) => { 
                         if (review.date === dateStr) { 
-                            list.push({ 
-                                topicTitle: topic.title, 
-                                area: topic.area, 
-                                topicId: topic.id, 
-                                reviewIdx: idx, 
-                                importance: topic.importance, 
-                                ...review 
-                            }); 
+                            list.push({ topicTitle: topic.title, area: topic.area, topicId: topic.id, reviewIdx: idx, importance: topic.importance, ...review }); 
                         } 
                     }); 
                 }); 
                 return list; 
             };
+
             return (
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
@@ -702,19 +614,37 @@
                 <div className="min-h-screen pb-12 transition-colors duration-300">
                     <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 py-4 px-4 sticky top-0 z-40 transition-colors shadow-sm dark:shadow-none">
                         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div><h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow <span className="text-xs bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 font-normal">v7.0</span></h1></div>
-                            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                                {installPrompt && (<button onClick={handleInstall} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 border flex items-center gap-2 font-bold text-xs"><Download size={16}/> App</button>)}
-                                <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 border flex items-center gap-2 font-bold text-xs"><Timer size={16}/></button>
-                                <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg transition border flex items-center gap-2 ${status === 'online' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'}`}>{status === 'online' ? <Cloud size={18}/> : <CloudOff size={18}/>}</button>
-                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
-                                <div className="h-6 w-px bg-slate-200 dark:bg-zinc-700 mx-1"></div>
-                                <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg">
-                                    <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button>
-                                    <button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button>
-                                    <button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button>
-                                    <button onClick={() => setViewMode('dashboard')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'dashboard' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><BarChart3 size={14}/> <span className="hidden sm:inline">Análise</span></button>
+                            {/* Left (Absolute on mobile visually, structured flex on desktop) */}
+                            <div className="flex-1 w-full md:w-auto relative flex items-center justify-between md:justify-start">
+                                <div className="flex items-center gap-3 md:hidden">
+                                    <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"><Timer size={18}/></button>
+                                    <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg border ${status === 'online' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-transparent'}`}><Cloud size={18}/></button>
+                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400"><Moon size={18}/></button>
                                 </div>
+                                
+                                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
+                                    <h1 className="text-xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow</h1>
+                                </div>
+
+                                {/* Spacer for mobile balance if needed, hidden */}
+                                <div className="w-[108px] md:hidden"></div>
+                            </div>
+
+                            {/* Right / Bottom Row on Mobile */}
+                            <div className="w-full md:w-auto overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+                                <div className="flex items-center justify-between md:justify-end gap-4 md:gap-2 bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-xl">
+                                    <button onClick={() => setViewMode('list')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm font-bold ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={18}/> <span className="hidden md:inline">Lista</span></button>
+                                    <button onClick={() => setViewMode('calendar')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm font-bold ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={18}/> <span className="hidden md:inline">Cal.</span></button>
+                                    <button onClick={() => setViewMode('diary')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm font-bold ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={18}/> <span className="hidden md:inline">Diário</span></button>
+                                    <button onClick={() => setViewMode('dashboard')} className={`flex-1 md:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition text-sm font-bold ${viewMode === 'dashboard' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><BarChart3 size={18}/> <span className="hidden md:inline">Análise</span></button>
+                                </div>
+                            </div>
+
+                             {/* Desktop Only Utilities */}
+                             <div className="hidden md:flex items-center gap-2">
+                                <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Timer size={20}/></button>
+                                <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Cloud size={20}/></button>
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Moon size={20}/></button>
                             </div>
                         </div>
                     </header>
@@ -736,15 +666,40 @@
                                     </div>
                                 )}
 
-                                <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 transition-colors">
-                                    <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Plus size={14}/> Novo Conteúdo Teórico</h2>
-                                    <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                        <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-11" value={title} onChange={e => setTitle(e.target.value)} /></div>
-                                        <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Área</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Subárea</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Selecione...</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Prioridade</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
-                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Aula</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-11" value={date} onChange={e => setDate(e.target.value)} /></div>
-                                        <div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center">Add</button></div>
+                                <section className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 transition-colors">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2"><Plus size={16} className="text-blue-500"/> Novo Conteúdo Teórico</h2>
+                                    </div>
+                                    
+                                    <form onSubmit={handleAdd}>
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                            {/* Row 1: Assunto & Data */}
+                                            <div className="md:col-span-8">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Assunto</label>
+                                                <input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={title} onChange={e => setTitle(e.target.value)} />
+                                            </div>
+                                            <div className="md:col-span-4">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Data Aula</label>
+                                                <input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-12" value={date} onChange={e => setDate(e.target.value)} />
+                                            </div>
+
+                                            {/* Row 2: Selects & Button - Equal Columns */}
+                                            <div className="md:col-span-3">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Área</label>
+                                                <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
+                                            </div>
+                                            <div className="md:col-span-3">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Subárea</label>
+                                                <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select>
+                                            </div>
+                                            <div className="md:col-span-3">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Prioridade</label>
+                                                <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select>
+                                            </div>
+                                            <div className="md:col-span-3 flex items-end">
+                                                <button type="submit" className="h-12 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center shadow-lg shadow-blue-600/20">Adicionar</button>
+                                            </div>
+                                        </div>
                                     </form>
                                 </section>
                                 {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-zinc-800 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
