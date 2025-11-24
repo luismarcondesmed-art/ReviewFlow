@@ -23,20 +23,8 @@
             theme: {
                 extend: {
                     colors: {
-                        slate: {
-                            50: '#fafafa',
-                            100: '#f4f4f5',
-                            200: '#e4e4e7',
-                            300: '#d4d4d8',
-                            400: '#a1a1aa',
-                            500: '#71717a',
-                            600: '#52525b',
-                            700: '#3f3f46',
-                            800: '#27272a',
-                            850: '#202023', 
-                            900: '#18181b',
-                            950: '#09090b', 
-                        }
+                        slate: { 850: '#1e293b', 950: '#020617' },
+                        zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' } // Paleta mais neutra
                     }
                 }
             }
@@ -69,7 +57,7 @@
         const iconUrl = "data:image/svg+xml;base64," + btoa(iconSvg);
         const linkIcon = document.createElement('link'); linkIcon.rel = 'icon'; linkIcon.href = iconUrl; document.head.appendChild(linkIcon);
         const linkApple = document.createElement('link'); linkApple.rel = 'apple-touch-icon'; linkApple.href = iconUrl; document.head.appendChild(linkApple);
-        const manifest = { name: "ResiFlow", short_name: "ResiFlow", start_url: ".", display: "standalone", background_color: "#ffffff", theme_color: "#0f172a", icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }] };
+        const manifest = { name: "ResiFlow", short_name: "ResiFlow", start_url: ".", display: "standalone", background_color: "#ffffff", theme_color: "#09090b", icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }] };
         const linkManifest = document.createElement('link'); linkManifest.rel = 'manifest'; linkManifest.href = 'data:application/json;base64,' + btoa(JSON.stringify(manifest)); document.head.appendChild(linkManifest);
         if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
             try {
@@ -81,7 +69,7 @@
         }
     </script>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-slate-200 transition-colors duration-300">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -131,8 +119,9 @@
         const MonitorPlay = (p) => <LucideIcon name="MonitorPlay" {...p} />;
         const Notebook = (p) => <LucideIcon name="Notebook" {...p} />;
         const AlertCircle = (p) => <LucideIcon name="AlertCircle" {...p} />;
+        const Tag = (p) => <LucideIcon name="Tag" {...p} />;
 
-        // --- CONFIG ---
+        // --- CONFIG & DATA STRUCTURE ---
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
             authDomain: "med-heklp.firebaseapp.com",
@@ -143,25 +132,46 @@
             measurementId: "G-BLWYTWFFTZ"
         };
 
+        // 1. Subáreas Adicionadas
         const AREAS = [
-            { id: 'all', name: 'Todas as Áreas', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
-            { id: 'clinica', name: 'Clínica Médica', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-            { id: 'cirurgia', name: 'Cirurgia', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800' },
-            { id: 'pediatria', name: 'Pediatria', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-            { id: 'go', name: 'G.O.', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-            { id: 'preventiva', name: 'Preventiva', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
+            { 
+                id: 'clinica', name: 'Clínica Médica', 
+                color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+                subareas: ['Cardiologia', 'Nefrologia', 'Pneumologia', 'Gastroenterologia', 'Hepatologia', 'Infectologia', 'Reumatologia', 'Hematologia', 'Endocrinologia', 'Neurologia', 'Psiquiatria', 'Dermatologia']
+            },
+            { 
+                id: 'cirurgia', name: 'Cirurgia', 
+                color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800',
+                subareas: ['Cirurgia Geral', 'Trauma', 'Cirurgia Digestiva', 'Cirurgia Vascular', 'Urologia', 'Ortopedia', 'Otorrinolaringologia', 'Oftalmologia', 'Cirurgia Plástica', 'Anestesiologia']
+            },
+            { 
+                id: 'pediatria', name: 'Pediatria', 
+                color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
+                subareas: ['Puericultura', 'Neonatologia', 'Infecto Ped', 'Respiratório', 'Gastro Ped', 'Nefro Ped', 'Emergências Pediátricas']
+            },
+            { 
+                id: 'go', name: 'G.O.', 
+                color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+                subareas: ['Obstetrícia Fisiológica', 'Obstetrícia Patológica', 'Ginecologia Geral', 'Endocrino Ginecológica', 'Oncologia Ginecológica', 'Mastologia']
+            },
+            { 
+                id: 'preventiva', name: 'Preventiva', 
+                color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                subareas: ['SUS', 'Epidemiologia', 'Saúde do Trabalhador', 'Ética Médica', 'Bioestatística']
+            },
         ];
 
         const IMPORTANCE_LEVELS = [
-            { id: 'high', label: 'Alta', weight: 2.0, color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800' },
-            { id: 'medium', label: 'Média', weight: 1.5, color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-            { id: 'low', label: 'Baixa', weight: 1.0, color: 'text-slate-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700' },
+            { id: 'high', label: 'Alta', weight: 2.0, color: 'text-red-600 dark:text-red-400' },
+            { id: 'medium', label: 'Média', weight: 1.5, color: 'text-yellow-600 dark:text-yellow-400' },
+            { id: 'low', label: 'Baixa', weight: 1.0, color: 'text-slate-500 dark:text-slate-400' },
         ];
 
+        // 2. Dificuldade Amortecida (Menos reativa)
         const DIFFICULTY_LEVELS = [
-            { id: 'easy', label: 'Fácil', weight: 0.8, icon: ThumbsUp },
-            { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus },
-            { id: 'hard', label: 'Difícil', weight: 1.3, icon: ThumbsDown },
+            { id: 'easy', label: 'Fácil', weight: 0.9, icon: ThumbsUp }, // Antes era 0.8
+            { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus }, // Neutro
+            { id: 'hard', label: 'Difícil', weight: 1.1, icon: ThumbsDown }, // Antes era 1.3
         ];
 
         const LOG_TYPES = [
@@ -176,19 +186,35 @@
         const getTodayStr = () => new Date().toISOString().split('T')[0];
         const formatDate = (dateStr) => { const [y, m, d] = dateStr.split('-'); return `${d}/${m}`; };
         const formatFullDate = (dateStr) => { if (!dateStr) return ''; const d = new Date(dateStr + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); };
+        
+        // UUID Seguro para robustez
+        const generateId = () => {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        };
 
         const SYSTEM_PARAMS = { BASE_QUESTIONS: 20, MIN_QUESTIONS: 15, MAX_QUESTIONS: 80, SPACING_FACTORS: { 'R0': 0.75, 'R1': 2.00, 'R2': 1.25, 'R3': 0.75, 'DEFAULT': 1.0 } };
 
         const calculateNextLoad = (accuracy, importanceId, difficultyId, nextStageType) => {
             const impWeight = IMPORTANCE_LEVELS.find(i => i.id === importanceId)?.weight || 1.0;
             const base = SYSTEM_PARAMS.BASE_QUESTIONS * impWeight;
+            
+            // Fatores fixos
             const spacingFactor = SYSTEM_PARAMS.SPACING_FACTORS[nextStageType] || SYSTEM_PARAMS.SPACING_FACTORS['DEFAULT'];
+            
+            // Fator de performance (Ainda reativo, mas essencial)
             const target = 0.90;
             const gap = Math.max(0, target - accuracy);
             const perfFactor = Math.min(2.2, 1 + (gap / target)); 
+            
+            // Fator de Dificuldade (Agora mais suave: 0.9 a 1.1)
             const diffWeight = DIFFICULTY_LEVELS.find(d => d.id === difficultyId)?.weight || 1.0;
+            
             let n = Math.round(base * perfFactor * spacingFactor * diffWeight);
+            
+            // Regra de Ouro: Se foi mal (<60%), aumenta carga independente do resto
             if (accuracy < 0.60) { n = n + 10; }
+            
             return Math.max(SYSTEM_PARAMS.MIN_QUESTIONS, Math.min(n, SYSTEM_PARAMS.MAX_QUESTIONS));
         };
 
@@ -196,6 +222,8 @@
             const d0 = new Date(studyDate + 'T12:00:00');
             const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
             const getInitialQ = (stage) => calculateNextLoad(1.0, importanceId, 'medium', stage);
+            
+            // Datas Fixas: 0, 7, 30, 60
             return [
                 { type: 'R0', date: studyDate, label: 'R0: Fixação', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: getInitialQ('R0') },
                 { type: 'R1', date: addDays(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: getInitialQ('R1') },
@@ -204,7 +232,18 @@
             ];
         };
 
-        // --- SYNC ---
+        // --- SYNC & STORAGE ---
+        // Proteção contra dados corrompidos
+        const safeJSONParse = (key, fallback) => {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : fallback;
+            } catch (e) {
+                console.error(`Erro ao ler ${key}`, e);
+                return fallback;
+            }
+        };
+
         const mergeItems = (local, cloud) => {
             const map = new Map();
             local.forEach(i => map.set(i.id, i));
@@ -217,7 +256,7 @@
 
         const useSync = (topics, logs, setTopics, setLogs) => {
             const [status, setStatus] = useState('offline');
-            const [config, setConfig] = useState(() => { const s = localStorage.getItem('resiflow_fb_config'); return s ? JSON.parse(s) : USER_FIREBASE_CONFIG; });
+            const [config, setConfig] = useState(() => safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG));
             const [syncKey, setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
             const dbRef = useRef(null);
             
@@ -277,17 +316,17 @@
             const prog = ((mode === 'focus' ? 1500 : mode === 'short' ? 300 : 900) - timeLeft) / (mode === 'focus' ? 1500 : mode === 'short' ? 300 : 900) * 100;
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700 flex flex-col items-center relative">
-                        <button onClick={onClose} className="absolute top-4 right-4 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><X size={20} className="text-slate-400"/></button>
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-zinc-800 flex flex-col items-center relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><X size={20} className="text-slate-400"/></button>
                         <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2"><Timer size={22} className="text-emerald-500"/> Pomodoro</h3>
-                        <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
-                            {['focus', 'short', 'long'].map(m => <button key={m} onClick={() => setM(m)} className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize ${mode === m ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>{m}</button>)}
+                        <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-zinc-950 p-1 rounded-xl">
+                            {['focus', 'short', 'long'].map(m => <button key={m} onClick={() => setM(m)} className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize ${mode === m ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>{m}</button>)}
                         </div>
                         <div className="relative w-48 h-48 flex items-center justify-center mb-8">
-                            <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90"><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-slate-900"/><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * prog) / 100} className="text-emerald-500 transition-all duration-1000 ease-linear" strokeLinecap="round"/></svg>
+                            <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90"><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-zinc-800"/><circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={552} strokeDashoffset={552 - (552 * prog) / 100} className="text-emerald-500 transition-all duration-1000 ease-linear" strokeLinecap="round"/></svg>
                             <div className="text-5xl font-black text-slate-800 dark:text-white tracking-wider font-mono">{fmt(timeLeft)}</div>
                         </div>
-                        <div className="flex gap-4"><button onClick={toggle} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl ${isActive ? 'bg-slate-100 dark:bg-slate-700 text-slate-600' : 'bg-emerald-500 text-white'}`}>{isActive ? <Pause/> : <Play/>}</button><button onClick={reset} className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-100 dark:bg-slate-700 text-slate-400"><RotateCcw/></button></div>
+                        <div className="flex gap-4"><button onClick={toggle} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600' : 'bg-emerald-500 text-white'}`}>{isActive ? <Pause/> : <Play/>}</button><button onClick={reset} className="w-16 h-16 rounded-2xl flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-400"><RotateCcw/></button></div>
                     </div>
                 </div>
             );
@@ -299,11 +338,11 @@
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-zinc-800">
                         <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><Cloud className="text-blue-500"/> Sincronização</h3><button onClick={onClose}><X className="text-slate-400"/></button></div>
                         <div className="space-y-4">
                             <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl text-sm text-emerald-800 dark:text-emerald-200 border border-emerald-100 dark:border-emerald-800"><p className="font-bold flex items-center gap-2"><CheckCircle2 size={16}/> Firebase Configurado</p></div>
-                            <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Chave de Sincronização</label><input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Senha única (ex: dr-silva)" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm dark:text-white font-mono" /></div>
+                            <div><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Chave de Sincronização</label><input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Senha única (ex: dr-silva)" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white font-mono" /></div>
                             <button onClick={() => { localStorage.setItem('resiflow_sync_key', tempKey); setSyncKey(tempKey); onClose(); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save size={18}/> Conectar</button>
                         </div>
                     </div>
@@ -323,19 +362,19 @@
             const handleSubmit = (e) => { e.preventDefault(); onSave({ correct: numCorrect, total: numTotal, favorites: parseInt(favorites) || 0, difficulty }); setCorrect(''); setTotal(''); setFavorites(''); setDifficulty('medium'); onClose(); };
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 dark:border-slate-700">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 dark:border-zinc-800">
                         <div className="flex justify-between items-start mb-6">
-                            <div><h3 className="text-xl font-bold text-slate-800 dark:text-white">{task.topicTitle}</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wide">{task.label}</span>{task.targetQ && <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded flex items-center gap-1"><Target size={12}/> Meta: {task.targetQ}</span>}</div></div>
+                            <div><h3 className="text-xl font-bold text-slate-800 dark:text-white">{task.topicTitle}</h3><div className="flex items-center gap-2 mt-1"><span className="text-xs font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded uppercase tracking-wide">{task.label}</span>{task.targetQ && <span className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded flex items-center gap-1"><Target size={12}/> Meta: {task.targetQ}</span>}</div></div>
                             <button onClick={onClose}><X className="text-slate-400" /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Acertos</label><input type="number" required autoFocus min="0" className="w-full p-4 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-100 dark:border-emerald-800 rounded-xl text-2xl font-bold text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none text-center" value={correct} onChange={e => setCorrect(e.target.value)} /></div>
-                                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Total</label><input type="number" required min="1" className="w-full p-4 bg-slate-50 dark:bg-slate-700/30 border-2 border-slate-100 dark:border-slate-700 rounded-xl text-2xl font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-center" value={total} onChange={e => setTotal(e.target.value)} /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Total</label><input type="number" required min="1" className="w-full p-4 bg-slate-50 dark:bg-zinc-800/50 border-2 border-slate-100 dark:border-zinc-700 rounded-xl text-2xl font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-center" value={total} onChange={e => setTotal(e.target.value)} /></div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 flex items-center justify-between border border-slate-100 dark:border-slate-700"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">Aproveitamento</span><div className={`text-3xl font-black ${percentage >= 90 ? 'text-emerald-500' : percentage >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{percentage}%</div></div>
-                            <div className="space-y-2"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Dificuldade</label><div className="grid grid-cols-3 gap-2">{DIFFICULTY_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => setDifficulty(lvl.id)} className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all border-2 ${difficulty === lvl.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-400 hover:border-slate-200 dark:hover:border-slate-600'}`}><lvl.icon size={20} /> <span className="text-xs font-bold">{lvl.label}</span></button>))}</div></div>
-                            <div className="relative"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-1"><Star size={12} className="fill-yellow-400 text-yellow-400"/> Favoritas</label><input type="number" className="w-full p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="0" value={favorites} onChange={e => setFavorites(e.target.value)} /></div>
+                            <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-xl p-4 flex items-center justify-between border border-slate-100 dark:border-zinc-700"><span className="text-sm font-medium text-slate-500 dark:text-slate-400">Aproveitamento</span><div className={`text-3xl font-black ${percentage >= 90 ? 'text-emerald-500' : percentage >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{percentage}%</div></div>
+                            <div className="space-y-2"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Dificuldade</label><div className="grid grid-cols-3 gap-2">{DIFFICULTY_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => setDifficulty(lvl.id)} className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all border-2 ${difficulty === lvl.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-slate-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-400 hover:border-slate-200 dark:hover:border-zinc-600'}`}><lvl.icon size={20} /> <span className="text-xs font-bold">{lvl.label}</span></button>))}</div></div>
+                            <div className="relative"><label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1 mb-1"><Star size={12} className="fill-yellow-400 text-yellow-400"/> Favoritas</label><input type="number" className="w-full p-3 border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-xl text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="0" value={favorites} onChange={e => setFavorites(e.target.value)} /></div>
                             <button type="submit" className="w-full bg-slate-900 dark:bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-blue-700 transition flex items-center justify-center gap-2"><CheckCircle2 size={20} /> Concluir</button>
                         </form>
                     </div>
@@ -343,74 +382,20 @@
             );
         };
 
-        // --- NOVO: Modal de Detalhes do Dia Melhorado ---
         const CalendarDayModal = ({ date, reviews, onClose, onOpenReview }) => {
             if (!date) return null;
-
             const pendingReviews = reviews.filter(r => !r.done);
             const doneReviews = reviews.filter(r => r.done);
             const hasActivity = reviews.length > 0;
-
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-slate-700 max-h-[80vh] flex flex-col">
-                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 shrink-0">
-                            <h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3>
-                            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition"><X size={20} className="text-slate-400"/></button>
-                        </div>
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-slate-100 dark:border-zinc-800 max-h-[80vh] flex flex-col">
+                        <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-slate-50 dark:bg-zinc-950 shrink-0"><h3 className="font-bold text-lg capitalize text-slate-800 dark:text-white flex items-center gap-2"><CalendarIcon size={18} className="text-blue-500"/> {formatFullDate(date)}</h3><button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-800 rounded-full transition"><X size={20} className="text-slate-400"/></button></div>
                         <div className="overflow-y-auto p-4 space-y-4 flex-1">
-                            {!hasActivity ? (
-                                <div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>
-                            ) : (
+                            {!hasActivity ? (<div className="text-center py-8 text-slate-400"><p className="text-sm">Nenhuma atividade registrada.</p></div>) : (
                                 <>
-                                    {/* Seção Pendentes */}
-                                    {pendingReviews.length > 0 && (
-                                        <div>
-                                            <h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4>
-                                            <div className="space-y-2">
-                                                {pendingReviews.map((item, idx) => {
-                                                     const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[1];
-                                                     return (
-                                                        <div key={idx} className="p-3 rounded-xl border bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 flex flex-col gap-2">
-                                                            <div className="flex justify-between items-start">
-                                                                <h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4>
-                                                                <span className="text-xs bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between mt-1">
-                                                                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>
-                                                                {item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}
-                                                            </div>
-                                                            <button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button>
-                                                        </div>
-                                                     )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Seção Concluídos */}
-                                    {doneReviews.length > 0 && (
-                                        <div>
-                                            <h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4>
-                                            <div className="space-y-2">
-                                                {doneReviews.map((item, idx) => {
-                                                     const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[1];
-                                                     return (
-                                                        <div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75">
-                                                            <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
-                                                            <div className="flex-1">
-                                                                <h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span>
-                                                                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                     )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {pendingReviews.length > 0 && (<div><h4 className="text-xs font-bold text-red-500 uppercase mb-2 flex items-center gap-1"><AlertCircle size={12}/> Pendentes ({pendingReviews.length})</h4><div className="space-y-2">{pendingReviews.map((item, idx) => { const areaInfo = AREAS.find(a => a.id === item.area) || AREAS[0]; return (<div key={idx} className="p-3 rounded-xl border bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 flex flex-col gap-2"><div className="flex justify-between items-start"><h4 className="font-bold text-sm leading-tight text-slate-800 dark:text-white">{item.topicTitle}</h4><span className="text-xs bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded font-bold">{item.label.split(':')[0]}</span></div><div className="flex items-center justify-between mt-1"><span className={`text-[10px] px-1.5 py-0.5 rounded border ${areaInfo.color} bg-transparent`}>{areaInfo.name}</span>{item.targetQ && <span className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1"><Target size={12}/> {item.targetQ}q</span>}</div><button onClick={() => { onClose(); onOpenReview(item.topicId, item.reviewIdx); }} className="w-full mt-1 bg-slate-900 dark:bg-blue-600 text-white py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition">Revisar Agora</button></div>) })}</div></div>)}
+                                    {doneReviews.length > 0 && (<div><h4 className="text-xs font-bold text-emerald-500 uppercase mb-2 mt-2 flex items-center gap-1"><CheckCircle2 size={12}/> Concluídos ({doneReviews.length})</h4><div className="space-y-2">{doneReviews.map((item, idx) => { return (<div key={idx} className="p-3 rounded-xl border bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800/30 flex gap-3 opacity-75"><div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div><div className="flex-1"><h4 className="font-bold text-sm leading-tight text-slate-600 dark:text-slate-300">{item.topicTitle}</h4><div className="flex items-center gap-2 mt-1"><span className="text-[10px] text-slate-400 uppercase font-bold">{item.label.split(':')[0]}</span><span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.correct}/{item.total} ({Math.round((item.correct/item.total)*100)}%)</span></div></div></div>) })}</div></div>)}
                                 </>
                             )}
                         </div>
@@ -424,36 +409,12 @@
             const [desc, setDesc] = useState('');
             const [val, setVal] = useState('');
             const [date, setDate] = useState(getTodayStr());
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!desc || !val) return;
-                onAddLog({ id: Date.now(), date, type, desc, val, updatedAt: Date.now(), deleted: false });
-                setDesc(''); setVal('');
-            };
-
-            const groupedLogs = useMemo(() => {
-                const groups = {};
-                logs.filter(l => !l.deleted).forEach(l => {
-                    if (!groups[l.date]) groups[l.date] = [];
-                    groups[l.date].push(l);
-                });
-                return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
-            }, [logs]);
-
+            const handleSubmit = (e) => { e.preventDefault(); if (!desc || !val) return; onAddLog({ id: generateId(), date, type, desc, val, updatedAt: Date.now(), deleted: false }); setDesc(''); setVal(''); };
+            const groupedLogs = useMemo(() => { const groups = {}; logs.filter(l => !l.deleted).forEach(l => { if (!groups[l.date]) groups[l.date] = []; groups[l.date].push(l); }); return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0])); }, [logs]);
             return (
                 <div className="space-y-6">
-                    <section className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                        <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Notebook size={14}/> Novo Registro Diário</h2>
-                        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                            <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm dark:text-white h-11" value={date} onChange={e => setDate(e.target.value)} /></div>
-                            <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Atividade</label><div className="relative"><select className="w-full p-2.5 pl-9 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm dark:text-white h-11 appearance-none" value={type} onChange={e => setType(e.target.value)}>{LOG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select><div className="absolute left-3 top-3 pointer-events-none text-slate-400">{(() => { const T = LOG_TYPES.find(t => t.id === type); const I = T ? T.icon : Target; return <I size={16}/> })()}</div></div></div>
-                            <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><input type="text" placeholder="Ex: Aula de ECG / 20 Questões SUS" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm dark:text-white h-11" value={desc} onChange={e => setDesc(e.target.value)} /></div>
-                            <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Valor/Qtd</label><input type="text" placeholder="Ex: 50 / 30min" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm dark:text-white h-11" value={val} onChange={e => setVal(e.target.value)} /></div>
-                            <div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center"><Plus size={20}/></button></div>
-                        </form>
-                    </section>
-                    <div className="space-y-6">{groupedLogs.length === 0 ? (<div className="text-center py-12 text-slate-400 dark:text-slate-600"><Notebook className="mx-auto mb-2 opacity-50" size={32}/><p>Nenhum registro ainda.</p></div>) : (groupedLogs.map(([dateStr, dayLogs]) => (<div key={dateStr}><h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider sticky top-20 bg-slate-50/90 dark:bg-slate-950/90 py-2 backdrop-blur-sm z-10">{formatFullDate(dateStr)}</h3><div className="space-y-2">{dayLogs.map(log => { const logType = LOG_TYPES.find(t => t.id === log.type) || LOG_TYPES[4]; const Icon = logType.icon; return (<div key={log.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3 shadow-sm group"><div className={`p-2 rounded-lg bg-slate-100 dark:bg-slate-900 ${logType.color} dark:opacity-90`}><Icon size={18}/></div><div className="flex-1"><div className="font-bold text-slate-800 dark:text-white text-sm">{log.desc}</div><div className="text-xs text-slate-500 dark:text-slate-400">{logType.label}</div></div><div className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-xs">{log.val}</div><button onClick={() => onDeleteLog(log.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition"><Trash2 size={14}/></button></div>) })}</div></div>)))}</div>
+                    <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800"><h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Notebook size={14}/> Novo Registro Diário</h2><form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"><div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={date} onChange={e => setDate(e.target.value)} /></div><div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Atividade</label><div className="relative"><select className="w-full p-2.5 pl-9 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11 appearance-none" value={type} onChange={e => setType(e.target.value)}>{LOG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select><div className="absolute left-3 top-3 pointer-events-none text-slate-400">{(() => { const T = LOG_TYPES.find(t => t.id === type); const I = T ? T.icon : Target; return <I size={16}/> })()}</div></div></div><div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><input type="text" placeholder="Ex: Aula de ECG" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={desc} onChange={e => setDesc(e.target.value)} /></div><div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Valor/Qtd</label><input type="text" placeholder="Ex: 50 / 30min" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm dark:text-white h-11" value={val} onChange={e => setVal(e.target.value)} /></div><div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center"><Plus size={20}/></button></div></form></section>
+                    <div className="space-y-6">{groupedLogs.length === 0 ? (<div className="text-center py-12 text-slate-400 dark:text-slate-600"><Notebook className="mx-auto mb-2 opacity-50" size={32}/><p>Nenhum registro ainda.</p></div>) : (groupedLogs.map(([dateStr, dayLogs]) => (<div key={dateStr}><h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider sticky top-20 bg-slate-50/90 dark:bg-zinc-950/90 py-2 backdrop-blur-sm z-10">{formatFullDate(dateStr)}</h3><div className="space-y-2">{dayLogs.map(log => { const logType = LOG_TYPES.find(t => t.id === log.type) || LOG_TYPES[4]; const Icon = logType.icon; return (<div key={log.id} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 flex items-center gap-3 shadow-sm group"><div className={`p-2 rounded-lg bg-slate-100 dark:bg-zinc-950 ${logType.color} dark:opacity-90`}><Icon size={18}/></div><div className="flex-1"><div className="font-bold text-slate-800 dark:text-white text-sm">{log.desc}</div><div className="text-xs text-slate-500 dark:text-slate-400">{logType.label}</div></div><div className="font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-zinc-950 px-2 py-1 rounded text-xs">{log.val}</div><button onClick={() => onDeleteLog(log.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-red-500 transition"><Trash2 size={14}/></button></div>) })}</div></div>)))}</div>
                 </div>
             );
         };
@@ -462,28 +423,23 @@
             const [expanded, setExpanded] = useState(false);
             const [isDeleting, setIsDeleting] = useState(false);
             const impInfo = IMPORTANCE_LEVELS.find(i => i.id === topic.importance) || IMPORTANCE_LEVELS[1];
-            const areaInfo = AREAS.find(a => a.id === topic.area) || AREAS[1]; 
+            const areaInfo = AREAS.find(a => a.id === topic.area) || AREAS[0]; 
             const completedReviews = topic.reviews.filter(r => r.done).length;
             const progressPercent = (completedReviews / 4) * 100;
             return (
-                <div className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all overflow-hidden">
                     <div className="p-5 cursor-pointer flex items-center justify-between" onClick={() => setExpanded(!expanded)}>
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${areaInfo.color}`}>{areaInfo.name}</span>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${impInfo.color}`}>{impInfo.label} Prioridade</span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border bg-transparent border-current opacity-80 ${impInfo.color}`}>{impInfo.label}</span>
+                                {topic.subarea && <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-950 flex items-center gap-1"><Tag size={10}/> {topic.subarea}</span>}
                             </div>
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">{topic.title}</h3>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="hidden sm:flex flex-col items-end gap-1">
-                                <span className="text-xs font-bold text-slate-400">{completedReviews}/4</span>
-                                <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${progressPercent}%`}}></div></div>
-                            </div>
-                            {expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}
-                        </div>
+                        <div className="flex items-center gap-4"><div className="hidden sm:flex flex-col items-end gap-1"><span className="text-xs font-bold text-slate-400">{completedReviews}/4</span><div className="w-16 h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{width: `${progressPercent}%`}}></div></div></div>{expanded ? <ChevronUp className="text-slate-400"/> : <ChevronDown className="text-slate-400"/>}</div>
                     </div>
-                    {expanded && (<div className="px-5 pb-5 pt-0 border-t border-slate-50 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30"><div className="mt-4 space-y-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const isLocked = !rev.done && !isNext; const performance = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const dateStr = formatDate(rev.date); return (<div key={idx} className={`relative flex items-center gap-4 p-3 rounded-xl border ${isNext ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-700 shadow-sm ring-1 ring-blue-500/20' : 'border-transparent'} ${isLocked ? 'opacity-50 grayscale' : ''}`}><div className={`w-1 h-10 rounded-full ${isDone ? (performance >= 90 ? 'bg-emerald-500' : 'bg-yellow-500') : (isNext ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700')}`}></div><div className="w-16 text-center"><div className="text-xs font-black text-slate-400 uppercase">{rev.label.split(':')[0]}</div><div className="font-bold text-slate-700 dark:text-slate-300">{dateStr}</div></div><div className="flex-1">{isDone ? (<div><div className="flex items-center gap-2"><span className={`font-bold text-lg ${performance >= 90 ? 'text-emerald-600 dark:text-emerald-400' : 'text-yellow-600 dark:text-yellow-400'}`}>{performance}%</span><span className="text-xs text-slate-400">({rev.correct}/{rev.total})</span></div>{rev.targetQ && <div className="text-[10px] text-slate-400">Meta: {rev.targetQ}</div>}</div>) : (<div><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{rev.label.split(':')[1]}</div>{rev.targetQ && (<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs font-medium mt-0.5"><Target size={12}/> <span>Meta: <span className="font-bold">{rev.targetQ}</span></span></div>)}</div>)}</div><div>{isDone ? (<div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><CheckCircle2 size={16}/></div>) : isNext ? (<button onClick={() => onOpenReview(topic.id, idx)} className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition">Revisar</button>) : (<div className="w-8 h-8 flex items-center justify-center"><Clock size={16} className="text-slate-300 dark:text-slate-600"/></div>)}</div></div>); })}</div><div className="mt-4 flex justify-end">{isDeleting ? (<div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-800 animate-in fade-in zoom-in-95 duration-200"><span className="text-xs font-bold text-red-800 dark:text-red-300">Tem certeza?</span><button onClick={() => onDelete(topic.id)} className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 border-b border-red-200 hover:border-red-600 transition-colors">Sim</button><button onClick={() => setIsDeleting(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancelar</button></div>) : (<button onClick={(e) => { e.stopPropagation(); setIsDeleting(true); }} className="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={12}/> Excluir Tema</button>)}</div></div>)}</div>
+                    {expanded && (<div className="px-5 pb-5 pt-0 border-t border-slate-50 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/30"><div className="mt-4 space-y-3">{topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const isLocked = !rev.done && !isNext; const performance = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; const dateStr = formatDate(rev.date); return (<div key={idx} className={`relative flex items-center gap-4 p-3 rounded-xl border ${isNext ? 'bg-white dark:bg-zinc-900 border-blue-200 dark:border-blue-900 shadow-sm ring-1 ring-blue-500/20' : 'border-transparent'} ${isLocked ? 'opacity-50 grayscale' : ''}`}><div className={`w-1 h-10 rounded-full ${isDone ? (performance >= 90 ? 'bg-emerald-500' : 'bg-yellow-500') : (isNext ? 'bg-blue-500' : 'bg-slate-200 dark:bg-zinc-700')}`}></div><div className="w-16 text-center"><div className="text-xs font-black text-slate-400 uppercase">{rev.label.split(':')[0]}</div><div className="font-bold text-slate-700 dark:text-slate-300">{dateStr}</div></div><div className="flex-1">{isDone ? (<div><div className="flex items-center gap-2"><span className={`font-bold text-lg ${performance >= 90 ? 'text-emerald-600 dark:text-emerald-400' : 'text-yellow-600 dark:text-yellow-400'}`}>{performance}%</span><span className="text-xs text-slate-400">({rev.correct}/{rev.total})</span></div>{rev.targetQ && <div className="text-[10px] text-slate-400">Meta: {rev.targetQ}</div>}</div>) : (<div><div className="text-sm font-medium text-slate-700 dark:text-slate-300">{rev.label.split(':')[1]}</div>{rev.targetQ && (<div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 text-xs font-medium mt-0.5"><Target size={12}/> <span>Meta: <span className="font-bold">{rev.targetQ}</span></span></div>)}</div>)}</div><div>{isDone ? (<div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><CheckCircle2 size={16}/></div>) : isNext ? (<button onClick={() => onOpenReview(topic.id, idx)} className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition">Revisar</button>) : (<div className="w-8 h-8 flex items-center justify-center"><Clock size={16} className="text-slate-300 dark:text-slate-600"/></div>)}</div></div>); })}</div><div className="mt-4 flex justify-end">{isDeleting ? (<div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-100 dark:border-red-800 animate-in fade-in zoom-in-95 duration-200"><span className="text-xs font-bold text-red-800 dark:text-red-300">Tem certeza?</span><button onClick={() => onDelete(topic.id)} className="text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 border-b border-red-200 hover:border-red-600 transition-colors">Sim</button><button onClick={() => setIsDeleting(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancelar</button></div>) : (<button onClick={(e) => { e.stopPropagation(); setIsDeleting(true); }} className="text-xs text-red-400 hover:text-red-600 font-medium flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={12}/> Excluir Tema</button>)}</div></div>)}</div>
             );
         };
 
@@ -499,10 +455,10 @@
             for (let i = 1; i <= daysInMonth; i++) days.push(i);
             const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(topic => { if(topic.deleted) return; topic.reviews.forEach((review, idx) => { if (review.date === dateStr) { list.push({ topicTitle: topic.title, area: topic.area, topicId: topic.id, reviewIdx: idx, ...review }); } }); }); return list; };
             return (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 capitalize">{today.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
                     <div className="grid grid-cols-7 gap-1 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
-                    <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
+                    <div className="grid grid-cols-7 gap-1">{days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviewsForDay = getReviewsForDate(dateStr); const isToday = dateStr === getTodayStr(); const pendingCount = reviewsForDay.filter(r => !r.done).length; const doneCount = reviewsForDay.filter(r => r.done).length; const hasActivity = reviewsForDay.length > 0; return (<div key={idx} onClick={() => setSelectedDate(dateStr)} className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-900' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-600'}`}><span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>{day}</span>{hasActivity && (<div className="mt-1 flex gap-0.5 justify-center flex-wrap max-w-[80%]">{[...Array(Math.min(3, pendingCount))].map((_, i) => <div key={`p-${i}`} className="w-1.5 h-1.5 rounded-full bg-red-500"></div>)}{[...Array(Math.min(3, doneCount))].map((_, i) => <div key={`d-${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>)}</div>)}</div>); })}</div>
                     <div className="flex justify-center gap-4 mt-4 text-[10px] text-slate-400"><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> A Fazer</div><div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Concluído</div></div>
                     <CalendarDayModal date={selectedDate} reviews={getReviewsForDate(selectedDate)} onClose={() => setSelectedDate(null)} onOpenReview={onOpenReview} />
                 </div>
@@ -510,14 +466,15 @@
         };
 
         function App() {
-            const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('resiflow_v3_data') || '[]'));
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('resiflow_logs') || '[]'));
+            const [topics, setTopics] = useState(() => safeJSONParse('resiflow_v3_data', []));
+            const [logs, setLogs] = useState(() => safeJSONParse('resiflow_logs', []));
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('resiflow_theme') === 'dark');
             const [viewMode, setViewMode] = useState('list'); 
             const [filterArea, setFilterArea] = useState('all');
             const [filterTime, setFilterTime] = useState('all'); 
             const [title, setTitle] = useState('');
             const [area, setArea] = useState('clinica');
+            const [subarea, setSubarea] = useState('');
             const [importance, setImportance] = useState('medium');
             const [date, setDate] = useState(getTodayStr());
             const [modalOpen, setModalOpen] = useState(false);
@@ -528,12 +485,7 @@
             const { status, config, setConfig, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
             const todayStr = getTodayStr();
 
-            useEffect(() => {
-                const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
-                window.addEventListener('beforeinstallprompt', handler);
-                return () => window.removeEventListener('beforeinstallprompt', handler);
-            }, []);
-
+            useEffect(() => { const h = (e) => { e.preventDefault(); setInstallPrompt(e); }; window.addEventListener('beforeinstallprompt', h); return () => window.removeEventListener('beforeinstallprompt', h); }, []);
             const handleInstall = () => { if (installPrompt) { installPrompt.prompt(); installPrompt.userChoice.then((c) => { if(c.outcome === 'accepted') setInstallPrompt(null); }); } };
 
             useEffect(() => {
@@ -548,9 +500,9 @@
                 e.preventDefault();
                 if (!title) return;
                 const schedule = generateSchedule(date, importance);
-                const newTopic = { id: Date.now(), title, area, importance, studyDate: date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
+                const newTopic = { id: generateId(), title, area, subarea, importance, studyDate: date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
                 setTopics(prev => [newTopic, ...prev]);
-                setTitle('');
+                setTitle(''); setSubarea('');
             };
 
             const handleAddLog = (log) => { setLogs(prev => [log, ...prev]); };
@@ -568,18 +520,24 @@
                 return list;
             }, [topics, filterArea, filterTime, todayStr]);
 
+            // Atualiza subareas quando area muda
+            const currentSubareas = useMemo(() => {
+                const selectedArea = AREAS.find(a => a.id === area);
+                return selectedArea ? selectedArea.subareas : [];
+            }, [area]);
+
             return (
                 <div className="min-h-screen pb-12 transition-colors duration-300">
-                    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-4 px-4 sticky top-0 z-40 transition-colors shadow-sm dark:shadow-none">
+                    <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 py-4 px-4 sticky top-0 z-40 transition-colors shadow-sm dark:shadow-none">
                         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div><h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 font-normal">v4.0</span></h1></div>
+                            <div><h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800 dark:text-white"><Activity className="text-emerald-500" /> ResiFlow <span className="text-xs bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 font-normal">v5.0</span></h1></div>
                             <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                                 {installPrompt && (<button onClick={handleInstall} className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 border flex items-center gap-2 font-bold text-xs"><Download size={16}/> App</button>)}
                                 <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 border flex items-center gap-2 font-bold text-xs"><Timer size={16}/></button>
                                 <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg transition border flex items-center gap-2 ${status === 'online' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent'}`}>{status === 'online' ? <Cloud size={18}/> : <CloudOff size={18}/>}</button>
-                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
-                                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg"><button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button><button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button><button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button></div>
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">{darkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
+                                <div className="h-6 w-px bg-slate-200 dark:bg-zinc-700 mx-1"></div>
+                                <div className="flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg"><button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><List size={14}/> <span className="hidden sm:inline">Lista</span></button><button onClick={() => setViewMode('calendar')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><CalendarIcon size={14}/> <span className="hidden sm:inline">Cal.</span></button><button onClick={() => setViewMode('diary')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 transition ${viewMode === 'diary' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Notebook size={14}/> <span className="hidden sm:inline">Diário</span></button></div>
                             </div>
                         </div>
                     </header>
@@ -587,17 +545,21 @@
                     <main className="max-w-4xl mx-auto px-4 mt-6 space-y-6">
                         {viewMode === 'diary' ? ( <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} /> ) : (
                             <>
-                                <section className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+                                <section className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 transition-colors">
                                     <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><Plus size={14}/> Novo Conteúdo Teórico</h2>
                                     <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                        <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-11" value={title} onChange={e => setTitle(e.target.value)} /></div>
-                                        <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Área</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={area} onChange={e => setArea(e.target.value)}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Prioridade</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
-                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Aula</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-11" value={date} onChange={e => setDate(e.target.value)} /></div>
+                                        <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Assunto</label><input type="text" placeholder="Ex: Síndrome Nefrótica" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-11" value={title} onChange={e => setTitle(e.target.value)} /></div>
+                                        <div className="md:col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Área</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                                        
+                                        {/* Novo Campo Subárea */}
+                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Subárea</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Selecione...</option>{currentSubareas.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+
+                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Prioridade</label><select className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-11" value={importance} onChange={e => setImportance(e.target.value)}>{IMPORTANCE_LEVELS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></div>
+                                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Aula</label><input type="date" className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-11" value={date} onChange={e => setDate(e.target.value)} /></div>
                                         <div className="md:col-span-1"><button type="submit" className="h-11 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center">Add</button></div>
                                     </form>
                                 </section>
-                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
+                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-zinc-800 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
                                 <section className="space-y-4">{viewMode === 'calendar' ? ( <CalendarView topics={topics} onOpenReview={openReview} /> ) : ( <> {sortedTopics.length === 0 ? ( <div className="text-center py-12 text-slate-400 dark:text-slate-600"><BookOpen className="mx-auto mb-2 opacity-50" size={32} /><p>Nenhum tema encontrado com estes filtros.</p></div> ) : ( sortedTopics.map(topic => ( <TopicCard key={topic.id} topic={topic} onOpenReview={openReview} onDelete={deleteTopic} /> )) )} </> )}</section>
                             </>
                         )}
