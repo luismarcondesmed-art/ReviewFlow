@@ -126,6 +126,9 @@
         const BarChart3 = (p) => <LucideIcon name="BarChart3" {...p} />;
         const ChevronRight = (p) => <LucideIcon name="ChevronRight" {...p} />;
         const Info = (p) => <LucideIcon name="Info" {...p} />;
+        const LinkIcon = (p) => <LucideIcon name="Link" {...p} />;
+        const Upload = (p) => <LucideIcon name="Upload" {...p} />;
+        const FileJson = (p) => <LucideIcon name="FileJson" {...p} />;
 
         // --- CONFIG ---
         const USER_FIREBASE_CONFIG = {
@@ -185,6 +188,7 @@
 
             let base = previousTotal || 20;
 
+            // REGRA R1 Fixa: 30/50/70
             if (nextStageType === 'R1') {
                 if (difficultyId === 'easy') base = 30;
                 else if (difficultyId === 'medium') base = 50;
@@ -203,10 +207,8 @@
         const generateSchedule = (studyDate, importanceId) => {
             const d0 = new Date(studyDate + 'T12:00:00');
             const addDays = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; };
-            
             const impWeight = IMPORTANCE_LEVELS.find(i => i.id === importanceId)?.weight || 1.0;
             const qR0 = Math.ceil(15 * impWeight);
-
             return [
                 { type: 'R0', date: studyDate, label: 'R0: Fixação', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: qR0 },
                 { type: 'R1', date: addDays(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, favorites: 0, difficulty: null, targetQ: 0 }, 
@@ -282,6 +284,59 @@
         };
 
         // --- COMPONENTS ---
+
+        const SettingsModal = ({ isOpen, onClose, topics, logs, setTopics, setLogs }) => {
+            if (!isOpen) return null;
+
+            const handleExport = () => {
+                const dataStr = JSON.stringify({ topics, logs }, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `resiflow_backup_${getTodayStr()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
+            const handleImport = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (data.topics) setTopics(prev => mergeItems(prev, data.topics));
+                        if (data.logs) setLogs(prev => mergeItems(prev, data.logs));
+                        alert('Backup importado com sucesso!');
+                        onClose();
+                    } catch (err) {
+                        alert('Erro ao importar arquivo.');
+                    }
+                };
+                reader.readAsText(file);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-zinc-800">
+                        <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2"><Settings size={20} className="text-slate-500"/> Configurações</h3><button onClick={onClose}><X className="text-slate-400"/></button></div>
+                        <div className="space-y-4">
+                            <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700">
+                                <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><FileJson size={16}/> Backup de Dados</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Exporte seus dados para segurança ou importe em outro dispositivo.</p>
+                                <div className="flex gap-2">
+                                    <button onClick={handleExport} className="flex-1 bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-slate-700 dark:text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><Download size={14}/> Exportar</button>
+                                    <label className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"><Upload size={14}/> Importar <input type="file" accept=".json" className="hidden" onChange={handleImport}/></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const PomodoroTimer = ({ isOpen, onClose }) => {
             if (!isOpen) return null;
             const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -315,7 +370,11 @@
             const [tempKey, setTempKey] = useState(syncKey);
             useEffect(() => setTempKey(syncKey), [syncKey]);
             if (!isOpen) return null;
-            const handleSave = () => { localStorage.setItem('resiflow_sync_key', tempKey); setSyncKey(tempKey); onClose(); };
+            const handleSave = () => { 
+                localStorage.setItem('resiflow_sync_key', tempKey); 
+                setSyncKey(tempKey); // Hook now clears data if key changes
+                onClose(); 
+            };
             return (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-zinc-800">
@@ -542,6 +601,7 @@
                                 {/* Exibe a Prioridade no Card */}
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border bg-transparent border-current opacity-80 ${impInfo.color}`}>{impInfo.label}</span>
                                 {topic.subarea && <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-950 flex items-center gap-1"><Tag size={10}/> {topic.subarea}</span>}
+                                {topic.materialLink && <a href={topic.materialLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 flex items-center gap-1 hover:opacity-80"><LinkIcon size={10}/> Material</a>}
                             </div>
                             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight">{topic.title}</h3>
                         </div>
@@ -564,8 +624,10 @@
             const [subarea, setSubarea] = useState('');
             const [importance, setImportance] = useState('medium');
             const [date, setDate] = useState(getTodayStr());
+            const [link, setLink] = useState('');
             const [modalOpen, setModalOpen] = useState(false);
             const [cloudModalOpen, setCloudModalOpen] = useState(false);
+            const [settingsOpen, setSettingsOpen] = useState(false);
             const [pomodoroOpen, setPomodoroOpen] = useState(false);
             const [selectedTask, setSelectedTask] = useState(null);
             const [installPrompt, setInstallPrompt] = useState(null);
@@ -587,9 +649,9 @@
                 e.preventDefault();
                 if (!title) return;
                 const schedule = generateSchedule(date, importance);
-                const newTopic = { id: generateId(), title, area, subarea, importance, studyDate: date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
+                const newTopic = { id: generateId(), title, area, subarea, importance, materialLink: link, studyDate: date, reviews: schedule, archived: false, deleted: false, updatedAt: Date.now() };
                 setTopics(prev => [newTopic, ...prev]);
-                setTitle(''); setSubarea('');
+                setTitle(''); setSubarea(''); setLink('');
             };
 
             const handleAddLog = (log) => { setLogs(prev => [log, ...prev]); };
@@ -598,6 +660,10 @@
             const openReview = (topicId, reviewIdx) => { const topic = topics.find(t => t.id === topicId); const review = topic.reviews[reviewIdx]; setSelectedTask({ topicId, topicTitle: topic.title, label: review.label, targetQ: review.targetQ, reviewIdx }); setModalOpen(true); };
             const completeReview = (data) => { setTopics(prev => prev.map(topic => { if (topic.id !== selectedTask.topicId) return topic; const newReviews = [...topic.reviews]; const currentIdx = selectedTask.reviewIdx; newReviews[currentIdx] = { ...newReviews[currentIdx], done: true, correct: data.correct, total: data.total, favorites: data.favorites, difficulty: data.difficulty }; if (currentIdx + 1 < newReviews.length) { const accuracy = data.total > 0 ? (data.correct / data.total) : 0; const nextReviewType = newReviews[currentIdx + 1].type; const nextLoad = calculateNextLoad(accuracy, topic.importance, data.difficulty, nextReviewType); newReviews[currentIdx + 1].targetQ = nextLoad; } return { ...topic, reviews: newReviews, updatedAt: Date.now() }; })); };
             const deleteTopic = (id) => setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: Date.now() } : t));
+
+            const toggleFilterArea = (id) => {
+                setFilterArea(prev => prev === id ? 'all' : id);
+            };
 
             const sortedTopics = useMemo(() => {
                 let list = [...topics].filter(t => !t.deleted);
@@ -619,7 +685,7 @@
                                 <div className="flex items-center gap-3 md:hidden">
                                     <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"><Timer size={18}/></button>
                                     <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg border ${status === 'online' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-transparent'}`}><Cloud size={18}/></button>
-                                    <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400"><Moon size={18}/></button>
+                                    <button onClick={() => setSettingsOpen(true)} className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400"><Settings size={18}/></button>
                                 </div>
                                 
                                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
@@ -644,6 +710,7 @@
                              <div className="hidden md:flex items-center gap-2">
                                 <button onClick={() => setPomodoroOpen(true)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Timer size={20}/></button>
                                 <button onClick={() => setCloudModalOpen(true)} className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Cloud size={20}/></button>
+                                <button onClick={() => setSettingsOpen(true)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Settings size={20}/></button>
                                 <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition"><Moon size={20}/></button>
                             </div>
                         </div>
@@ -683,7 +750,13 @@
                                                 <input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:[color-scheme:dark] appearance-none h-12" value={date} onChange={e => setDate(e.target.value)} />
                                             </div>
 
-                                            {/* Row 2: Selects & Button - Equal Columns */}
+                                            {/* Row 2: Link Material (NEW) */}
+                                            <div className="md:col-span-12">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Link do Material (Opcional)</label>
+                                                <input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400 h-12" value={link} onChange={e => setLink(e.target.value)} />
+                                            </div>
+
+                                            {/* Row 3: Selects & Button - Equal Columns */}
                                             <div className="md:col-span-3">
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">Área</label>
                                                 <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white h-12" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.filter(a => a.id !== 'all').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
@@ -702,13 +775,14 @@
                                         </div>
                                     </form>
                                 </section>
-                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-zinc-800 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => setFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
+                                {viewMode === 'list' && (<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"><button onClick={() => setFilterTime(filterTime === 'all' ? 'today' : 'all')} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterTime === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-blue-300'}`}>{filterTime === 'today' ? '📅 Apenas Hoje' : '📅 Mostrar Tudo'}</button><div className="w-px bg-slate-200 dark:bg-zinc-800 mx-1"></div>{AREAS.map(a => <button key={a.id} onClick={() => toggleFilterArea(a.id)} className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold border transition ${filterArea === a.id ? `${a.color} shadow-sm` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 opacity-70 hover:opacity-100'}`}>{a.name}</button>)}</div>)}
                                 <section className="space-y-4">{viewMode === 'calendar' ? ( <CalendarView topics={topics} onOpenReview={openReview} /> ) : ( <> {sortedTopics.length === 0 ? ( <div className="text-center py-12 text-slate-400 dark:text-slate-600"><BookOpen className="mx-auto mb-2 opacity-50" size={32} /><p>Nenhum tema encontrado com estes filtros.</p></div> ) : ( sortedTopics.map(topic => ( <TopicCard key={topic.id} topic={topic} onOpenReview={openReview} onDelete={deleteTopic} /> )) )} </> )}</section>
                             </>
                         )}
                     </main>
                     <ModalReview isOpen={modalOpen} onClose={() => setModalOpen(false)} task={selectedTask} onSave={completeReview} />
                     <CloudConfigModal isOpen={cloudModalOpen} onClose={() => setCloudModalOpen(false)} config={config} setConfig={setConfig} syncKey={syncKey} setSyncKey={setSyncKey} />
+                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} setTopics={setTopics} setLogs={setLogs} />
                     <PomodoroTimer isOpen={pomodoroOpen} onClose={() => setPomodoroOpen(false)} />
                 </div>
             );
