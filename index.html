@@ -5,21 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ResiFlow</title>
     
-    <!-- PWA Setup Fundamental -->
+    <!-- PWA Setup -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="ResiFlow">
-    
-    <!-- Correção Barra de Status iOS: Define a cor baseada no tema do sistema ANTES do JS rodar -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Link para o Manifesto Externo -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Ícones -->
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg"> <!-- O iOS aceita SVG em versões recentes, mas prefere PNG -->
+    
+    <!-- Cores de Tema para Mobile (Crucial para a barra de status) -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
     
-    <!-- React & ReactDOM -->
+    <!-- Bibliotecas Externas -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -42,63 +47,24 @@
             }
         }
     </script>
-    
-    <!-- Icons Data -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         window.firebaseModules = { initializeApp, getFirestore, doc, onSnapshot, setDoc, collection };
     </script>
 
-    <!-- PWA Generation Script (Icons & Manifest) -->
+    <!-- Registro do Service Worker Externo -->
     <script>
-        (function() {
-            // 1. Gerar Ícone SVG (Gradiente Azul/Roxo com Pulso)
-            const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect width="512" height="512" rx="128" fill="url(#g)"/><path d="M96 256h64l48-96 64 192 64-192 48 96h32" stroke="white" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
-            const iconUrl = "data:image/svg+xml;base64," + btoa(iconSvg);
-
-            // 2. Injetar Links de Ícone
-            const linkFavicon = document.createElement('link');
-            linkFavicon.rel = 'icon';
-            linkFavicon.href = iconUrl;
-            document.head.appendChild(linkFavicon);
-
-            const linkApple = document.createElement('link');
-            linkApple.rel = 'apple-touch-icon';
-            linkApple.href = iconUrl;
-            document.head.appendChild(linkApple);
-
-            // 3. Gerar Manifest.json Dinâmico
-            const manifest = {
-                name: "ResiFlow",
-                short_name: "ResiFlow",
-                start_url: ".",
-                display: "standalone",
-                background_color: "#09090b",
-                theme_color: "#09090b",
-                icons: [
-                    { src: iconUrl, sizes: "512x512", type: "image/svg+xml" },
-                    { src: iconUrl, sizes: "192x192", type: "image/svg+xml" }
-                ]
-            };
-            const manifestUrl = "data:application/json;base64," + btoa(JSON.stringify(manifest));
-            const linkManifest = document.createElement('link');
-            linkManifest.rel = 'manifest';
-            linkManifest.href = manifestUrl;
-            document.head.appendChild(linkManifest);
-
-            // 4. Registrar Service Worker (Necessário para PWA Install Banner no Chrome)
-            if ('serviceWorker' in navigator) {
-                // Service Worker vazio apenas para cumprir o requisito de PWA
-                const swContent = `self.addEventListener('fetch', () => {});`;
-                const swBlob = new Blob([swContent], {type: 'text/javascript'});
-                const swUrl = URL.createObjectURL(swBlob);
-                navigator.serviceWorker.register(swUrl).catch(() => {});
-            }
-        })();
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado:', reg.scope))
+                    .catch(err => console.log('Falha no SW:', err));
+            });
+        }
     </script>
 
     <style>
