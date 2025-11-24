@@ -157,9 +157,9 @@
         ];
 
         const DIFFICULTY_LEVELS = [
-            { id: 'easy', label: 'Fácil', weight: 0.9, icon: ThumbsUp },
+            { id: 'easy', label: 'Fácil', weight: 0.85, icon: ThumbsUp },
             { id: 'medium', label: 'Médio', weight: 1.0, icon: Minus },
-            { id: 'hard', label: 'Difícil', weight: 1.1, icon: ThumbsDown },
+            { id: 'hard', label: 'Difícil', weight: 1.15, icon: ThumbsDown },
         ];
 
         const LOG_TYPES = [
@@ -182,12 +182,12 @@
             BASE_QUESTIONS: 15, // Base mínima para cálculo (Ajustada pelos pesos de Imp)
             MIN_QUESTIONS: 15, 
             MAX_QUESTIONS: 100,
-            TARGET_ACCURACY: 0.80, // 80%
+            TARGET_ACCURACY: 0.90, // 90%
             SPACING_FACTORS: {
                 'R0': 1.0, // Usada para basear o R0
-                'R1': 2.0, // Pico (Dobro da base)
-                'R2': 1.2, // Manutenção
-                'R3': 0.8, // Longo Prazo
+                'R1': 2.5, // Pico (Dobro da base)
+                'R2': 1.25, // Manutenção
+                'R3': 1.0, // Longo Prazo
                 'DEFAULT': 1.0
             }
         };
