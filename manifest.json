@@ -1,27 +1,22 @@
 {
   "name": "ResiFlow",
   "short_name": "ResiFlow",
+  "description": "Gerencie seus estudos de residência médica",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/svg+xml"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon.svg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/svg+xml"
     }
   ]
 }
