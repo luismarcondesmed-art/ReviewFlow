@@ -8,10 +8,8 @@
     <!-- PWA & iOS Configurações Otimizadas -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="ResiFlow">
-    <!-- black-translucent: O conteúdo flui por baixo da barra de status -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Cores do tema para o navegador (Chrome/Safari) -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#09090b">
     
@@ -55,19 +53,26 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Firebase Module: Dispatches event when ready to fix race condition in Safari -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
         window.firebaseModules = { initializeApp, getFirestore, doc, onSnapshot, setDoc, collection, getAuth, signInAnonymously };
+        // Dispatch event for Safari/Async loading
+        window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado'))
-                    .catch(err => console.log('Falha SW', err));
+                // Wrap in try-catch for strict contexts
+                try {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('SW registrado'))
+                        .catch(err => console.log('Falha SW (ignorado em dev)', err));
+                } catch(e) { console.log('SW n/a'); }
             });
         }
     </script>
@@ -88,7 +93,10 @@
         html { 
             background-color: var(--bg-color);
             transition: background-color 300ms ease;
-            min-height: 100dvh;
+            height: 100%;
+            /* Fix for Safari Mobile Viewport */
+            min-height: 100vh; 
+            min-height: -webkit-fill-available;
             -webkit-text-size-adjust: 100%;
         }
 
@@ -102,17 +110,17 @@
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             -webkit-tap-highlight-color: transparent; 
-            min-height: 100dvh;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
             width: 100%;
-            overscroll-behavior-y: none;
+            overscroll-behavior-y: none; /* Prevents bounce effect */
             background-color: transparent;
             color: var(--text-color);
-            /* Melhora a renderização de fonte no Desktop */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
         
-        input, select, textarea { font-size: 16px !important; }
+        input, select, textarea { font-size: 16px !important; /* Prevents zoom on iOS */ }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -174,7 +182,33 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
-        // ... existing LucideIcon and Icons code ...
+        // --- SAFE STORAGE WRAPPER (Prevents Safari Private Mode Crash) ---
+        const safeStorage = {
+            getItem: (key) => {
+                try {
+                    return localStorage.getItem(key);
+                } catch (e) {
+                    console.warn('LocalStorage access denied (Private Mode?)', e);
+                    return null;
+                }
+            },
+            setItem: (key, value) => {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    console.warn('LocalStorage write denied (Private Mode?)', e);
+                }
+            },
+            getJSON: (key, fallback) => {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : fallback;
+                } catch (e) {
+                    return fallback;
+                }
+            }
+        };
+
         const LucideIcon = ({ name, size = 24, className = "" }) => {
             const iconData = window.lucide && window.lucide.icons ? window.lucide.icons[name] : null;
             if (!iconData) return <span style={{width: size, height: size, display: 'inline-block'}} />;
@@ -246,11 +280,22 @@
         };
 
         const formatDate = (d) => { if(!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}`; };
-        const formatFullDate = (d) => { if (!d) return ''; const dateObj = new Date(d + 'T12:00:00'); return dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'long' }); };
-        const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
-        const safeJSONParse = (key, fallback) => { try { const item = localStorage.getItem(key); return item ? JSON.parse(item) : fallback; } catch (e) { return fallback; } };
+        // Fixed Safari Date Parsing Issue
+        const formatFullDate = (d) => { 
+            if (!d) return ''; 
+            // Ensure strictly valid ISO format for Safari
+            const dateObj = new Date(`${d}T12:00:00`); 
+            return dateObj.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'long' }); 
+        };
         
-        // ... existing Constants (AREAS, SUB_AREAS, IMPORTANCE_LEVELS, LOG_TYPES, SYSTEM_PARAMS) ...
+        // Fixed Crypto UUID for older Safari
+        const generateId = () => {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                try { return crypto.randomUUID(); } catch(e) {}
+            }
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        };
+
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
             authDomain: "med-heklp.firebaseapp.com",
@@ -293,7 +338,6 @@
 
         const SYSTEM_PARAMS = { BASE_QUESTIONS: 20, MIN_QUESTIONS: 15, MAX_QUESTIONS: 100, TARGET_ACCURACY: 0.90, SPACING_FACTORS: { 'R0': 1.0, 'R1': 2.5, 'R2': 1.25, 'R3': 1.0, 'DEFAULT': 1.0 }, PERF_CAP: 2.2 };
 
-        // ... existing utility functions (calculateNextLoad, generateSchedule, mergeItems) ...
         const calculateNextLoad = (importanceId, diffId, stage, acc) => {
             const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
             const base = impObj.baseQ;
@@ -336,13 +380,22 @@
 
         const useSync = (topics, logs, setTopics, setLogs) => {
             const [status, setStatus] = useState('offline');
-            const [config, setConfig] = useState(() => safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG));
-            const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
+            const [config, setConfig] = useState(() => safeStorage.getJSON('resiflow_fb_config', USER_FIREBASE_CONFIG));
+            const [syncKey, _setSyncKey] = useState(() => safeStorage.getItem('resiflow_sync_key') || '');
+            const [firebaseReady, setFirebaseReady] = useState(!!window.firebaseModules);
+            
+            // Safari Fix: Listen for module loading event
+            useEffect(() => {
+                if (window.firebaseModules) setFirebaseReady(true);
+                const onReady = () => setFirebaseReady(true);
+                window.addEventListener('firebase-ready', onReady);
+                return () => window.removeEventListener('firebase-ready', onReady);
+            }, []);
             
             const setSyncKey = (newKey) => {
                 if (newKey !== syncKey) { setTopics([]); setLogs([]); }
                 _setSyncKey(newKey);
-                localStorage.setItem('resiflow_sync_key', newKey);
+                safeStorage.setItem('resiflow_sync_key', newKey);
             };
 
             const dbRef = useRef(null);
@@ -350,7 +403,7 @@
             useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
 
             useEffect(() => {
-                if (!config || !syncKey || !window.firebaseModules) return;
+                if (!firebaseReady || !config || !syncKey || !window.firebaseModules) return;
                 try {
                     const { initializeApp, getFirestore, doc, onSnapshot, getAuth, signInAnonymously } = window.firebaseModules;
                     let app;
@@ -380,10 +433,10 @@
                     }).catch((e) => { console.error("Auth failed", e); setStatus('error'); });
 
                 } catch (e) { console.error(e); setStatus('error'); }
-            }, [config, syncKey]);
+            }, [config, syncKey, firebaseReady]);
 
             const saveToCloud = async (newTopics, newLogs) => {
-                if (!dbRef.current || !syncKey) return;
+                if (!dbRef.current || !syncKey || !window.firebaseModules) return;
                 try {
                     const { doc, setDoc } = window.firebaseModules;
                     const docRef = doc(dbRef.current, 'artifacts', 'resiflow', 'public', 'data', 'users', syncKey);
@@ -393,9 +446,6 @@
             return { status, config, setConfig, syncKey, setSyncKey, saveToCloud };
         };
 
-        // --- COMPONENTS (ModalWrapper, SettingsModal, PomodoroTimer, DiaryView, CalendarView, AddTopicModal, TopicCard, AreaDetailView, BentoDashboard) ---
-        // Ensure all components are defined here in the correct order before App
-        
         const ModalWrapper = ({ isOpen, onClose, children, title }) => {
             if (!isOpen) return null;
             return (
@@ -872,7 +922,6 @@
             const nextReview = topic.reviews.find(r => !r.done);
             const isLate = nextReview && nextReview.date < getTodayStr();
 
-            // Mapeamento de cores para elementos internos
             const colorMap = {
                 clinica: 'blue',
                 cirurgia: 'red',
@@ -882,12 +931,13 @@
             };
             const c = colorMap[topic.area] || 'blue';
 
-            // Swipe Logic
+            // Fixed Touch Logic for Safari to prevent ghost swipes
             const touchStartX = useRef(0);
             const touchEndX = useRef(0);
 
             const handleTouchStart = (e) => {
                 touchStartX.current = e.targetTouches[0].clientX;
+                touchEndX.current = e.targetTouches[0].clientX; // Reset end to start
             };
 
             const handleTouchMove = (e) => {
@@ -1010,7 +1060,6 @@
                 const globalAcc = totalQ > 0 ? Math.round((totalC/totalQ)*100) : 0;
                 const areaStats = AREAS.map(a => { const ts = active.filter(t => t.area === a.id); const q = ts.reduce((ac, t) => ac + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.total || 0), 0), 0); const c = ts.reduce((ac, t) => ac + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.correct || 0), 0), 0); return { ...a, acc: q > 0 ? Math.round((c/q)*100) : 0, q }; }).sort((a,b) => b.acc - a.acc);
                 
-                // Last 30 Days Accuracy Data
                 const last30Days = [];
                 const today = new Date();
                 for(let i=29; i>=0; i--) {
@@ -1033,7 +1082,6 @@
                 return { active: active.length, reviewsDone, totalQ, globalAcc, areaStats, last30Days };
             }, [topics]);
 
-            // Simple Sparkline SVG
             const Sparkline = ({ data }) => {
                 const max = 100;
                 const points = data.map((val, i) => `${(i / (data.length - 1)) * 100},${100 - val}`).join(' ');
@@ -1090,8 +1138,8 @@
             useEffect(() => {
                 if (dataLoaded) return;
                 try {
-                    const t = safeJSONParse('resiflow_v3_data', []);
-                    const l = safeJSONParse('resiflow_logs', []);
+                    const t = safeStorage.getJSON('resiflow_v3_data', []);
+                    const l = safeStorage.getJSON('resiflow_logs', []);
                     setTopics(t);
                     setLogs(l);
                 } catch (e) {
@@ -1104,7 +1152,7 @@
             const [filter, setFilter] = useState('all');
             const [areaFilter, setAreaFilter] = useState('all');
             const [searchTerm, setSearchTerm] = useState('');
-            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('resiflow_theme') === 'dark');
+            const [darkMode, setDarkMode] = useState(() => safeStorage.getItem('resiflow_theme') === 'dark');
             
             const [modalAddOpen, setModalAddOpen] = useState(false);
             const [reviewModalData, setReviewModalData] = useState(null);
@@ -1115,20 +1163,19 @@
 
             const { status, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
 
-            // Correção de Bug 1: Sincronização robusta de Tema e Meta Tags
             useEffect(() => {
                 if (darkMode) {
                     document.documentElement.classList.add('dark');
-                    localStorage.setItem('resiflow_theme', 'dark');
+                    safeStorage.setItem('resiflow_theme', 'dark');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('resiflow_theme', 'light');
+                    safeStorage.setItem('resiflow_theme', 'light');
                 }
             }, [darkMode]);
 
             useEffect(() => {
-                localStorage.setItem('resiflow_v3_data', JSON.stringify(topics));
-                localStorage.setItem('resiflow_logs', JSON.stringify(logs));
+                safeStorage.setItem('resiflow_v3_data', JSON.stringify(topics));
+                safeStorage.setItem('resiflow_logs', JSON.stringify(logs));
                 if (status === 'online') { const t = setTimeout(() => saveToCloud(topics, logs), 2000); return () => clearTimeout(t); }
             }, [topics, logs, status]);
 
@@ -1160,14 +1207,11 @@
 
             const triggerDelete = (id) => { setDeleteConfirmId(id); };
 
-            // Otimização de Performance: Funções de callback estáveis para evitar re-renders desnecessários
             const handleOpenReview = useCallback((topicId, reviewIdx) => {
-                // Usa callback funcional para obter o estado mais recente de 'topics' sem recriar a função
                 setTopics(currentTopics => {
                     const topic = currentTopics.find(t => t.id === topicId);
                     if (topic) {
                         const review = topic.reviews[reviewIdx];
-                        // Side-effect: setReviewModalData (ok em event handler)
                         setReviewModalData({
                             topicId,
                             reviewIdx,
@@ -1176,9 +1220,9 @@
                             target: review.targetQ
                         });
                     }
-                    return currentTopics; // Não altera o estado, apenas lê
+                    return currentTopics; 
                 });
-            }, []); // Sem dependências, função estável
+            }, []);
 
             const handleDelete = useCallback((id) => {
                 setDeleteConfirmId(id);
@@ -1204,39 +1248,35 @@
                     const newRevs = [...t.reviews];
                     newRevs[reviewIdx] = { ...newRevs[reviewIdx], done: true, correct: data.correct, total: data.total };
                     
-                    // Schedule Next Notification Logic (Simulated via Local Storage)
                     if(reviewIdx + 1 < newRevs.length) {
                         const acc = data.total > 0 ? data.correct/data.total : 0;
                         const nextLoad = calculateNextLoad(t.importance, data.difficulty, newRevs[reviewIdx+1].type, acc);
                         newRevs[reviewIdx+1].targetQ = nextLoad;
                         
-                        // Save next review date for notification
                         const nextDate = newRevs[reviewIdx+1].date;
-                        const existingNotifs = JSON.parse(localStorage.getItem('resiflow_notifications') || '[]');
+                        const existingNotifs = safeStorage.getJSON('resiflow_notifications', []);
                         existingNotifs.push({ date: nextDate, title: t.title, type: newRevs[reviewIdx+1].label });
-                        localStorage.setItem('resiflow_notifications', JSON.stringify(existingNotifs));
+                        safeStorage.setItem('resiflow_notifications', JSON.stringify(existingNotifs));
                     }
-                    return { ...t, reviews: newRevs, updatedAt: Date.now() }; // Importante: atualizar updatedAt
+                    return { ...t, reviews: newRevs, updatedAt: Date.now() }; 
                 }));
                 setReviewModalData(null);
             };
 
-            // Check for notifications on load
             useEffect(() => {
                 if (Notification.permission === 'granted') {
                     const today = getTodayStr();
-                    const notifs = JSON.parse(localStorage.getItem('resiflow_notifications') || '[]');
+                    const notifs = safeStorage.getJSON('resiflow_notifications', []);
                     const todayNotifs = notifs.filter(n => n.date === today);
                     
                     if(todayNotifs.length > 0) {
-                        // Check if already notified today to avoid spam
-                        const lastNotified = localStorage.getItem('resiflow_last_notif_date');
+                        const lastNotified = safeStorage.getItem('resiflow_last_notif_date');
                         if(lastNotified !== today) {
                             new Notification(`ResiFlow: ${todayNotifs.length} revisões hoje!`, {
                                 body: `Mantenha o foco! Você tem ${todayNotifs.length} tópicos para revisar.`,
                                 icon: 'icon.svg'
                             });
-                            localStorage.setItem('resiflow_last_notif_date', today);
+                            safeStorage.setItem('resiflow_last_notif_date', today);
                         }
                     }
                 }
@@ -1254,9 +1294,7 @@
 
             return (
                 <div className="min-h-screen pb-32 md:pb-10 relative overflow-x-hidden pt-safe">
-                    {/* Correção de Bug 3 & Desktop Clipping: Fixed inset-0 garante que o fundo sempre cubra a janela inteira */}
                     <div className="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
-                         {/* Bolhas Aumentadas e Mais Sutis no Dark Mode */}
                          <div className="absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
                          <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-purple-400/10 dark:bg-indigo-900/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
                     </div>
@@ -1305,13 +1343,13 @@
                                     <div className="flex flex-col gap-3 mb-4">
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <div className="relative flex-1"><Icons.Search className="absolute left-3 top-3 text-slate-400" size={18}/><input type="text" placeholder="Buscar assunto..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
-                                            <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setFilter(filter === 'today' ? 'all' : 'today'); }} className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filter === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{filter === 'today' ? '📅 Hoje' : '📅 Todos'}</button>
-                                        </div>
-                                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                                            <button onClick={() => setAreaFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-black border-transparent' : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>Todos</button>
-                                            {AREAS.map(a => (
-                                                <button key={a.id} onClick={() => setAreaFilter(a.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === a.id ? `${a.color} border-transparent` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{a.name}</button>
-                                            ))}
+                                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                                <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setFilter(filter === 'today' ? 'all' : 'today'); }} className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filter === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{filter === 'today' ? '📅 Hoje' : '📅 Todos'}</button>
+                                                <button onClick={() => setAreaFilter('all')} className={`px-3 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-black border-transparent' : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>Todos</button>
+                                                {AREAS.map(a => (
+                                                    <button key={a.id} onClick={() => setAreaFilter(a.id)} className={`px-3 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === a.id ? `${a.color} border-transparent` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{a.name}</button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                     {visibleTopics.length === 0 ? (
