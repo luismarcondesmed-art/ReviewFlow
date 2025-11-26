@@ -28,7 +28,6 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Confetti Effect Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
     <script>
@@ -64,18 +63,8 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         
         window.firebaseModules = { 
-            initializeApp, 
-            getFirestore, 
-            doc, 
-            onSnapshot, 
-            setDoc, 
-            collection, 
-            getAuth, 
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged
+            initializeApp, getFirestore, doc, onSnapshot, setDoc, collection, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged
         };
-        
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
@@ -129,55 +118,8 @@
             return React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
         };
 
-        const Icons = {
-            Target: (p) => <LucideIcon name="Target" {...p} />,
-            Calendar: (p) => <LucideIcon name="Calendar" {...p} />,
-            Plus: (p) => <LucideIcon name="Plus" {...p} />,
-            CheckCircle2: (p) => <LucideIcon name="CheckCircle2" {...p} />,
-            Clock: (p) => <LucideIcon name="Clock" {...p} />,
-            BookOpen: (p) => <LucideIcon name="BookOpen" {...p} />,
-            Star: (p) => <LucideIcon name="Star" {...p} />,
-            X: (p) => <LucideIcon name="X" {...p} />,
-            ChevronDown: (p) => <LucideIcon name="ChevronDown" {...p} />,
-            ChevronUp: (p) => <LucideIcon name="ChevronUp" {...p} />,
-            ChevronLeft: (p) => <LucideIcon name="ChevronLeft" {...p} />,
-            ChevronRight: (p) => <LucideIcon name="ChevronRight" {...p} />,
-            Activity: (p) => <LucideIcon name="Activity" {...p} />,
-            Moon: (p) => <LucideIcon name="Moon" {...p} />,
-            Sun: (p) => <LucideIcon name="Sun" {...p} />,
-            List: (p) => <LucideIcon name="List" {...p} />,
-            Trash2: (p) => <LucideIcon name="Trash2" {...p} />,
-            Cloud: (p) => <LucideIcon name="Cloud" {...p} />,
-            Save: (p) => <LucideIcon name="Save" {...p} />,
-            Download: (p) => <LucideIcon name="Download" {...p} />,
-            Upload: (p) => <LucideIcon name="Upload" {...p} />,
-            Settings: (p) => <LucideIcon name="Settings" {...p} />,
-            Timer: (p) => <LucideIcon name="Timer" {...p} />,
-            Play: (p) => <LucideIcon name="Play" {...p} />,
-            Pause: (p) => <LucideIcon name="Pause" {...p} />,
-            RotateCcw: (p) => <LucideIcon name="RotateCcw" {...p} />,
-            Layers: (p) => <LucideIcon name="Layers" {...p} />,
-            Notebook: (p) => <LucideIcon name="Notebook" {...p} />,
-            Search: (p) => <LucideIcon name="Search" {...p} />,
-            BarChart3: (p) => <LucideIcon name="BarChart3" {...p} />,
-            LinkIcon: (p) => <LucideIcon name="Link" {...p} />,
-            FileJson: (p) => <LucideIcon name="FileJson" {...p} />,
-            Lock: (p) => <LucideIcon name="Lock" {...p} />,
-            Home: (p) => <LucideIcon name="Home" {...p} />,
-            PieChart: (p) => <LucideIcon name="PieChart" {...p} />,
-            MoreHorizontal: (p) => <LucideIcon name="MoreHorizontal" {...p} />,
-            PenTool: (p) => <LucideIcon name="PenTool" {...p} />,
-            MonitorPlay: (p) => <LucideIcon name="MonitorPlay" {...p} />,
-            AlertTriangle: (p) => <LucideIcon name="AlertTriangle" {...p} />,
-            ArrowLeft: (p) => <LucideIcon name="ArrowLeft" {...p} />,
-            Bell: (p) => <LucideIcon name="Bell" {...p} />,
-            Flame: (p) => <LucideIcon name="Flame" {...p} />,
-            ListTodo: (p) => <LucideIcon name="ListTodo" {...p} />,
-            LogOut: (p) => <LucideIcon name="LogOut" {...p} />,
-            Coffee: (p) => <LucideIcon name="Coffee" {...p} />,
-        };
+        const Icons = { Target: (p)=><LucideIcon name="Target" {...p}/>, Calendar: (p)=><LucideIcon name="Calendar" {...p}/>, Plus: (p)=><LucideIcon name="Plus" {...p}/>, CheckCircle2: (p)=><LucideIcon name="CheckCircle2" {...p}/>, Clock: (p)=><LucideIcon name="Clock" {...p}/>, BookOpen: (p)=><LucideIcon name="BookOpen" {...p}/>, Star: (p)=><LucideIcon name="Star" {...p}/>, X: (p)=><LucideIcon name="X" {...p}/>, ChevronDown: (p)=><LucideIcon name="ChevronDown" {...p}/>, ChevronUp: (p)=><LucideIcon name="ChevronUp" {...p}/>, ChevronLeft: (p)=><LucideIcon name="ChevronLeft" {...p}/>, ChevronRight: (p)=><LucideIcon name="ChevronRight" {...p}/>, Activity: (p)=><LucideIcon name="Activity" {...p}/>, Moon: (p)=><LucideIcon name="Moon" {...p}/>, Sun: (p)=><LucideIcon name="Sun" {...p}/>, List: (p)=><LucideIcon name="List" {...p}/>, Trash2: (p)=><LucideIcon name="Trash2" {...p}/>, Cloud: (p)=><LucideIcon name="Cloud" {...p}/>, Save: (p)=><LucideIcon name="Save" {...p}/>, Download: (p)=><LucideIcon name="Download" {...p}/>, Upload: (p)=><LucideIcon name="Upload" {...p}/>, Settings: (p)=><LucideIcon name="Settings" {...p}/>, Timer: (p)=><LucideIcon name="Timer" {...p}/>, Play: (p)=><LucideIcon name="Play" {...p}/>, Pause: (p)=><LucideIcon name="Pause" {...p}/>, RotateCcw: (p)=><LucideIcon name="RotateCcw" {...p}/>, Layers: (p)=><LucideIcon name="Layers" {...p}/>, Notebook: (p)=><LucideIcon name="Notebook" {...p}/>, Search: (p)=><LucideIcon name="Search" {...p}/>, BarChart3: (p)=><LucideIcon name="BarChart3" {...p}/>, LinkIcon: (p)=><LucideIcon name="Link" {...p}/>, FileJson: (p)=><LucideIcon name="FileJson" {...p}/>, Lock: (p)=><LucideIcon name="Lock" {...p}/>, Home: (p)=><LucideIcon name="Home" {...p}/>, PieChart: (p)=><LucideIcon name="PieChart" {...p}/>, MoreHorizontal: (p)=><LucideIcon name="MoreHorizontal" {...p}/>, PenTool: (p)=><LucideIcon name="PenTool" {...p}/>, MonitorPlay: (p)=><LucideIcon name="MonitorPlay" {...p}/>, AlertTriangle: (p)=><LucideIcon name="AlertTriangle" {...p}/>, ArrowLeft: (p)=><LucideIcon name="ArrowLeft" {...p}/>, Bell: (p)=><LucideIcon name="Bell" {...p}/>, Flame: (p)=><LucideIcon name="Flame" {...p}/>, ListTodo: (p)=><LucideIcon name="ListTodo" {...p}/>, LogOut: (p)=><LucideIcon name="LogOut" {...p}/>, Coffee: (p)=><LucideIcon name="Coffee" {...p}/>, Edit: (p)=><LucideIcon name="PenTool" {...p}/> };
         
-        // --- CONSTANTES ---
         const VIBRATE_PATTERNS = { tick: 10, success: [20, 30, 20], reviewDone: [50, 50, 50], streak: [100, 50, 100, 50, 100], error: [200] };
         const vibrate = (pattern = 10) => { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(pattern); };
         const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
@@ -197,52 +139,32 @@
         const generateSchedule = (date, importanceId) => { const d0 = new Date(date + 'T12:00:00'); const add = (d, days) => { const r = new Date(d); r.setDate(r.getDate() + days); return r.toISOString().split('T')[0]; }; const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1]; const q1 = calculateNextLoad(importanceId, 'medium', 'R1', null); const q2 = calculateNextLoad(importanceId, 'medium', 'R2', null); const q3 = calculateNextLoad(importanceId, 'medium', 'R3', null); return [ { type: 'R0', date: date, label: 'R0: Fixação', done: false, correct: 0, total: 0, difficulty: null, targetQ: impObj.baseQ }, { type: 'R1', date: add(d0, 7), label: 'R1: Pico', done: false, correct: 0, total: 0, difficulty: null, targetQ: q1 }, { type: 'R2', date: add(d0, 30), label: 'R2: Manutenção', done: false, correct: 0, total: 0, difficulty: null, targetQ: q2 }, { type: 'R3', date: add(d0, 60), label: 'R3: Longo', done: false, correct: 0, total: 0, difficulty: null, targetQ: q3 } ]; };
         const mergeItems = (local, cloud) => { const map = new Map(); local.forEach(i => map.set(i.id, i)); cloud.forEach(c => { const l = map.get(c.id); if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)) map.set(c.id, c); }); return Array.from(map.values()); };
 
-        // --- CONTEXTOS ---
         const ToastContext = createContext();
         const ToastProvider = ({ children }) => {
             const [toasts, setToasts] = useState([]);
-            const showToast = useCallback((message, type = 'success') => {
-                const id = Date.now();
-                setToasts(prev => [...prev, { id, message, type }]);
-                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
-            }, []);
-            return (
-                <ToastContext.Provider value={{ showToast }}>
-                    {children}
-                    <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-sm px-4">
-                        {toasts.map(toast => (
-                            <div key={toast.id} className={`p-4 rounded-2xl shadow-xl border-2 animate-bounce-in flex items-center gap-3 backdrop-blur-md ${ toast.type === 'error' ? 'bg-red-50/90 border-red-200 text-red-700 dark:bg-red-900/90 dark:text-white dark:border-red-800' : 'bg-white/90 border-white text-slate-800 dark:bg-zinc-800/90 dark:text-white dark:border-zinc-700' }`}>
-                                {toast.type === 'error' ? <Icons.AlertTriangle size={20}/> : <Icons.CheckCircle2 size={20} className="text-emerald-500"/>}
-                                <span className="text-sm font-bold">{toast.message}</span>
-                            </div>
-                        ))}
-                    </div>
-                </ToastContext.Provider>
-            );
+            const showToast = useCallback((message, type = 'success') => { const id = Date.now(); setToasts(prev => [...prev, { id, message, type }]); setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000); }, []);
+            return ( <ToastContext.Provider value={{ showToast }}> {children} <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-sm px-4"> {toasts.map(toast => ( <div key={toast.id} className={`p-4 rounded-2xl shadow-xl border-2 animate-bounce-in flex items-center gap-3 backdrop-blur-md ${ toast.type === 'error' ? 'bg-red-50/90 border-red-200 text-red-700 dark:bg-red-900/90 dark:text-white dark:border-red-800' : 'bg-white/90 border-white text-slate-800 dark:bg-zinc-800/90 dark:text-white dark:border-zinc-700' }`}> {toast.type === 'error' ? <Icons.AlertTriangle size={20}/> : <Icons.CheckCircle2 size={20} className="text-emerald-500"/>} <span className="text-sm font-bold">{toast.message}</span> </div> ))} </div> </ToastContext.Provider> );
         };
 
         const useSync = (topics, logs, setTopics, setLogs) => {
             const [status, setStatus] = useState('offline');
             const { showToast } = useContext(ToastContext);
             const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('resiflow_sync_key') || '');
-            const [config, setConfig] = useState(() => {
-                if (typeof __firebase_config !== 'undefined') {
-                    try { return JSON.parse(__firebase_config); } catch (e) { console.error("Error parsing __firebase_config", e); }
-                }
-                return safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG);
-            });
+            const [config, setConfig] = useState(() => { if (typeof __firebase_config !== 'undefined') { try { return JSON.parse(__firebase_config); } catch (e) { console.error(e); } } return safeJSONParse('resiflow_fb_config', USER_FIREBASE_CONFIG); });
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'resiflow';
+            
             const setSyncKey = (newKey) => { if (newKey !== syncKey) { setTopics([]); setLogs([]); } _setSyncKey(newKey); localStorage.setItem('resiflow_sync_key', newKey); };
+            
             const dbRef = useRef(null);
             const stateRef = useRef({ topics, logs });
             useEffect(() => { stateRef.current = { topics, logs }; }, [topics, logs]);
+            
             useEffect(() => { 
                 const initFirebase = async () => {
                     if (!window.firebaseModules) return;
                     try { 
                         const { initializeApp, getFirestore, doc, onSnapshot, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.firebaseModules; 
-                        let app; 
-                        try { app = initializeApp(config); } catch(e) { app = window.firebaseModules.app; } 
+                        let app; try { app = initializeApp(config); } catch(e) { app = window.firebaseModules.app; } 
                         const auth = getAuth(); 
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await signInWithCustomToken(auth, __initial_auth_token); } else { await signInAnonymously(auth); }
                         onAuthStateChanged(auth, (user) => {
@@ -253,11 +175,11 @@
                                 const unsub = onSnapshot(docRef, (s) => { 
                                     if (s.exists()) { 
                                         const d = s.data(); 
-                                        if (d.topics) { const mergedTopics = mergeItems(stateRef.current.topics, d.topics); if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) setTopics(mergedTopics); } 
-                                        if (d.logs) { const mergedLogs = mergeItems(stateRef.current.logs, d.logs); if (JSON.stringify(mergedLogs) !== JSON.stringify(stateRef.current.logs)) setLogs(mergedLogs); } 
+                                        if (d.topics) { const merged = mergeItems(stateRef.current.topics, d.topics); if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.topics)) setTopics(merged); } 
+                                        if (d.logs) { const merged = mergeItems(stateRef.current.logs, d.logs); if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.logs)) setLogs(merged); } 
                                     } 
                                     setStatus('online'); 
-                                }, (err) => { console.error(err); setStatus('error'); showToast("Erro na sincronização", "error"); }); 
+                                }, (err) => { console.error(err); setStatus('error'); }); 
                                 return () => unsub();
                             }
                         });
@@ -265,57 +187,48 @@
                 };
                 if (window.firebaseModules) initFirebase(); else window.addEventListener('firebase-ready', initFirebase);
             }, [config, syncKey]);
+            
             const saveToCloud = async (newTopics, newLogs) => { if (!dbRef.current || !syncKey) return; try { const { doc, setDoc } = window.firebaseModules; const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey); await setDoc(docRef, { topics: newTopics, logs: newLogs, updatedAt: new Date().toISOString() }, { merge: true }); } catch (e) { console.error(e); setStatus('error'); } };
-            return { status, config, setConfig, syncKey, setSyncKey, saveToCloud };
+            return { status, config, setConfig, syncKey, setSyncKey, saveToCloud, appId };
         };
 
-        // --- COMPONENTS ---
         const ModalWrapper = ({ isOpen, onClose, children, title }) => { if (!isOpen) return null; return ( <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center sm:p-4 pb-safe"> <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div> <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 md:rounded-2xl rounded-t-2xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh] mb-safe md:mb-0"> <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-t-2xl z-10"> <h3 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h3> <button aria-label="Fechar" onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.X size={20} className="text-slate-400"/></button> </div> <div className="overflow-y-auto p-0">{children}</div> </div> </div> ); };
 
-        const SettingsModal = ({ isOpen, onClose, topics, logs, setTopics, setLogs, syncKey, setSyncKey, status }) => {
+        const SettingsModal = ({ isOpen, onClose, topics, logs, setTopics, setLogs, syncKey, setSyncKey, status, appId }) => {
             const [tempKey, setTempKey] = useState(syncKey);
             const { showToast } = useContext(ToastContext);
             useEffect(() => setTempKey(syncKey), [syncKey]);
             const handleExport = () => { const dataStr = JSON.stringify({ topics, logs }, null, 2); const blob = new Blob([dataStr], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `reviewflow_bkp_${getTodayStr()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("Backup exportado!"); };
             const handleImport = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { const data = JSON.parse(event.target.result); if (!Array.isArray(data.topics)) throw new Error("Formato inválido"); setTopics(prev => mergeItems(prev, data.topics)); if(data.logs) setLogs(prev => mergeItems(prev, data.logs)); showToast("Importado com sucesso!"); onClose(); } catch (err) { showToast("Erro na importação", "error"); } }; reader.readAsText(file); e.target.value = null; };
-            return ( <ModalWrapper isOpen={isOpen} onClose={onClose} title="Configurações"> <div className="p-6 space-y-6"> <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/50"> <h4 className="font-bold text-sm text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2"><Icons.Cloud size={16}/> Sincronização Nuvem</h4> <div className="space-y-3"> <div><label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Chave de Acesso</label><div className="flex gap-2"><input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Crie uma senha única" className="flex-1 p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-700 text-sm dark:text-white font-mono" /><button onClick={() => { setSyncKey(tempKey); onClose(); showToast("Chave salva!"); }} className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-lg font-bold text-xs">Salvar</button></div></div> <div className="flex items-center gap-2 text-xs"><div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div><span className="text-slate-500 dark:text-slate-400">{status === 'online' ? 'Conectado' : 'Desconectado'}</span></div> </div> </div> <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700"> <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><Icons.FileJson size={16}/> Backup Local</h4> <div className="flex gap-2"><button onClick={handleExport} className="flex-1 bg-white dark:bg-zinc-700 hover:bg-slate-100 text-slate-700 dark:text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-slate-200 dark:border-zinc-600"><Icons.Download size={14}/> Exportar</button><label className="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"><Icons.Upload size={14}/> Importar <input type="file" accept=".json" className="hidden" onChange={handleImport}/></label></div> </div> </div> </ModalWrapper> );
+            return ( 
+                <ModalWrapper isOpen={isOpen} onClose={onClose} title="Configurações"> 
+                    <div className="p-6 space-y-6"> 
+                        <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/50"> 
+                            <h4 className="font-bold text-sm text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2"><Icons.Cloud size={16}/> Sincronização Nuvem</h4> 
+                            <div className="space-y-3"> 
+                                <div><label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">Chave de Acesso (Sync Key)</label><div className="flex gap-2"><input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Crie uma senha única" className="flex-1 p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-700 text-sm dark:text-white font-mono" /><button onClick={() => { setSyncKey(tempKey); onClose(); showToast("Chave salva!"); }} className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-lg font-bold text-xs">Salvar</button></div><p className="text-[10px] text-slate-400 mt-1">⚠️ Salve esta chave! Se você perder, perderá seus dados.</p></div> 
+                                <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-xs"><div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : 'bg-slate-400'}`}></div><span className="text-slate-500 dark:text-slate-400">{status === 'online' ? 'Conectado' : 'Desconectado'}</span></div></div>
+                            </div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700">
+                            <h4 className="font-bold text-xs text-slate-500 uppercase mb-2">Diagnóstico (Debug)</h4>
+                            <div className="text-xs font-mono text-slate-600 dark:text-slate-400 break-all">App ID: {appId}<br/>Path: artifacts/{appId}/public/data/users/{syncKey || '???'}</div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-100 dark:border-zinc-700"> <h4 className="font-bold text-sm text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><Icons.FileJson size={16}/> Backup Local</h4> <div className="flex gap-2"><button onClick={handleExport} className="flex-1 bg-white dark:bg-zinc-700 hover:bg-slate-100 text-slate-700 dark:text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-slate-200 dark:border-zinc-600"><Icons.Download size={14}/> Exportar</button><label className="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"><Icons.Upload size={14}/> Importar <input type="file" accept=".json" className="hidden" onChange={handleImport}/></label></div> </div> 
+                    </div> 
+                </ModalWrapper> 
+            );
         };
 
         const SidebarPomodoro = () => {
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
             const [mode, setMode] = useState('focus');
-            
-            useEffect(() => { 
-                let interval = null; 
-                if (isActive && timeLeft > 0) interval = setInterval(() => setTimeLeft(t => t - 1), 1000); 
-                else if (timeLeft === 0) { setIsActive(false); vibrate(VIBRATE_PATTERNS.success); }
-                return () => clearInterval(interval); 
-            }, [isActive, timeLeft]); 
-            
-            const modes = { focus: 25*60, short: 5*60, long: 15*60 }; 
-            const changeMode = (m) => { setMode(m); setIsActive(false); setTimeLeft(modes[m]); }; 
+            useEffect(() => { let interval = null; if (isActive && timeLeft > 0) interval = setInterval(() => setTimeLeft(t => t - 1), 1000); else if (timeLeft === 0) { setIsActive(false); vibrate(VIBRATE_PATTERNS.success); } return () => clearInterval(interval); }, [isActive, timeLeft]);
+            const modes = { focus: 25*60, short: 5*60, long: 15*60 };
+            const changeMode = (m) => { setMode(m); setIsActive(false); setTimeLeft(modes[m]); };
             const fmt = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-            
-            return (
-                <div className="bg-slate-100 dark:bg-zinc-800/50 p-4 rounded-2xl mt-auto border border-slate-200 dark:border-white/5">
-                    <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-bold text-slate-700 dark:text-white text-sm flex items-center gap-2"><Icons.Timer size={16} className="text-emerald-500"/> Foco</h4>
-                        <div className="flex gap-1">
-                            {Object.keys(modes).map(m => (
-                                <button key={m} onClick={() => changeMode(m)} className={`w-2 h-2 rounded-full ${mode === m ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'}`} title={m}></button>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="text-4xl font-black text-slate-800 dark:text-white font-mono text-center mb-4 tracking-wider">{fmt(timeLeft)}</div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setIsActive(!isActive)} className={`flex-1 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all ${isActive ? 'bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'}`}>
-                            {isActive ? <Icons.Pause size={14}/> : <Icons.Play size={14}/>} {isActive ? 'Pausar' : 'Iniciar'}
-                        </button>
-                        <button onClick={() => changeMode(mode)} className="p-2 rounded-lg bg-white dark:bg-zinc-700 text-slate-400 hover:text-slate-600"><Icons.RotateCcw size={14}/></button>
-                    </div>
-                </div>
-            )
+            return ( <div className="bg-slate-100 dark:bg-zinc-800/50 p-4 rounded-2xl mt-auto border border-slate-200 dark:border-white/5"> <div className="flex items-center justify-between mb-3"> <h4 className="font-bold text-slate-700 dark:text-white text-sm flex items-center gap-2"><Icons.Timer size={16} className="text-emerald-500"/> Foco</h4> <div className="flex gap-1"> {Object.keys(modes).map(m => ( <button key={m} onClick={() => changeMode(m)} className={`w-2 h-2 rounded-full ${mode === m ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'}`} title={m}></button> ))} </div> </div> <div className="text-4xl font-black text-slate-800 dark:text-white font-mono text-center mb-4 tracking-wider">{fmt(timeLeft)}</div> <div className="flex gap-2"> <button onClick={() => setIsActive(!isActive)} className={`flex-1 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all ${isActive ? 'bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'}`}> {isActive ? <Icons.Pause size={14}/> : <Icons.Play size={14}/>} {isActive ? 'Pausar' : 'Iniciar'} </button> <button onClick={() => changeMode(mode)} className="p-2 rounded-lg bg-white dark:bg-zinc-700 text-slate-400 hover:text-slate-600"><Icons.RotateCcw size={14}/></button> </div> </div> );
         };
 
         const PomodoroModal = ({ isOpen, onClose }) => { 
@@ -331,65 +244,21 @@
             return ( 
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"> 
                     <div className="relative w-full max-w-sm bg-white dark:bg-zinc-950 rounded-[2rem] p-8 shadow-2xl border border-slate-200 dark:border-zinc-800 flex flex-col items-center overflow-hidden"> 
-                        
-                        {/* Close Button */}
-                        <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                            <Icons.X size={28}/>
-                        </button> 
-                        
-                        {/* Title */}
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-8 flex items-center gap-2 text-xl tracking-tight">
-                            <Icons.Timer className="text-emerald-500" size={24}/> Foco & Fluxo
-                        </h3> 
-                        
-                        {/* Timer Display */}
+                        <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><Icons.X size={28}/></button> 
+                        <h3 className="font-bold text-slate-800 dark:text-white mb-8 flex items-center gap-2 text-xl tracking-tight"><Icons.Timer className="text-emerald-500" size={24}/> Foco & Fluxo</h3> 
                         <div className="relative w-64 h-64 flex items-center justify-center mb-10">
-                            {/* Background Ring */}
                             <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90 drop-shadow-xl">
                                 <circle cx="128" cy="128" r="110" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100 dark:text-zinc-900"/>
-                                <circle 
-                                    cx="128" cy="128" r="110" 
-                                    stroke="currentColor" strokeWidth="8" fill="transparent" 
-                                    strokeDasharray={691} 
-                                    strokeDashoffset={691 - (691 * ((modes[mode] - timeLeft) / modes[mode]) * 100) / 100} 
-                                    className={`text-${mode === 'focus' ? 'emerald' : 'blue'}-500 transition-all duration-1000 ease-linear`} 
-                                    strokeLinecap="round"
-                                />
+                                <circle cx="128" cy="128" r="110" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={691} strokeDashoffset={691 - (691 * ((modes[mode] - timeLeft) / modes[mode]) * 100) / 100} className={`text-${mode === 'focus' ? 'emerald' : 'blue'}-500 transition-all duration-1000 ease-linear`} strokeLinecap="round"/>
                             </svg>
-                            
-                            <div className="text-7xl font-bold tracking-tight text-slate-800 dark:text-white font-mono tabular-nums">
-                                {fmt(timeLeft)}
-                            </div>
+                            <div className="text-7xl font-bold tracking-tight text-slate-800 dark:text-white font-mono tabular-nums">{fmt(timeLeft)}</div>
                         </div> 
-                        
-                        {/* Controls */}
                         <div className="flex items-center gap-6 w-full justify-center mb-8">
-                            <button 
-                                onClick={() => { vibrate(VIBRATE_PATTERNS.tick); changeMode(mode); }} 
-                                className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"
-                            >
-                                <Icons.RotateCcw size={24}/>
-                            </button>
-                            
-                            <button 
-                                onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setIsActive(!isActive); }} 
-                                className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white'}`}
-                            >
-                                {isActive ? <Icons.Pause fill="currentColor" size={32}/> : <Icons.Play fill="currentColor" className="ml-1" size={32}/>}
-                            </button>
+                            <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); changeMode(mode); }} className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-100 dark:bg-zinc-900 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"><Icons.RotateCcw size={24}/></button>
+                            <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setIsActive(!isActive); }} className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all ${isActive ? 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300' : 'bg-emerald-500 text-white'}`}>{isActive ? <Icons.Pause fill="currentColor" size={32}/> : <Icons.Play fill="currentColor" className="ml-1" size={32}/>}</button>
                         </div>
-
-                        {/* Mode Toggles */}
                         <div className="flex gap-1 bg-slate-100 dark:bg-zinc-900 p-1.5 rounded-2xl w-full">
-                            {Object.keys(modes).map(m => (
-                                <button 
-                                    key={m} 
-                                    onClick={() => { vibrate(VIBRATE_PATTERNS.tick); changeMode(m); }} 
-                                    className={`flex-1 py-3 text-xs font-bold rounded-xl capitalize transition-all ${mode === m ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    {m === 'focus' ? 'Foco' : m === 'short' ? 'Curta' : 'Longa'}
-                                </button>
-                            ))}
+                            {Object.keys(modes).map(m => ( <button key={m} onClick={() => { vibrate(VIBRATE_PATTERNS.tick); changeMode(m); }} className={`flex-1 py-3 text-xs font-bold rounded-xl capitalize transition-all ${mode === m ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{m === 'focus' ? 'Foco' : m === 'short' ? 'Curta' : 'Longa'}</button> ))}
                         </div> 
                     </div> 
                 </div> 
@@ -399,55 +268,21 @@
         const DashboardSummary = ({ topics }) => {
             const today = getTodayStr();
             const dueToday = useMemo(() => topics.filter(t => !t.deleted && t.reviews.some(r => !r.done && r.date <= today)).length, [topics, today]);
-            const newThisWeek = useMemo(() => {
-                const lastWeek = new Date(); lastWeek.setDate(lastWeek.getDate() - 7);
-                return topics.filter(t => !t.deleted && new Date(t.studyDate) >= lastWeek).length;
-            }, [topics]);
-            const accuracy = useMemo(() => {
-                const active = topics.filter(t => !t.deleted);
-                const totalQ = active.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.total || 0), 0), 0);
-                const totalC = active.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.correct || 0), 0), 0);
-                return totalQ > 0 ? Math.round((totalC/totalQ)*100) : 0;
-            }, [topics]);
-
+            const newThisWeek = useMemo(() => { const lastWeek = new Date(); lastWeek.setDate(lastWeek.getDate() - 7); return topics.filter(t => !t.deleted && new Date(t.studyDate) >= lastWeek).length; }, [topics]);
+            const accuracy = useMemo(() => { const active = topics.filter(t => !t.deleted); const totalQ = active.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.total || 0), 0), 0); const totalC = active.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.correct || 0), 0), 0); return totalQ > 0 ? Math.round((totalC/totalQ)*100) : 0; }, [topics]);
             return (
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between">
-                        <div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center"><Icons.Clock size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Hoje</span></div>
-                        <div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{dueToday}</div><div className="text-xs text-slate-500">Revisões Pendentes</div></div>
-                    </div>
-                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between">
-                        <div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center"><Icons.Target size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Geral</span></div>
-                        <div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{accuracy}%</div><div className="text-xs text-slate-500">Taxa de Acerto</div></div>
-                    </div>
-                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between">
-                        <div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-500 flex items-center justify-center"><Icons.Plus size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Semana</span></div>
-                        <div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{newThisWeek}</div><div className="text-xs text-slate-500">Novos Tópicos</div></div>
-                    </div>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between"><div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center"><Icons.Clock size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Hoje</span></div><div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{dueToday}</div><div className="text-xs text-slate-500">Revisões Pendentes</div></div></div>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between"><div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center"><Icons.Target size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Geral</span></div><div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{accuracy}%</div><div className="text-xs text-slate-500">Taxa de Acerto</div></div></div>
+                    <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col justify-between"><div className="flex justify-between items-start"><div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-500 flex items-center justify-center"><Icons.Plus size={16}/></div><span className="text-xs font-bold text-slate-400 uppercase">Semana</span></div><div><div className="text-2xl font-black text-slate-800 dark:text-white mt-2">{newThisWeek}</div><div className="text-xs text-slate-500">Novos Tópicos</div></div></div>
                 </div>
             )
         }
 
-        // ... DiaryWidget, DiaryView, CalendarView, AddTopicModal, TopicCard, AreaDetailView, BentoDashboard mantidos iguais ...
         const DiaryWidget = ({ logs, topics }) => {
             const streak = useMemo(() => { let currentStreak = 0; const today = new Date(); let d = new Date(today); const todayStr = d.toISOString().split('T')[0]; const todayActive = logs.some(l => l.date === todayStr && !l.deleted && l.type === 'checklist'); if (!todayActive) d.setDate(d.getDate() - 1); while (true) { const dateStr = d.toISOString().split('T')[0]; if (logs.some(l => l.date === dateStr && !l.deleted && l.type === 'checklist')) { currentStreak++; d.setDate(d.getDate() - 1); } else break; } return currentStreak; }, [logs]);
             const upcomingReviews = useMemo(() => { const upcoming = []; const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); const tomorrowStr = tomorrow.toISOString().split('T')[0]; topics.forEach(t => { if (t.deleted) return; t.reviews.forEach(r => { if (!r.done && r.date >= tomorrowStr) upcoming.push({ topic: t, review: r }); }); }); return upcoming.sort((a, b) => a.review.date.localeCompare(b.review.date)).slice(0, 5); }, [topics]);
-            return (
-                <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg shadow-orange-500/20 relative overflow-hidden">
-                        <Icons.Flame className="absolute right-4 bottom-4 opacity-20" size={80}/>
-                        <div className="relative z-10">
-                            <div className="text-orange-100 text-sm font-bold mb-1 uppercase">Sequência Atual</div>
-                            <div className="text-5xl font-black tracking-tighter">{streak} <span className="text-2xl">dias</span></div>
-                            <div className="text-orange-100 text-xs mt-2 font-medium">Mantenha o fogo aceso! 🔥</div>
-                        </div>
-                    </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm">
-                        <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2"><Icons.Calendar size={18} className="text-blue-500"/> Próximas Revisões</h3>
-                        <div className="space-y-3">{upcomingReviews.length === 0 ? (<p className="text-center text-slate-400 text-sm py-4">Nada agendado para breve.</p>) : (upcomingReviews.map((item, i) => { const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[item.topic.area] || 'blue'; return ( <div key={i} className="flex items-start gap-3 p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors"> <div className={`w-1.5 h-1.5 rounded-full mt-2 bg-${c}-500`}></div> <div className="flex-1 min-w-0"> <div className="text-xs font-bold text-slate-400 uppercase mb-0.5">{formatDate(item.review.date)}</div> <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.topic.title}</div> <div className="text-xs text-slate-500">{item.review.label}</div> </div> </div> ) }))}</div>
-                    </div>
-                </div>
-            )
+            return ( <div className="space-y-6"> <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg shadow-orange-500/20 relative overflow-hidden"> <Icons.Flame className="absolute right-4 bottom-4 opacity-20" size={80}/> <div className="relative z-10"> <div className="text-orange-100 text-sm font-bold mb-1 uppercase">Sequência Atual</div> <div className="text-5xl font-black tracking-tighter">{streak} <span className="text-2xl">dias</span></div> <div className="text-orange-100 text-xs mt-2 font-medium">Mantenha o fogo aceso! 🔥</div> </div> </div> <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm"> <h3 className="font-bold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2"><Icons.Calendar size={18} className="text-blue-500"/> Próximas Revisões</h3> <div className="space-y-3">{upcomingReviews.length === 0 ? (<p className="text-center text-slate-400 text-sm py-4">Nada agendado para breve.</p>) : (upcomingReviews.map((item, i) => { const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[item.topic.area] || 'blue'; return ( <div key={i} className="flex items-start gap-3 p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors"> <div className={`w-1.5 h-1.5 rounded-full mt-2 bg-${c}-500`}></div> <div className="flex-1 min-w-0"> <div className="text-xs font-bold text-slate-400 uppercase mb-0.5">{formatDate(item.review.date)}</div> <div className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">{item.topic.title}</div> <div className="text-xs text-slate-500">{item.review.label}</div> </div> </div> ) }))}</div> </div> </div> );
         }
 
         const DiaryView = ({ logs, onAddLog, onDeleteLog, topics }) => {
@@ -466,7 +301,60 @@
 
         const AddTopicModal = ({ isOpen, onClose, onSave }) => { if (!isOpen) return null; const [title, setTitle] = useState(''); const [area, setArea] = useState('clinica'); const [subarea, setSubarea] = useState(''); const [importance, setImportance] = useState('medium'); const [date, setDate] = useState(getTodayStr()); const [link, setLink] = useState(''); const { showToast } = useContext(ToastContext); const handleSubmit = (e) => { e.preventDefault(); if(!title) return; vibrate(VIBRATE_PATTERNS.tick); onSave({ title, area, subarea, importance, date, link }); showToast("Tópico criado com sucesso!"); setTitle(''); setSubarea(''); setLink(''); onClose(); }; return ( <ModalWrapper isOpen={isOpen} onClose={onClose} title="Novo Conteúdo"> <div className="p-6 space-y-5"> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">O que você estudou?</label> <input autoFocus type="text" placeholder="Ex: Insuficiência Cardíaca" className="w-full text-lg font-semibold bg-transparent border-b-2 border-slate-200 dark:border-zinc-700 focus:border-blue-500 outline-none py-2 placeholder-slate-300 dark:placeholder-zinc-600 dark:text-white transition-colors" value={title} onChange={e => setTitle(e.target.value)} /> </div> <div className="grid grid-cols-2 gap-4"> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Área</label> <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}</select> </div> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Subárea</label> <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{(SUB_AREAS[area]||[]).map(s => <option key={s} value={s}>{s}</option>)}</select> </div> </div> <div className="space-y-3"> <label className="block text-xs font-bold text-slate-500 uppercase">Prioridade</label> <div className="grid grid-cols-3 gap-3">{IMPORTANCE_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setImportance(lvl.id); }} className={`py-3 rounded-xl text-sm font-bold border transition-all ${importance === lvl.id ? `border-${lvl.color.split('-')[1]}-500 bg-${lvl.color.split('-')[1]}-50 dark:bg-${lvl.color.split('-')[1]}-900/30 ${lvl.color}` : 'border-slate-200 dark:border-zinc-700 text-slate-400 hover:border-slate-300'}`}>{lvl.label}</button>))}</div> </div> <div className="grid grid-cols-1 gap-4"> <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Data</label><input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={date} onChange={e => setDate(e.target.value)} /></div> <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Link (Opcional)</label><input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={link} onChange={e => setLink(e.target.value)} /></div> </div> </div> <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 rounded-b-2xl"> <button onClick={handleSubmit} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"><Icons.Plus size={20}/> Criar Plano</button> </div> </ModalWrapper> ); };
 
-        const TopicCard = React.memo(({ topic, onOpenReview, onDelete }) => { const [expanded, setExpanded] = useState(false); const areaConfig = AREAS.find(a => a.id === topic.area) || AREAS[0]; const activeBorder = areaConfig.accent; const reviewsDone = topic.reviews.filter(r => r.done); const avgAccuracy = reviewsDone.length > 0 ? Math.round(reviewsDone.reduce((acc, r) => acc + (r.correct/r.total), 0) / reviewsDone.length * 100) : 0; const isLate = topic.reviews.find(r => !r.done && r.date < getTodayStr()); const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[topic.area] || 'blue'; const touchStartX = useRef(0); const touchEndX = useRef(0); return ( <div className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-${c}-900/50`} onTouchStart={e => touchStartX.current = e.targetTouches[0].clientX} onTouchMove={e => touchEndX.current = e.targetTouches[0].clientX} onTouchEnd={() => { if (touchEndX.current - touchStartX.current > 100) { const nextReviewIndex = topic.reviews.findIndex(r => !r.done); if (nextReviewIndex !== -1) { vibrate(VIBRATE_PATTERNS.tick); onOpenReview(topic.id, nextReviewIndex); } } }}> <div className="p-4 cursor-pointer" onClick={() => setExpanded(!expanded)}> <div className="flex justify-between items-start"> <div className="flex-1 pr-4"> <div className="flex items-center gap-2 mb-1.5"> <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">{areaConfig.name}{topic.subarea ? ` - ${topic.subarea}` : ''}</span> {topic.importance === 'high' && <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><Icons.Star size={10} fill="currentColor"/> Alta</span>} {isLate && <span className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><Icons.Clock size={10}/> Atrasado</span>} </div> <h3 className={`font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight group-hover:text-${c}-600 dark:group-hover:text-${c}-400 transition-colors`}>{topic.title}</h3> </div> <div className="flex flex-col items-end gap-1.5"> {reviewsDone.length > 0 && ( <span className={`text-xs font-black px-2 py-0.5 rounded-full ${avgAccuracy >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'}`}>{avgAccuracy}%</span> )} <div className="flex gap-1"> {[0,1,2,3].map(i => { const rev = topic.reviews[i]; let color = 'bg-slate-200 dark:bg-zinc-800'; if (rev && rev.done) color = (rev.correct/rev.total) >= 0.8 ? 'bg-emerald-500' : 'bg-amber-500'; else if (rev && !rev.done && (i === 0 || topic.reviews[i-1].done)) color = `bg-${c}-500 animate-pulse`; return <div key={i} className={`w-1.5 h-1.5 rounded-full ${color}`}></div> })} </div> </div> </div> </div> {expanded && ( <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-zinc-950/30 border-t border-slate-100 dark:border-zinc-800 animate-fade-in"> <div className="space-y-2 mt-3"> {topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const acc = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; return ( <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl transition-colors ${isNext ? `bg-white dark:bg-zinc-800 shadow-sm border border-${c}-100 dark:border-${c}-900/30` : 'opacity-70'}`}> <div className="flex items-center gap-3"> <div className={`font-black text-xs w-6 ${isDone ? 'text-slate-400' : isNext ? `text-${c}-600 dark:text-${c}-400` : 'text-slate-300'}`}>{rev.label.split(':')[0]}</div> <div className="flex flex-col"> <span className={`text-xs font-medium ${!isDone && rev.date < getTodayStr() ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{formatDate(rev.date)}</span> {rev.targetQ && !isDone && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1"><Icons.Target size={10}/> Meta: {rev.targetQ}q</span>} </div> </div> {isDone ? ( <div className={`font-bold text-sm ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</div> ) : isNext ? ( <button onClick={(e) => {e.stopPropagation(); onOpenReview(topic.id, idx); vibrate(VIBRATE_PATTERNS.tick);}} className={`bg-${c}-600 hover:bg-${c}-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-md shadow-${c}-500/20 active:scale-95 transition-transform`}>Revisar</button> ) : ( <Icons.Lock size={14} className="text-slate-300 dark:text-zinc-700"/> )} </div> ) })} </div> <div className="mt-4 pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-between items-center"> {topic.materialLink ? ( <a href={topic.materialLink} target="_blank" className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1"><Icons.LinkIcon size={12}/> Material</a> ) : <div></div>} <button onClick={(e) => { e.stopPropagation(); onDelete(topic.id); }} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><Icons.Trash2 size={12}/> Excluir</button> </div> </div> )} <div className="absolute top-5 right-4 pointer-events-none text-slate-300 dark:text-zinc-600">{expanded ? <Icons.ChevronUp size={16}/> : <Icons.ChevronDown size={16}/>}</div> </div> ); }, (prev, next) => prev.topic.id === next.topic.id && prev.topic.updatedAt === next.topic.updatedAt);
+        const EditTopicModal = ({ isOpen, onClose, onSave, topic }) => { 
+            if (!isOpen || !topic) return null;
+            
+            const [title, setTitle] = useState(topic.title); 
+            const [area, setArea] = useState(topic.area); 
+            const [subarea, setSubarea] = useState(topic.subarea || ''); 
+            const [importance, setImportance] = useState(topic.importance); 
+            const [link, setLink] = useState(topic.materialLink || ''); 
+            
+            const { showToast } = useContext(ToastContext);
+            
+            const handleSubmit = (e) => { 
+                e.preventDefault(); 
+                if(!title) return; 
+                vibrate(VIBRATE_PATTERNS.tick); 
+                onSave({ ...topic, title, area, subarea, importance, materialLink: link, updatedAt: Date.now() }); 
+                showToast("Tópico atualizado!"); 
+                onClose(); 
+            };
+            
+            return ( 
+                <ModalWrapper isOpen={isOpen} onClose={onClose} title="Editar Tópico"> 
+                    <div className="p-6 space-y-5"> 
+                        <div> 
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">O que você estudou?</label> 
+                            <input autoFocus type="text" placeholder="Ex: Insuficiência Cardíaca" className="w-full text-lg font-semibold bg-transparent border-b-2 border-slate-200 dark:border-zinc-700 focus:border-blue-500 outline-none py-2 placeholder-slate-300 dark:placeholder-zinc-600 dark:text-white transition-colors" value={title} onChange={e => setTitle(e.target.value)} /> 
+                        </div> 
+                        <div className="grid grid-cols-2 gap-4"> 
+                            <div> 
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Área</label> 
+                                <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}</select> 
+                            </div> 
+                            <div> 
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Subárea</label> 
+                                <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{(SUB_AREAS[area]||[]).map(s => <option key={s} value={s}>{s}</option>)}</select> 
+                            </div> 
+                        </div> 
+                        <div className="space-y-3"> 
+                            <label className="block text-xs font-bold text-slate-500 uppercase">Prioridade</label> 
+                            <div className="grid grid-cols-3 gap-3">{IMPORTANCE_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setImportance(lvl.id); }} className={`py-3 rounded-xl text-sm font-bold border transition-all ${importance === lvl.id ? `border-${lvl.color.split('-')[1]}-500 bg-${lvl.color.split('-')[1]}-50 dark:bg-${lvl.color.split('-')[1]}-900/30 ${lvl.color}` : 'border-slate-200 dark:border-zinc-700 text-slate-400 hover:border-slate-300'}`}>{lvl.label}</button>))}</div> 
+                        </div> 
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Link (Opcional)</label>
+                            <input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={link} onChange={e => setLink(e.target.value)} />
+                        </div> 
+                    </div> 
+                    <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 rounded-b-2xl"> 
+                        <button onClick={handleSubmit} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"><Icons.Save size={20}/> Salvar Alterações</button> 
+                    </div> 
+                </ModalWrapper> 
+            ); 
+        };
+
+        const TopicCard = React.memo(({ topic, onOpenReview, onDelete, onEdit }) => { const [expanded, setExpanded] = useState(false); const areaConfig = AREAS.find(a => a.id === topic.area) || AREAS[0]; const activeBorder = areaConfig.accent; const reviewsDone = topic.reviews.filter(r => r.done); const avgAccuracy = reviewsDone.length > 0 ? Math.round(reviewsDone.reduce((acc, r) => acc + (r.correct/r.total), 0) / reviewsDone.length * 100) : 0; const isLate = topic.reviews.find(r => !r.done && r.date < getTodayStr()); const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[topic.area] || 'blue'; const touchStartX = useRef(0); const touchEndX = useRef(0); return ( <div className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-${c}-900/50`} onTouchStart={e => touchStartX.current = e.targetTouches[0].clientX} onTouchMove={e => touchEndX.current = e.targetTouches[0].clientX} onTouchEnd={() => { if (touchEndX.current - touchStartX.current > 100) { const nextReviewIndex = topic.reviews.findIndex(r => !r.done); if (nextReviewIndex !== -1) { vibrate(VIBRATE_PATTERNS.tick); onOpenReview(topic.id, nextReviewIndex); } } }}> <div className="p-4 cursor-pointer" onClick={() => setExpanded(!expanded)}> <div className="flex justify-between items-start"> <div className="flex-1 pr-4"> <div className="flex items-center gap-2 mb-1.5"> <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">{areaConfig.name}{topic.subarea ? ` - ${topic.subarea}` : ''}</span> {topic.importance === 'high' && <span className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><Icons.Star size={10} fill="currentColor"/> Alta</span>} {isLate && <span className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><Icons.Clock size={10}/> Atrasado</span>} </div> <h3 className={`font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight group-hover:text-${c}-600 dark:group-hover:text-${c}-400 transition-colors`}>{topic.title}</h3> </div> <div className="flex flex-col items-end gap-1.5"> {reviewsDone.length > 0 && ( <span className={`text-xs font-black px-2 py-0.5 rounded-full ${avgAccuracy >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'}`}>{avgAccuracy}%</span> )} <div className="flex gap-1"> {[0,1,2,3].map(i => { const rev = topic.reviews[i]; let color = 'bg-slate-200 dark:bg-zinc-800'; if (rev && rev.done) color = (rev.correct/rev.total) >= 0.8 ? 'bg-emerald-500' : 'bg-amber-500'; else if (rev && !rev.done && (i === 0 || topic.reviews[i-1].done)) color = `bg-${c}-500 animate-pulse`; return <div key={i} className={`w-1.5 h-1.5 rounded-full ${color}`}></div> })} </div> </div> </div> </div> {expanded && ( <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-zinc-950/30 border-t border-slate-100 dark:border-zinc-800 animate-fade-in"> <div className="space-y-2 mt-3"> {topic.reviews.map((rev, idx) => { const isNext = !rev.done && (idx === 0 || topic.reviews[idx-1].done); const isDone = rev.done; const acc = rev.total > 0 ? Math.round((rev.correct/rev.total)*100) : 0; return ( <div key={idx} className={`flex items-center justify-between p-2.5 rounded-xl transition-colors ${isNext ? `bg-white dark:bg-zinc-800 shadow-sm border border-${c}-100 dark:border-${c}-900/30` : 'opacity-70'}`}> <div className="flex items-center gap-3"> <div className={`font-black text-xs w-6 ${isDone ? 'text-slate-400' : isNext ? `text-${c}-600 dark:text-${c}-400` : 'text-slate-300'}`}>{rev.label.split(':')[0]}</div> <div className="flex flex-col"> <span className={`text-xs font-medium ${!isDone && rev.date < getTodayStr() ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>{formatDate(rev.date)}</span> {rev.targetQ && !isDone && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1"><Icons.Target size={10}/> Meta: {rev.targetQ}q</span>} </div> </div> {isDone ? ( <div className={`font-bold text-sm ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</div> ) : isNext ? ( <button onClick={(e) => {e.stopPropagation(); onOpenReview(topic.id, idx); vibrate(VIBRATE_PATTERNS.tick);}} className={`bg-${c}-600 hover:bg-${c}-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-md shadow-${c}-500/20 active:scale-95 transition-transform`}>Revisar</button> ) : ( <Icons.Lock size={14} className="text-slate-300 dark:text-zinc-700"/> )} </div> ) })} </div> <div className="mt-4 pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-between items-center"> {topic.materialLink ? ( <a href={topic.materialLink} target="_blank" className="text-xs font-bold text-blue-500 hover:underline flex items-center gap-1"><Icons.LinkIcon size={12}/> Material</a> ) : <div></div>} <div className="flex gap-2"> <button onClick={(e) => { e.stopPropagation(); onEdit(topic.id); }} className="text-xs text-slate-500 hover:text-blue-500 flex items-center gap-1 transition-colors px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"><Icons.Edit size={12}/> Editar</button> <button onClick={(e) => { e.stopPropagation(); onDelete(topic.id); }} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors px-2 py-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"><Icons.Trash2 size={12}/> Excluir</button> </div> </div> </div> )} <div className="absolute top-5 right-4 pointer-events-none text-slate-300 dark:text-zinc-600">{expanded ? <Icons.ChevronUp size={16}/> : <Icons.ChevronDown size={16}/>}</div> </div> ); }, (prev, next) => prev.topic.id === next.topic.id && prev.topic.updatedAt === next.topic.updatedAt);
 
         const AreaDetailView = ({ areaId, onBack, topics }) => { const area = AREAS.find(a => a.id === areaId); const areaTopics = topics.filter(t => t.area === areaId && !t.deleted); const stats = useMemo(() => { const totalQ = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.total || 0), 0), 0); const totalC = areaTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + (r.correct || 0), 0), 0); const globalAcc = totalQ > 0 ? Math.round((totalC/totalQ)*100) : 0; return { totalQ, globalAcc }; }, [areaTopics]); return ( <div className="animate-slide-in-right pb-32 lg:pb-0"> <div className="flex items-center gap-3 mb-6"><button aria-label="Voltar" onClick={onBack} className="p-2 rounded-xl bg-white dark:bg-zinc-900 shadow-sm border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300"><Icons.ArrowLeft size={20}/></button><div><h2 className="text-xl font-bold text-slate-800 dark:text-white">{area.full}</h2><p className="text-xs text-slate-500">{areaTopics.length} tópicos cadastrados</p></div></div> <div className="grid grid-cols-2 gap-4 mb-6"><div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm"><div className="text-xs text-slate-500 uppercase font-bold mb-1">Aproveitamento</div><div className={`text-3xl font-black ${stats.globalAcc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{stats.globalAcc}%</div></div><div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm"><div className="text-xs text-slate-500 uppercase font-bold mb-1">Questões</div><div className="text-3xl font-black text-slate-800 dark:text-white">{stats.totalQ}</div></div></div> <div className="space-y-3">{areaTopics.length === 0 ? <div className="text-center text-slate-400 py-10">Nenhum tópico nesta área.</div> : areaTopics.map(t => { const done = t.reviews.filter(r => r.done); const tAcc = done.length > 0 ? Math.round(done.reduce((a,b)=>a+(b.correct/b.total),0)/done.length*100) : 0; return ( <div key={t.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-white/5 flex justify-between items-center cursor-default"><div className="flex-1 pr-2 overflow-hidden"><div className="font-bold text-slate-800 dark:text-slate-200 truncate">{t.title}</div><div className="text-xs text-slate-500">{done.length}/4 Revisões</div></div><div className={`font-bold text-lg ${tAcc >= 80 ? 'text-emerald-500' : tAcc >= 60 ? 'text-amber-500' : 'text-slate-400'}`}>{done.length > 0 ? tAcc + '%' : '-'}</div></div> ) })}</div> </div> ); };
 
@@ -476,11 +364,19 @@
             const [topics, setTopics] = useState([]); 
             const [logs, setLogs] = useState([]); 
             const [dataLoaded, setDataLoaded] = useState(false);
-            
-            // Pagination State
             const [visibleCount, setVisibleCount] = useState(20);
             
-            useEffect(() => { if (dataLoaded) return; try { const t = safeJSONParse('resiflow_v3_data', []); const l = safeJSONParse('resiflow_logs', []); setTopics(t); setLogs(l); } catch (e) { console.warn('Erro', e); } setDataLoaded(true); }, [dataLoaded]);
+            useEffect(() => { 
+                if (dataLoaded) return; 
+                try { 
+                    const t = safeJSONParse('resiflow_v3_data', []); 
+                    const l = safeJSONParse('resiflow_logs', []); 
+                    setTopics(t); 
+                    setLogs(l); 
+                } catch (e) { console.warn('Erro', e); } 
+                setDataLoaded(true); 
+            }, [dataLoaded]);
+            
             const [view, setView] = useState('list'); 
             const [filter, setFilter] = useState('all'); 
             const [areaFilter, setAreaFilter] = useState('all'); 
@@ -492,29 +388,45 @@
             const [pomodoroOpen, setPomodoroOpen] = useState(false); 
             const [deleteConfirmId, setDeleteConfirmId] = useState(null); 
             const [selectedDashboardArea, setSelectedDashboardArea] = useState(null);
-            const { status, syncKey, setSyncKey, saveToCloud } = useSync(topics, logs, setTopics, setLogs);
+            const { status, syncKey, setSyncKey, saveToCloud, appId } = useSync(topics, logs, setTopics, setLogs);
             const { showToast } = useContext(ToastContext);
+            
+            // New State for Edit Mode
+            const [editingTopic, setEditingTopic] = useState(null);
+            // New State for Mobile Search Header
+            const [isSearchOpen, setIsSearchOpen] = useState(false);
 
             useEffect(() => { if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('resiflow_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('resiflow_theme', 'light'); } }, [darkMode]);
-            useEffect(() => { localStorage.setItem('resiflow_v3_data', JSON.stringify(topics)); localStorage.setItem('resiflow_logs', JSON.stringify(logs)); if (status === 'online') { const t = setTimeout(() => saveToCloud(topics, logs), 2000); return () => clearTimeout(t); } }, [topics, logs, status]);
+            
+            useEffect(() => { 
+                if (!dataLoaded) return;
+                localStorage.setItem('resiflow_v3_data', JSON.stringify(topics)); 
+                localStorage.setItem('resiflow_logs', JSON.stringify(logs)); 
+                if (status === 'online') { const t = setTimeout(() => saveToCloud(topics, logs), 2000); return () => clearTimeout(t); } 
+            }, [topics, logs, status, dataLoaded]);
 
-            // Reset visible count when filters change
             useEffect(() => { setVisibleCount(20); }, [filter, areaFilter, searchTerm, view]);
 
-            const filteredList = useMemo(() => { 
-                let list = topics.filter(t => !t.deleted); 
-                if(searchTerm) { const lowerTerm = searchTerm.toLowerCase(); list = list.filter(t => { const areaName = (AREAS.find(a => a.id === t.area)?.name || '').toLowerCase(); const sub = (t.subarea || '').toLowerCase(); const title = t.title.toLowerCase(); return title.includes(lowerTerm) || areaName.includes(lowerTerm) || sub.includes(lowerTerm); }); } 
-                if(filter === 'today') list = list.filter(t => t.reviews.some(r => !r.done && r.date <= getTodayStr())); 
-                if(areaFilter !== 'all') list = list.filter(t => t.area === areaFilter); 
-                list.sort((a,b) => { const nextA = a.reviews.find(r => !r.done)?.date || '9999'; const nextB = b.reviews.find(r => !r.done)?.date || '9999'; return nextA.localeCompare(nextB); }); 
-                return list; 
-            }, [topics, searchTerm, filter, areaFilter]);
-
+            const filteredList = useMemo(() => { let list = topics.filter(t => !t.deleted); if(searchTerm) { const lowerTerm = searchTerm.toLowerCase(); list = list.filter(t => { const areaName = (AREAS.find(a => a.id === t.area)?.name || '').toLowerCase(); const sub = (t.subarea || '').toLowerCase(); const title = t.title.toLowerCase(); return title.includes(lowerTerm) || areaName.includes(lowerTerm) || sub.includes(lowerTerm); }); } if(filter === 'today') list = list.filter(t => t.reviews.some(r => !r.done && r.date <= getTodayStr())); if(areaFilter !== 'all') list = list.filter(t => t.area === areaFilter); list.sort((a,b) => { const nextA = a.reviews.find(r => !r.done)?.date || '9999'; const nextB = b.reviews.find(r => !r.done)?.date || '9999'; return nextA.localeCompare(nextB); }); return list; }, [topics, searchTerm, filter, areaFilter]);
             const visibleTopics = useMemo(() => filteredList.slice(0, visibleCount), [filteredList, visibleCount]);
 
             const handleAddTopic = (data) => { const schedule = generateSchedule(data.date, data.importance); const newTopic = { id: generateId(), title: data.title, area: data.area, subarea: data.subarea, importance: data.importance, materialLink: data.link, studyDate: data.date, reviews: schedule, deleted: false, updatedAt: Date.now() }; setTopics([newTopic, ...topics]); showToast("Tópico adicionado!"); };
+            
+            const handleUpdateTopic = (updatedTopic) => {
+                setTopics(prev => prev.map(t => t.id === updatedTopic.id ? updatedTopic : t));
+            };
+
             const handleOpenReview = useCallback((topicId, reviewIdx) => { setTopics(currentTopics => { const topic = currentTopics.find(t => t.id === topicId); if (topic) { const review = topic.reviews[reviewIdx]; setReviewModalData({ topicId, reviewIdx, title: topic.title, label: review.label, target: review.targetQ }); } return currentTopics; }); }, []);
             const handleDelete = useCallback((id) => { setDeleteConfirmId(id); }, []);
+            const handleEdit = useCallback((id) => { 
+                // We need to access current topics state, so we use the setter function to get it safely
+                setTopics(current => {
+                    const t = current.find(x => x.id === id);
+                    if (t) setEditingTopic(t);
+                    return current; 
+                });
+            }, []);
+
             const confirmDelete = () => { if (deleteConfirmId) { vibrate(VIBRATE_PATTERNS.tick); setTopics(prev => prev.map(t => t.id === deleteConfirmId ? {...t, deleted: true, updatedAt: Date.now()} : t)); setDeleteConfirmId(null); showToast("Tópico excluído", "error"); } };
             const handleAddLog = (log) => setLogs([log, ...logs]);
             const handleDeleteLog = (id) => setLogs(prev => prev.map(l => l.id === id ? { ...l, deleted: true, updatedAt: Date.now() } : l));
@@ -528,17 +440,11 @@
                 if (view === 'diary') return <DiaryView logs={logs} onAddLog={handleAddLog} onDeleteLog={handleDeleteLog} topics={topics} />;
                 return (
                     <>
-                        {/* Desktop Dashboard Summary (Only on Desktop List View) */}
-                        <div className="hidden lg:block">
-                            <DashboardSummary topics={topics} />
-                        </div>
-
+                        <div className="hidden lg:block"><DashboardSummary topics={topics} /></div>
                         <div className="flex flex-col gap-3 mb-6">
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <div className="relative flex-1">
-                                    <Icons.Search className="absolute left-3 top-3 text-slate-400" size={18}/>
-                                    <input type="text" placeholder="Buscar assunto..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                                </div>
+                                {/* Desktop Search Bar - Hidden on Mobile as it is in Header */}
+                                <div className="hidden lg:block relative flex-1"><Icons.Search className="absolute left-3 top-3 text-slate-400" size={18}/><input type="text" placeholder="Buscar assunto..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
                                 <button aria-label="Filtrar por Hoje" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setFilter(filter === 'today' ? 'all' : 'today'); }} className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors whitespace-nowrap ${filter === 'today' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{filter === 'today' ? '📅 Hoje' : '📅 Todos'}</button>
                             </div>
                             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -546,22 +452,7 @@
                                 {AREAS.map(a => ( <button key={a.id} onClick={() => setAreaFilter(a.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-all ${areaFilter === a.id ? `${a.color} border-transparent` : 'bg-white dark:bg-zinc-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'}`}>{a.name}</button> ))}
                             </div>
                         </div>
-                        {visibleTopics.length === 0 ? ( 
-                            <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
-                                <div className="w-20 h-20 bg-slate-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-zinc-700"><Icons.BookOpen size={32}/></div>
-                                <h3 className="font-bold text-slate-700 dark:text-slate-300">Nada por aqui</h3>
-                                <p className="text-sm text-slate-500">Adicione um novo tópico para começar.</p>
-                            </div> 
-                        ) : ( 
-                            <>
-                                {visibleTopics.map(t => ( <TopicCard key={t.id} topic={t} onOpenReview={handleOpenReview} onDelete={handleDelete} /> ))}
-                                {filteredList.length > visibleCount && (
-                                    <button onClick={() => setVisibleCount(c => c + 20)} className="w-full py-3 text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-zinc-900 rounded-xl transition-colors">
-                                        Carregar Mais ({filteredList.length - visibleCount})
-                                    </button>
-                                )}
-                            </>
-                        )}
+                        {visibleTopics.length === 0 ? ( <div className="flex flex-col items-center justify-center py-20 text-center opacity-60"><div className="w-20 h-20 bg-slate-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-4 text-slate-300 dark:text-zinc-700"><Icons.BookOpen size={32}/></div><h3 className="font-bold text-slate-700 dark:text-slate-300">Nada por aqui</h3><p className="text-sm text-slate-500">Adicione um novo tópico para começar.</p></div> ) : ( <> {visibleTopics.map(t => ( <TopicCard key={t.id} topic={t} onOpenReview={handleOpenReview} onDelete={handleDelete} onEdit={handleEdit} /> ))} {filteredList.length > visibleCount && ( <button onClick={() => setVisibleCount(c => c + 20)} className="w-full py-3 text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-zinc-900 rounded-xl transition-colors"> Carregar Mais ({filteredList.length - visibleCount}) </button> )} </> )}
                     </>
                 );
             };
@@ -621,19 +512,44 @@
                         </aside>
                     </div>
 
-                    {/* Mobile Layout (Original) */}
-                    <div className="lg:hidden min-h-screen pb-24 pt-safe relative">
-                        <header className="fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-white/5 transition-all pt-safe">
-                            <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-                                <h1 className="text-xl font-bold flex items-center gap-2 tracking-tight text-slate-800 dark:text-white"><div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><Icons.Activity size={18}/></div> ReviewFlow</h1>
-                                <div className="flex items-center gap-1">
-                                    <button aria-label="Timer" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setPomodoroOpen(true); }} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Timer size={20}/></button>
-                                    <button aria-label="Configurações" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setSettingsOpen(true); }} className={`p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
-                                    <button aria-label="Alternar Tema" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setDarkMode(!darkMode); }} className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition-colors">{darkMode ? <Icons.Sun size={20}/> : <Icons.Moon size={20}/>}</button>
+                    {/* Mobile Header */}
+                    <div className="lg:hidden fixed top-0 w-full z-40 glass border-b border-slate-200/50 dark:border-white/5 transition-all pt-safe">
+                        <div className="px-4 h-16 flex items-center justify-between">
+                            {isSearchOpen ? (
+                                <div className="flex items-center w-full gap-2 animate-fade-in">
+                                    <button onClick={() => { setIsSearchOpen(false); setSearchTerm(''); }} className="p-2 -ml-2 text-slate-500"><Icons.ArrowLeft size={20}/></button>
+                                    <div className="relative flex-1">
+                                        <Icons.Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/>
+                                        <input 
+                                            autoFocus
+                                            type="text" 
+                                            placeholder="Buscar..." 
+                                            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-sm outline-none dark:text-white"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        </header>
-                        <main className="max-w-3xl mx-auto px-4 mt-24 animate-fade-in">
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><Icons.Activity size={18}/></div>
+                                        <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">ReviewFlow</h1>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button aria-label="Buscar" onClick={() => { setIsSearchOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Search size={20}/></button>
+                                        <button aria-label="Timer" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setPomodoroOpen(true); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Timer size={20}/></button>
+                                        <button aria-label="Configurações" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setSettingsOpen(true); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
+                                        <button aria-label="Alternar Tema" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setDarkMode(!darkMode); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500 transition-colors">{darkMode ? <Icons.Sun size={20}/> : <Icons.Moon size={20}/>}</button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Mobile Main Content Wrapper */}
+                    <div className="lg:hidden min-h-screen pb-24 pt-safe mt-16">
+                        <main className="max-w-3xl mx-auto px-4 animate-fade-in">
                             <MainContent />
                         </main>
                         <nav className="fixed bottom-0 left-0 w-full glass border-t border-slate-200/50 dark:border-white/5 z-50 flex justify-around items-center py-4 px-4 pb-safe">
@@ -643,9 +559,9 @@
                     </div>
 
                     <AddTopicModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} onSave={handleAddTopic} />
-                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} setTopics={setTopics} setLogs={setLogs} syncKey={syncKey} setSyncKey={setSyncKey} status={status} />
+                    <EditTopicModal isOpen={!!editingTopic} onClose={() => setEditingTopic(null)} onSave={handleUpdateTopic} topic={editingTopic} />
+                    <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} setTopics={setTopics} setLogs={setLogs} syncKey={syncKey} setSyncKey={setSyncKey} status={status} appId={appId} />
                     
-                    {/* Mobile Pomodoro Modal */}
                     <div className="lg:hidden">
                         <PomodoroModal isOpen={pomodoroOpen} onClose={() => setPomodoroOpen(false)} />
                     </div>
