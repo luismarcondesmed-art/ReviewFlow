@@ -29,6 +29,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <!-- UseGesture for Swipe -->
+    <script src="https://unpkg.com/@use-gesture/vanilla@10.3.0/dist/use-gesture.umd.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -120,7 +122,6 @@
             return React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
         };
 
-        // Expanded Icons definition to avoid parser issues with long lines
         const Icons = { 
             Target: (p)=><LucideIcon name="Target" {...p}/>, 
             Calendar: (p)=><LucideIcon name="Calendar" {...p}/>, 
@@ -173,10 +174,12 @@
             ArrowUpDown: (p)=><LucideIcon name="ArrowUpDown" {...p}/>, 
             SortAsc: (p)=><LucideIcon name="ArrowDownUp" {...p}/>, 
             Monitor: (p)=><LucideIcon name="Monitor" {...p}/>, 
-            ClipboardList: (p)=><LucideIcon name="ClipboardList" {...p}/> 
+            ClipboardList: (p)=><LucideIcon name="ClipboardList" {...p}/>,
+            PlayCircle: (p)=><LucideIcon name="PlayCircle" {...p}/>,
+            StopCircle: (p)=><LucideIcon name="StopCircle" {...p}/>
         };
         
-        const VIBRATE_PATTERNS = { tick: 10, success: [20, 30, 20], reviewDone: [50, 50, 50], streak: [100, 50, 100, 50, 100], error: [200] };
+        const VIBRATE_PATTERNS = { tick: 10, success: [20, 30, 20], reviewDone: [50, 50, 50], streak: [100, 50, 100, 50, 100], error: [200], alarm: [500, 200, 500, 200, 500] };
         const vibrate = (pattern = 10) => { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(pattern); };
         const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         const formatDate = (d) => { if(!d) return ''; const [y, m, day] = d.split('-'); return `${day}/${m}`; };
@@ -243,6 +246,69 @@
             }, [config, syncKey]);
             const saveToCloud = async (newTopics, newLogs, newSimulados) => { if (!dbRef.current || !syncKey) return; try { const { doc, setDoc } = window.firebaseModules; const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey); await setDoc(docRef, { topics: newTopics, logs: newLogs, simulados: newSimulados, updatedAt: new Date().toISOString() }, { merge: true }); } catch (e) { console.error(e); setStatus('error'); } };
             return { status, config, setConfig, syncKey, setSyncKey, saveToCloud, appId };
+        };
+
+        // --- NEW POMODORO COMPONENTS ---
+        const TimerModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+            const [timeLeft, setTimeLeft] = useState(25 * 60);
+            const [isActive, setIsActive] = useState(false);
+            const [mode, setMode] = useState('focus'); // focus, short, long
+            const audioRef = useRef(null);
+
+            useEffect(() => {
+                let interval = null;
+                if (isActive && timeLeft > 0) {
+                    interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+                } else if (timeLeft === 0 && isActive) {
+                    setIsActive(false);
+                    vibrate(VIBRATE_PATTERNS.alarm);
+                    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                    audio.play().catch(e=>console.log(e));
+                }
+                return () => clearInterval(interval);
+            }, [isActive, timeLeft]);
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const setPreset = (m, name) => {
+                setIsActive(false);
+                setMode(name);
+                setTimeLeft(m * 60);
+            };
+
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-3xl p-8 text-center shadow-2xl border border-slate-200 dark:border-zinc-700 relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><Icons.X size={24}/></button>
+                        
+                        <h3 className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-xs font-bold mb-6">Modo Foco</h3>
+                        
+                        <div className="text-7xl font-black tabular-nums text-slate-800 dark:text-white mb-8 tracking-tighter">
+                            {formatTime(timeLeft)}
+                        </div>
+
+                        <div className="flex justify-center gap-4 mb-8">
+                            <button onClick={() => setIsActive(!isActive)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-xl ${isActive ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white hover:scale-105'}`}>
+                                {isActive ? <Icons.Pause size={32} fill="currentColor"/> : <Icons.Play size={32} fill="currentColor" className="ml-1"/>}
+                            </button>
+                            <button onClick={() => { setIsActive(false); setTimeLeft(mode === 'focus' ? 25*60 : mode === 'short' ? 5*60 : 15*60); }} className="w-16 h-16 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all">
+                                <Icons.RotateCcw size={24}/>
+                            </button>
+                        </div>
+
+                        <div className="flex justify-center gap-2">
+                            <button onClick={() => setPreset(25, 'focus')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'focus' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>25m</button>
+                            <button onClick={() => setPreset(50, 'focus')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'long-focus' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>50m</button>
+                            <button onClick={() => setPreset(5, 'short')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'short' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>5m</button>
+                        </div>
+                    </div>
+                </div>
+            );
         };
 
         const ModalWrapper = ({ isOpen, onClose, children, title }) => { if (!isOpen) return null; return ( <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center sm:p-4 pb-safe"> <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div> <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 md:rounded-2xl rounded-t-2xl shadow-2xl animate-slide-up flex flex-col max-h-[90vh] mb-safe md:mb-0"> <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md rounded-t-2xl z-10"> <h3 className="text-lg font-bold text-slate-800 dark:text-white">{title}</h3> <button aria-label="Fechar" onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.X size={20} className="text-slate-400"/></button> </div> <div className="overflow-y-auto p-0">{children}</div> </div> </div> ); };
@@ -898,6 +964,33 @@
             const [dataLoaded, setDataLoaded] = useState(false);
             const [visibleCount, setVisibleCount] = useState(20);
             
+            // --- GESTURE LOGIC ---
+            const bind = React.useMemo(() => {
+                if (window.UseGesture) {
+                    return window.UseGesture.useDrag(({ swipe: [swipeX], tap, target }) => {
+                        if (tap && target.closest('header')) {
+                            // Double tap header to scroll top logic could go here
+                            // For now just simple tap
+                        }
+                        if (swipeX) {
+                            const views = ['list', 'calendar', 'dashboard', 'simulados', 'diary'];
+                            const currentIndex = views.indexOf(view);
+                            if (swipeX < 0 && currentIndex < views.length - 1) {
+                                setView(views[currentIndex + 1]);
+                                setSelectedDashboardArea(null);
+                            } else if (swipeX > 0) {
+                                if (selectedDashboardArea) {
+                                    setSelectedDashboardArea(null); // Back gesture for dashboard detail
+                                } else if (currentIndex > 0) {
+                                    setView(views[currentIndex - 1]);
+                                }
+                            }
+                        }
+                    }, { axis: 'x', filterTaps: true });
+                }
+                return () => ({});
+            }, [view, selectedDashboardArea]);
+
             useEffect(() => { 
                 if (dataLoaded) return; 
                 try { 
@@ -925,6 +1018,7 @@
             const [editingSimulado, setEditingSimulado] = useState(null);
             const [reviewModalData, setReviewModalData] = useState(null); 
             const [settingsOpen, setSettingsOpen] = useState(false); 
+            const [timerOpen, setTimerOpen] = useState(false);
             const [deleteConfirmId, setDeleteConfirmId] = useState(null); 
             const [deleteSimuladoConfirmId, setDeleteSimuladoConfirmId] = useState(null);
             const [selectedDashboardArea, setSelectedDashboardArea] = useState(null);
@@ -936,6 +1030,16 @@
             const [filterModalOpen, setFilterModalOpen] = useState(false);
             const [sortModalOpen, setSortModalOpen] = useState(false);
             const [fabOpen, setFabOpen] = useState(false); // FAB State
+
+            // Badges logic
+            useEffect(() => {
+                if ('setAppBadge' in navigator) {
+                    const today = getTodayStr();
+                    const dueCount = topics.filter(t => !t.deleted && t.reviews.some(r => !r.done && r.date <= today)).length;
+                    if (dueCount > 0) navigator.setAppBadge(dueCount);
+                    else navigator.clearAppBadge();
+                }
+            }, [topics]);
 
             // Theme Logic
             useEffect(() => {
@@ -1057,7 +1161,7 @@
             };
 
             return (
-                <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300 overflow-x-hidden">
+                <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300 overflow-x-hidden touch-pan-y" {...(bind ? bind() : {})}>
                     <div className="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
                          <div className="absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
                          <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-purple-400/10 dark:bg-indigo-900/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
@@ -1077,6 +1181,7 @@
                                 ))}
                             </nav>
                             <div className="mt-auto space-y-2 pt-4 border-t border-slate-200 dark:border-white/5">
+                                <button onClick={() => setTimerOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-white transition-all"><Icons.Timer size={20}/> Pomodoro</button>
                                 <button onClick={() => setSettingsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-white transition-all"><Icons.Settings size={20}/> Ajustes</button>
                             </div>
                         </aside>
@@ -1088,7 +1193,10 @@
                                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{view === 'list' ? 'Meus Estudos' : view === 'calendar' ? 'Calendário' : view === 'dashboard' ? 'Centro Estatístico' : view === 'simulados' ? 'Simulados' : 'Diário'}</h2>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">Bem-vindo de volta! Vamos evoluir hoje?</p>
                                     </div>
-                                    <button onClick={() => setModalAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"><Icons.Plus size={20}/> Novo Tópico</button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setTimerOpen(true)} className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all"><Icons.Timer size={20}/> Foco</button>
+                                        <button onClick={() => setModalAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"><Icons.Plus size={20}/> Novo Tópico</button>
+                                    </div>
                                 </header>
                                 <MainContent />
                             </div>
@@ -1126,8 +1234,8 @@
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button aria-label="Buscar" onClick={() => { setIsSearchOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Search size={20}/></button>
+                                        <button aria-label="Modo Foco" onClick={() => { setTimerOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-blue-500"><Icons.Timer size={20}/></button>
                                         <button aria-label="Filtrar" onClick={() => { setFilterModalOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 ${filter !== 'all' || areaFilter !== 'all' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Filter size={20}/></button>
-                                        <button aria-label="Ordenar" onClick={() => { setSortModalOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.SortAsc size={20}/></button>
                                         <button aria-label="Configurações" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setSettingsOpen(true); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
                                     </div>
                                 </>
@@ -1146,6 +1254,9 @@
                                 <>
                                     <button onClick={() => { setFabOpen(false); setEditingSimulado(null); setModalSimuladoOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
                                         Simulado <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white"><Icons.ClipboardList size={20}/></div>
+                                    </button>
+                                    <button onClick={() => { setFabOpen(false); setTimerOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
+                                        Pomodoro <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white"><Icons.Timer size={20}/></div>
                                     </button>
                                     <button onClick={() => { setFabOpen(false); setModalAddOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
                                         Tópico <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white"><Icons.BookOpen size={20}/></div>
@@ -1170,6 +1281,7 @@
                     <AddTopicModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} onSave={handleAddTopic} />
                     <AddSimuladoModal isOpen={modalSimuladoOpen} onClose={() => setModalSimuladoOpen(false)} onSave={handleAddSimulado} topics={topics} initialData={editingSimulado} />
                     <EditTopicModal isOpen={!!editingTopic} onClose={() => setEditingTopic(null)} onSave={handleUpdateTopic} topic={editingTopic} />
+                    <TimerModal isOpen={timerOpen} onClose={() => setTimerOpen(false)} />
                     <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} simulados={simulados} setTopics={setTopics} setLogs={setLogs} setSimulados={setSimulados} syncKey={syncKey} setSyncKey={setSyncKey} status={status} appId={appId} themeMode={themeMode} toggleTheme={toggleTheme} />
                     <FilterModal isOpen={filterModalOpen} onClose={() => setFilterModalOpen(false)} filter={filter} setFilter={setFilter} areaFilter={areaFilter} setAreaFilter={setAreaFilter} />
                     <SortModal isOpen={sortModalOpen} onClose={() => setSortModalOpen(false)} sortBy={sortBy} setSortBy={setSortBy} />
