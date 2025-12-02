@@ -16,6 +16,7 @@
     <link rel="icon" type="image/svg+xml" href="icon.svg">
     <link rel="apple-touch-icon" href="icon.svg">
     
+    <!-- External Libs -->
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,8 +30,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <!-- UseGesture for Swipe -->
-    <script src="https://unpkg.com/@use-gesture/vanilla@10.3.0/dist/use-gesture.umd.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -82,25 +81,33 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         :root { --bg-color: #f8fafc; --text-color: #0f172a; }
         html.dark { --bg-color: #09090b; --text-color: #e2e8f0; }
-        html { background-color: var(--bg-color); transition: background-color 300ms ease; min-height: 100dvh; -webkit-text-size-adjust: 100%; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; min-height: 100dvh; width: 100%; overscroll-behavior-y: none; background-color: transparent; color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        input, select, textarea { font-size: 16px !important; }
+        html { background-color: var(--bg-color); transition: background-color 300ms ease; min-height: 100dvh; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; min-height: 100dvh; width: 100%; overscroll-behavior-y: none; background-color: transparent; color: var(--text-color); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+        
+        /* Modern Scrollbar for Windows */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
         .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* iOS Fluidity */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ios-scroll { -webkit-overflow-scrolling: touch; }
+        
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .dark .glass { background: rgba(9, 9, 11, 0.85); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
+        .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
+
         #app-loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f8fafc; z-index: 9999; transition: opacity 0.3s ease-out; }
         html.dark #app-loader { background-color: #09090b; }
         .loader-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #4f46e5); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .8; transform: scale(0.95); } }
-        .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
     </style>
 </head>
 <body class="selection:bg-blue-500 selection:text-white">
@@ -116,11 +123,11 @@
         const { useState, useEffect, useMemo, useRef, useCallback, createContext, useContext } = React;
 
         // --- COMPONENTS UTILS ---
-        const LucideIcon = ({ name, size = 24, className = "" }) => {
+        const LucideIcon = React.memo(({ name, size = 24, className = "" }) => {
             const iconData = window.lucide && window.lucide.icons ? window.lucide.icons[name] : null;
             if (!iconData) return <span style={{width: size, height: size, display: 'inline-block'}} />;
             return React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className }, iconData.map((ele, i) => React.createElement(ele[0], { ...ele[1], key: i })));
-        };
+        });
 
         const Icons = { 
             Target: (p)=><LucideIcon name="Target" {...p}/>, 
@@ -207,7 +214,6 @@
 
         const useSync = (topics, logs, simulados, setTopics, setLogs, setSimulados) => {
             const [status, setStatus] = useState('offline');
-            const { showToast } = useContext(ToastContext);
             const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('reviewflow_sync_key') || '');
             const [config, setConfig] = useState(() => { if (typeof __firebase_config !== 'undefined') { try { return JSON.parse(__firebase_config); } catch (e) { console.error(e); } } return safeJSONParse('reviewflow_fb_config', USER_FIREBASE_CONFIG); });
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'reviewflow';
@@ -248,64 +254,50 @@
             return { status, config, setConfig, syncKey, setSyncKey, saveToCloud, appId };
         };
 
-        // --- NEW POMODORO COMPONENTS ---
-        const TimerModal = ({ isOpen, onClose }) => {
-            if (!isOpen) return null;
-            const [timeLeft, setTimeLeft] = useState(25 * 60);
-            const [isActive, setIsActive] = useState(false);
-            const [mode, setMode] = useState('focus'); // focus, short, long
-            const audioRef = useRef(null);
-
+        const PomodoroWidget = ({ timerState, setTimerState }) => {
+            const { timeLeft, isActive, mode } = timerState;
             useEffect(() => {
                 let interval = null;
                 if (isActive && timeLeft > 0) {
-                    interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+                    interval = setInterval(() => setTimerState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 })), 1000);
                 } else if (timeLeft === 0 && isActive) {
-                    setIsActive(false);
+                    setTimerState(prev => ({ ...prev, isActive: false }));
                     vibrate(VIBRATE_PATTERNS.alarm);
                     const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
                     audio.play().catch(e=>console.log(e));
                 }
                 return () => clearInterval(interval);
-            }, [isActive, timeLeft]);
-
+            }, [isActive, timeLeft, setTimerState]);
             const formatTime = (seconds) => {
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             };
-
-            const setPreset = (m, name) => {
-                setIsActive(false);
-                setMode(name);
-                setTimeLeft(m * 60);
+            const toggleTimer = () => setTimerState(prev => ({ ...prev, isActive: !prev.isActive }));
+            const resetTimer = () => setTimerState(prev => ({ ...prev, isActive: false, timeLeft: prev.mode === 'focus' ? 25*60 : prev.mode === 'short' ? 5*60 : 15*60 }));
+            const setMode = (m, min) => {
+                setTimerState({ mode: m, timeLeft: min * 60, isActive: false });
+                vibrate(VIBRATE_PATTERNS.tick);
             };
-
             return (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-                    <div className="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-3xl p-8 text-center shadow-2xl border border-slate-200 dark:border-zinc-700 relative">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><Icons.X size={24}/></button>
-                        
-                        <h3 className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-xs font-bold mb-6">Modo Foco</h3>
-                        
-                        <div className="text-7xl font-black tabular-nums text-slate-800 dark:text-white mb-8 tracking-tighter">
-                            {formatTime(timeLeft)}
+                <div className="bg-slate-100 dark:bg-zinc-800 rounded-2xl p-4 shadow-inner border border-slate-200 dark:border-zinc-700 animate-fade-in">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pomodoro</span>
+                        <div className="flex gap-1">
+                            <button onClick={() => setMode('focus', 25)} className={`w-2 h-2 rounded-full ${mode === 'focus' ? 'bg-blue-500' : 'bg-slate-300 dark:bg-zinc-600'}`}></button>
+                            <button onClick={() => setMode('short', 5)} className={`w-2 h-2 rounded-full ${mode === 'short' ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'}`}></button>
                         </div>
-
-                        <div className="flex justify-center gap-4 mb-8">
-                            <button onClick={() => setIsActive(!isActive)} className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-xl ${isActive ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white hover:scale-105'}`}>
-                                {isActive ? <Icons.Pause size={32} fill="currentColor"/> : <Icons.Play size={32} fill="currentColor" className="ml-1"/>}
-                            </button>
-                            <button onClick={() => { setIsActive(false); setTimeLeft(mode === 'focus' ? 25*60 : mode === 'short' ? 5*60 : 15*60); }} className="w-16 h-16 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-zinc-700 transition-all">
-                                <Icons.RotateCcw size={24}/>
-                            </button>
-                        </div>
-
-                        <div className="flex justify-center gap-2">
-                            <button onClick={() => setPreset(25, 'focus')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'focus' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>25m</button>
-                            <button onClick={() => setPreset(50, 'focus')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'long-focus' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>50m</button>
-                            <button onClick={() => setPreset(5, 'short')} className={`px-4 py-2 rounded-full text-xs font-bold transition-colors ${mode === 'short' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>5m</button>
-                        </div>
+                    </div>
+                    <div className="text-center mb-3">
+                        <div className="text-4xl font-black tabular-nums text-slate-800 dark:text-white tracking-tight">{formatTime(timeLeft)}</div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={toggleTimer} className={`flex-1 py-2 rounded-xl flex items-center justify-center text-white font-bold text-xs transition-all shadow-md ${isActive ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                            {isActive ? <Icons.Pause size={16} fill="currentColor"/> : <Icons.Play size={16} fill="currentColor" className="ml-0.5"/>}
+                        </button>
+                        <button onClick={resetTimer} className="w-10 flex items-center justify-center bg-white dark:bg-zinc-700 rounded-xl text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-600 transition-colors">
+                            <Icons.RotateCcw size={16}/>
+                        </button>
                     </div>
                 </div>
             );
@@ -334,7 +326,6 @@
                             </div>
                             <button onClick={toggleTheme} className="px-4 py-2 bg-white dark:bg-zinc-700 border border-slate-200 dark:border-zinc-600 rounded-lg text-xs font-bold text-slate-700 dark:text-white">Alternar</button>
                         </div>
-
                         <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/50"> 
                             <h4 className="font-bold text-sm text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2"><Icons.Cloud size={16}/> Sincronização Nuvem</h4> 
                             <div className="space-y-3"> 
@@ -366,7 +357,6 @@
             )
         }
 
-        // --- NEW SIMULADO COMPONENTS ---
         const AddSimuladoModal = ({ isOpen, onClose, onSave, topics, initialData }) => {
             if (!isOpen) return null;
             const [name, setName] = useState(initialData?.name || '');
@@ -392,14 +382,7 @@
                 e.preventDefault();
                 if (!name || !year) return;
                 vibrate(VIBRATE_PATTERNS.tick);
-                onSave({ 
-                    name, 
-                    year, 
-                    totalQuestions: Number(totalQ), 
-                    correctCount: Number(correct), 
-                    dateTaken: new Date(dateTaken + 'T12:00:00').toISOString(),
-                    difficultyTopics: selectedDifficulties 
-                });
+                onSave({ name, year, totalQuestions: Number(totalQ), correctCount: Number(correct), dateTaken: new Date(dateTaken + 'T12:00:00').toISOString(), difficultyTopics: selectedDifficulties });
                 showToast(initialData ? "Simulado atualizado!" : "Simulado registrado!");
                 onClose();
             };
@@ -459,112 +442,53 @@
 
         const SimuladosView = ({ simulados, topics, onAdd, onDelete, onEdit }) => {
             const sortedSimulados = useMemo(() => [...simulados].sort((a,b) => new Date(b.dateTaken) - new Date(a.dateTaken)), [simulados]);
-            const last20 = useMemo(() => sortedSimulados.slice(0, 20).reverse(), [sortedSimulados]); // Reverse to chronological for chart
-            
-            // Chart Data Generation (SVG Path)
+            const last20 = useMemo(() => sortedSimulados.slice(0, 20).reverse(), [sortedSimulados]); 
             const chartData = useMemo(() => {
                 if (last20.length < 2) return null;
-                const max = 100;
-                const min = 0;
-                const width = 100; // viewBox width
-                const height = 50; // viewBox height
+                const max = 100; const min = 0; const width = 100; const height = 50;
                 const points = last20.map((s, i) => {
                     const acc = (s.correctCount / s.totalQuestions) * 100;
                     const x = (i / (last20.length - 1)) * width;
                     const y = height - ((acc - min) / (max - min)) * height;
                     return `${x},${y}`;
                 }).join(' ');
-                
-                // 90% threshold line
                 const y90 = height - ((90 - min) / (max - min)) * height;
-                
                 return { points, y90 };
             }, [last20]);
 
             return (
                 <div className="animate-fade-in pb-32 lg:pb-0 space-y-6">
-                    {/* Chart Section */}
                     <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden">
                         <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><Icons.Activity size={20} className="text-blue-500"/> Evolução</h3>
-                                <p className="text-xs text-slate-400">Últimos {last20.length} simulados</p>
-                            </div>
-                            {last20.length > 0 && (
-                                <div className="text-right">
-                                    <div className="text-2xl font-black text-slate-800 dark:text-white">{Math.round((last20[last20.length-1].correctCount / last20[last20.length-1].totalQuestions)*100)}%</div>
-                                    <div className="text-xs text-slate-500 font-bold uppercase">Último</div>
-                                </div>
-                            )}
+                            <div><h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><Icons.Activity size={20} className="text-blue-500"/> Evolução</h3><p className="text-xs text-slate-400">Últimos {last20.length} simulados</p></div>
+                            {last20.length > 0 && (<div className="text-right"><div className="text-2xl font-black text-slate-800 dark:text-white">{Math.round((last20[last20.length-1].correctCount / last20[last20.length-1].totalQuestions)*100)}%</div><div className="text-xs text-slate-500 font-bold uppercase">Último</div></div>)}
                         </div>
-                        
                         {chartData ? (
                             <div className="w-full aspect-[2/1] relative">
                                 <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                                    {/* Grid Lines */}
                                     <line x1="0" y1="0" x2="100" y2="0" stroke="currentColor" strokeOpacity="0.1" strokeWidth="0.1" className="text-slate-400"/>
                                     <line x1="0" y1="25" x2="100" y2="25" stroke="currentColor" strokeOpacity="0.1" strokeWidth="0.1" className="text-slate-400"/>
                                     <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeOpacity="0.1" strokeWidth="0.1" className="text-slate-400"/>
-                                    
-                                    {/* Threshold 90% */}
                                     <line x1="0" y1={chartData.y90} x2="100" y2={chartData.y90} stroke="#10b981" strokeWidth="0.5" strokeDasharray="2" opacity="0.5" />
                                     <text x="101" y={chartData.y90 + 1} fontSize="3" fill="#10b981" className="font-bold">90%</text>
-
-                                    {/* Data Line */}
                                     <polyline points={chartData.points} fill="none" stroke="#3b82f6" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                                    
-                                    {/* Data Points */}
-                                    {last20.map((s, i) => {
-                                        const acc = (s.correctCount / s.totalQuestions) * 100;
-                                        const x = (i / (last20.length - 1)) * 100;
-                                        const y = 50 - ((acc - 0) / 100) * 50;
-                                        return (
-                                            <circle key={s.id} cx={x} cy={y} r="1.5" className={`${acc >= 90 ? 'fill-emerald-500 stroke-emerald-500' : 'fill-white dark:fill-zinc-900 stroke-blue-500'}`} strokeWidth="0.5" />
-                                        )
-                                    })}
+                                    {last20.map((s, i) => { const acc = (s.correctCount / s.totalQuestions) * 100; const x = (i / (last20.length - 1)) * 100; const y = 50 - ((acc - 0) / 100) * 50; return (<circle key={s.id} cx={x} cy={y} r="1.5" className={`${acc >= 90 ? 'fill-emerald-500 stroke-emerald-500' : 'fill-white dark:fill-zinc-900 stroke-blue-500'}`} strokeWidth="0.5" />) })}
                                 </svg>
                             </div>
-                        ) : (
-                            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Adicione simulados para ver o gráfico</div>
-                        )}
+                        ) : (<div className="h-40 flex items-center justify-center text-slate-400 text-sm">Adicione simulados para ver o gráfico</div>)}
                     </div>
-
-                    {/* List Section */}
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center px-1">
-                            <h3 className="font-bold text-slate-800 dark:text-white">Histórico</h3>
-                            <button onClick={onAdd} className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">Novo Simulado</button>
-                        </div>
-                        
+                        <div className="flex justify-between items-center px-1"><h3 className="font-bold text-slate-800 dark:text-white">Histórico</h3><button onClick={onAdd} className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">Novo Simulado</button></div>
                         {sortedSimulados.map(sim => {
                             const acc = Math.round((sim.correctCount / sim.totalQuestions) * 100);
                             return (
                                 <div key={sim.id} className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-white/5 flex justify-between items-center group relative">
                                     <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-slate-800 dark:text-white">{sim.name}</span>
-                                            <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-zinc-800 px-1.5 rounded">{sim.year}</span>
-                                        </div>
-                                        <div className="text-xs text-slate-500 flex gap-3">
-                                            <span>{formatDate(sim.dateTaken.split('T')[0])}</span>
-                                            <span>{sim.correctCount}/{sim.totalQuestions} acertos</span>
-                                        </div>
-                                        {sim.difficultyTopics && sim.difficultyTopics.length > 0 && (
-                                            <div className="flex gap-1 mt-1.5 flex-wrap">
-                                                {sim.difficultyTopics.map(tid => {
-                                                    const t = topics.find(x => x.id === tid);
-                                                    return t ? <span key={tid} className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-900/30">{t.title}</span> : null;
-                                                })}
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2 mb-1"><span className="font-bold text-slate-800 dark:text-white">{sim.name}</span><span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-zinc-800 px-1.5 rounded">{sim.year}</span></div>
+                                        <div className="text-xs text-slate-500 flex gap-3"><span>{formatDate(sim.dateTaken.split('T')[0])}</span><span>{sim.correctCount}/{sim.totalQuestions} acertos</span></div>
+                                        {sim.difficultyTopics && sim.difficultyTopics.length > 0 && (<div className="flex gap-1 mt-1.5 flex-wrap">{sim.difficultyTopics.map(tid => { const t = topics.find(x => x.id === tid); return t ? <span key={tid} className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-900/30">{t.title}</span> : null; })}</div>)}
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`text-xl font-black ${acc >= 90 ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300'}`}>{acc}%</div>
-                                        <div className="flex gap-1">
-                                            <button onClick={() => onEdit(sim)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Icons.Edit size={16}/></button>
-                                            <button onClick={() => onDelete(sim.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Icons.Trash2 size={16}/></button>
-                                        </div>
-                                    </div>
+                                    <div className="flex items-center gap-4"><div className={`text-xl font-black ${acc >= 90 ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300'}`}>{acc}%</div><div className="flex gap-1"><button onClick={() => onEdit(sim)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Icons.Edit size={16}/></button><button onClick={() => onDelete(sim.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Icons.Trash2 size={16}/></button></div></div>
                                 </div>
                             )
                         })}
@@ -593,22 +517,121 @@
             const getHeatmapColor = (item) => { if (item.count === 0) return 'bg-slate-100 dark:bg-zinc-800'; if (item.type === 'questions') return 'bg-blue-500'; if (item.type === 'anki') return 'bg-purple-500'; if (item.type === 'class') return 'bg-red-500'; return 'bg-emerald-500'; };
             return ( <div className="animate-fade-in space-y-6 pb-32 lg:pb-0"> <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden"> <div ref={scrollRef} className="flex gap-1 overflow-x-auto no-scrollbar pb-2"> <div className="flex gap-1 flex-wrap h-32 content-start flex-col"> {heatmapData.map((day, i) => ( <div key={day.date} className={`w-3 h-3 rounded-sm ${getHeatmapColor(day)}`} title={`${formatDate(day.date)}: ${day.tooltip || 'Sem atividades'}`}></div> ))} </div> </div> <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 px-1"><span>Início</span><span>Hoje</span></div> </div> <div className="flex items-center justify-between bg-slate-100 dark:bg-zinc-800/50 p-2 rounded-xl"> <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white dark:hover:bg-zinc-700 rounded-lg transition-colors"><Icons.ChevronLeft size={20} className="text-slate-500"/></button> <div className="font-bold text-slate-700 dark:text-slate-200">{selectedDate === getTodayStr() ? 'Hoje, ' : ''}{formatFullDate(selectedDate)}</div> <button onClick={() => changeDate(1)} className="p-2 hover:bg-white dark:hover:bg-zinc-700 rounded-lg transition-colors" disabled={selectedDate >= getTodayStr()}><Icons.ChevronRight size={20} className={selectedDate >= getTodayStr() ? "text-slate-300 dark:text-zinc-800" : "text-slate-500"}/></button> </div> <div className="grid grid-cols-1 gap-3"> {['Questões', 'Anki', 'Aula'].map(item => { const isDone = status[item === 'Questões' ? 'questions' : item === 'Anki' ? 'anki' : 'class']; const config = { 'Questões': { icon: Icons.Target, color: 'blue' }, 'Anki': { icon: Icons.Layers, color: 'purple' }, 'Aula': { icon: Icons.MonitorPlay, color: 'red' } }[item]; const Icon = config.icon; return ( <button key={item} onClick={() => toggleChecklist(item)} className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group active:scale-[0.98] ${isDone ? `bg-${config.color}-50 dark:bg-${config.color}-900/20 border-${config.color}-500 dark:border-${config.color}-500` : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-zinc-800 hover:border-slate-200 dark:hover:border-zinc-700'}`}> <div className="flex items-center gap-4"> <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isDone ? `bg-${config.color}-500 text-white` : `bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600`}`}><Icon size={24} strokeWidth={isDone ? 3 : 2} /></div> <div className="text-left"> <div className={`text-lg font-bold transition-colors ${isDone ? `text-${config.color}-700 dark:text-${config.color}-300` : 'text-slate-700 dark:text-slate-300'}`}>{item}</div> <div className="text-xs font-medium text-slate-400 dark:text-slate-500">{isDone ? 'Concluído!' : 'Toque para marcar'}</div> </div> </div> <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isDone ? `bg-${config.color}-500 border-${config.color}-500` : 'border-slate-300 dark:border-zinc-600'}`}>{isDone && <Icons.CheckCircle2 size={14} className="text-white" strokeWidth={4} />}</div> </button> ); })} </div> </div> ); };
 
-        const CalendarView = ({ topics, onOpenReview, simulados }) => { const [displayDate, setDisplayDate] = useState(new Date()); const [selectedDate, setSelectedDate] = useState(null); const currentMonth = displayDate.getMonth(); const currentYear = displayDate.getFullYear(); const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(); const startDay = new Date(currentYear, currentMonth, 1).getDay(); const days = Array(startDay).fill(null).concat([...Array(daysInMonth).keys()].map(i => i + 1)); const prevMonth = () => setDisplayDate(new Date(currentYear, currentMonth - 1, 1)); const nextMonth = () => setDisplayDate(new Date(currentYear, currentMonth + 1, 1)); const goToday = () => setDisplayDate(new Date()); 
-        const getReviewsForDate = (dateStr) => { const list = []; topics.forEach(t => { if (t.deleted) return; t.reviews.forEach((r, idx) => { if (r.date === dateStr) list.push({ topic: t, review: r, idx }); }); }); return list; }; 
-        const getSimuladosForDate = (dateStr) => simulados.filter(s => s.dateTaken.split('T')[0] === dateStr);
-        return ( <div className="animate-fade-in pb-32 lg:pb-0 flex flex-col lg:flex-row gap-6 h-full"> <div className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm p-6 h-fit"> <div className="flex items-center justify-between mb-6"> <h3 className="text-xl font-bold text-slate-800 dark:text-white capitalize flex items-center gap-2">{displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3> <div className="flex gap-1"> <button aria-label="Mês anterior" onClick={prevMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronLeft size={20}/></button> <button onClick={goToday} className="px-3 py-1 text-xs font-bold bg-slate-100 dark:bg-zinc-800 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700">Hoje</button> <button aria-label="Próximo mês" onClick={nextMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronRight size={20}/></button> </div> </div> <div className="grid grid-cols-7 gap-2 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div> <div className="grid grid-cols-7 gap-2"> {days.map((day, idx) => { if (!day) return <div key={idx} className="aspect-square"></div>; const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const reviews = getReviewsForDate(dateStr); const daySimulados = getSimuladosForDate(dateStr); const isToday = dateStr === getTodayStr(); const pending = reviews.filter(x => !x.review.done).length; const done = reviews.filter(x => x.review.done).length; const hasDots = pending > 0 || done > 0; return ( <button key={idx} onClick={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)} className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${selectedDate === dateStr ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10' : isToday ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-slate-50 dark:bg-zinc-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800'}`}> <span className={`text-sm font-bold`}>{day}</span> 
-        {daySimulados.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-500"></div>}
-        {hasDots && (<div className="flex gap-0.5 mt-1 max-w-[80%] flex-wrap justify-center">{[...Array(Math.min(3, pending))].map((_, i) => <div key={`p${i}`} className={`w-1 h-1 rounded-full ${selectedDate === dateStr ? 'bg-white/70' : 'bg-blue-500'}`}></div>)}{[...Array(Math.min(3, done))].map((_, i) => <div key={`d${i}`} className={`w-1 h-1 rounded-full ${selectedDate === dateStr ? 'bg-emerald-300' : 'bg-emerald-500'}`}></div>)}</div>)} </button> ); })} </div> </div> {selectedDate && ( <div className="flex-1 lg:max-w-md animate-fade-in"> <div className="bg-slate-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-slate-200 dark:border-white/5 h-full flex flex-col"> <h4 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2 mb-4"><Icons.CalendarCheck size={20} className="text-blue-500"/> {formatFullDate(selectedDate)}</h4> <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1"> {getSimuladosForDate(selectedDate).length > 0 && (
-            <div className="mb-4 space-y-2">
-                <div className="text-xs font-bold text-slate-400 uppercase">Simulados</div>
-                {getSimuladosForDate(selectedDate).map(sim => (
-                    <div key={sim.id} className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 p-3 rounded-xl flex justify-between items-center">
-                        <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">{sim.name}</span>
-                        <span className="font-black text-purple-600 dark:text-purple-400">{Math.round((sim.correctCount/sim.totalQuestions)*100)}%</span>
+        const CalendarView = ({ topics, onOpenReview, simulados }) => {
+            const [displayDate, setDisplayDate] = useState(new Date());
+            const [selectedDate, setSelectedDate] = useState(null);
+            
+            const currentMonth = displayDate.getMonth();
+            const currentYear = displayDate.getFullYear();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = new Date(currentYear, currentMonth, 1).getDay();
+            const days = Array(startDay).fill(null).concat([...Array(daysInMonth).keys()].map(i => i + 1));
+            
+            const prevMonth = () => setDisplayDate(new Date(currentYear, currentMonth - 1, 1));
+            const nextMonth = () => setDisplayDate(new Date(currentYear, currentMonth + 1, 1));
+            const goToday = () => setDisplayDate(new Date());
+            
+            const getReviewsForDate = (dateStr) => {
+                const list = [];
+                topics.forEach(t => {
+                    if (t.deleted) return;
+                    t.reviews.forEach((r, idx) => {
+                        if (r.date === dateStr) list.push({ topic: t, review: r, idx });
+                    });
+                });
+                return list;
+            };
+            
+            const getSimuladosForDate = (dateStr) => simulados.filter(s => s.dateTaken.split('T')[0] === dateStr);
+
+            return (
+                <div className="animate-fade-in pb-32 lg:pb-0 flex flex-col lg:flex-row gap-6 h-full">
+                    <div className="flex-1 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm p-6 h-fit">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-slate-800 dark:text-white capitalize flex items-center gap-2">{displayDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+                            <div className="flex gap-1">
+                                <button aria-label="Mês anterior" onClick={prevMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronLeft size={20}/></button>
+                                <button onClick={goToday} className="px-3 py-1 text-xs font-bold bg-slate-100 dark:bg-zinc-800 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-700">Hoje</button>
+                                <button aria-label="Próximo mês" onClick={nextMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full"><Icons.ChevronRight size={20}/></button>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-7 gap-2 mb-2">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={i} className="text-center text-xs font-bold text-slate-400">{d}</div>)}</div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {days.map((day, idx) => {
+                                if (!day) return <div key={idx} className="aspect-square"></div>;
+                                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const reviews = getReviewsForDate(dateStr);
+                                const daySimulados = getSimuladosForDate(dateStr);
+                                const isToday = dateStr === getTodayStr();
+                                const pending = reviews.filter(x => !x.review.done).length;
+                                const done = reviews.filter(x => x.review.done).length;
+                                const hasDots = pending > 0 || done > 0;
+                                return (
+                                    <button key={idx} onClick={() => setSelectedDate(selectedDate === dateStr ? null : dateStr)} className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all ${selectedDate === dateStr ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105 z-10' : isToday ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-slate-50 dark:bg-zinc-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800'}`}>
+                                        <span className={`text-sm font-bold`}>{day}</span>
+                                        {daySimulados.length > 0 && <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-500"></div>}
+                                        {hasDots && (<div className="flex gap-0.5 mt-1 max-w-[80%] flex-wrap justify-center">{[...Array(Math.min(3, pending))].map((_, i) => <div key={`p${i}`} className={`w-1 h-1 rounded-full ${selectedDate === dateStr ? 'bg-white/70' : 'bg-blue-500'}`}></div>)}{[...Array(Math.min(3, done))].map((_, i) => <div key={`d${i}`} className={`w-1 h-1 rounded-full ${selectedDate === dateStr ? 'bg-emerald-300' : 'bg-emerald-500'}`}></div>)}</div>)}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                ))}
-            </div>
-        )} {getReviewsForDate(selectedDate).length === 0 && getSimuladosForDate(selectedDate).length === 0 ? ( <div className="text-center text-slate-400 py-8 flex flex-col items-center justify-center h-40"> <Icons.Coffee size={32} className="mb-2 opacity-50"/> <p>Nada agendado para este dia.</p> </div> ) : ( getReviewsForDate(selectedDate).map((item, i) => { const areaInfo = AREAS.find(a => a.id === item.topic.area) || AREAS[0]; const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[item.topic.area] || 'blue'; const acc = item.review.total > 0 ? Math.round((item.review.correct / item.review.total) * 100) : 0; return ( <div key={i} className={`p-4 rounded-xl border relative overflow-hidden bg-white dark:bg-zinc-900 border-slate-200 dark:border-${c}-500/30 shadow-sm`}> <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${areaInfo.color.split(' ')[0].replace('bg-', 'bg-').replace('/20', '-500')}`}></div> <div className="flex justify-between items-start pl-3"> <div className="flex-1"> <div className="flex items-center gap-2 mb-1"> <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${areaInfo.color}`}>{areaInfo.name.toUpperCase()}</span> {item.topic.importance === 'high' && <span className="text-red-500 text-[10px] flex items-center"><Icons.Star size={10} fill="currentColor"/></span>} </div> <div className="font-bold text-slate-800 dark:text-white leading-tight mb-1">{item.topic.title}</div> <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5"> <span className="font-bold bg-slate-100 dark:bg-zinc-800 px-1.5 rounded text-slate-600 dark:text-slate-300">{item.review.label.split(':')[0]}</span> <span>{item.review.label.split(':')[1]} • {item.review.done ? `${item.review.correct}/${item.review.total} acertos` : `Meta: ${item.review.targetQ}q`}</span> </div> </div> <div className="flex flex-col items-end gap-2"> {item.review.done ? (<><span className={`text-sm font-black ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</span></>) : (<button onClick={() => { onOpenReview(item.topic.id, item.idx); }} className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-blue-500/20 shadow-lg">Revisar</button>)} </div> </div> </div> ); }) )} </div> </div> </div> )} </div> ); };
+                    {selectedDate && (
+                        <div className="flex-1 lg:max-w-md animate-fade-in">
+                            <div className="bg-slate-50 dark:bg-zinc-900/50 rounded-3xl p-6 border border-slate-200 dark:border-white/5 h-full flex flex-col">
+                                <h4 className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2 mb-4"><Icons.CalendarCheck size={20} className="text-blue-500"/> {formatFullDate(selectedDate)}</h4>
+                                <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                    {getSimuladosForDate(selectedDate).length > 0 && (
+                                        <div className="mb-4 space-y-2">
+                                            <div className="text-xs font-bold text-slate-400 uppercase">Simulados</div>
+                                            {getSimuladosForDate(selectedDate).map(sim => (
+                                                <div key={sim.id} className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 p-3 rounded-xl flex justify-between items-center">
+                                                    <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">{sim.name}</span>
+                                                    <span className="font-black text-purple-600 dark:text-purple-400">{Math.round((sim.correctCount/sim.totalQuestions)*100)}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {getReviewsForDate(selectedDate).length === 0 && getSimuladosForDate(selectedDate).length === 0 ? (
+                                        <div className="text-center text-slate-400 py-8 flex flex-col items-center justify-center h-40">
+                                            <Icons.Coffee size={32} className="mb-2 opacity-50"/>
+                                            <p>Nada agendado para este dia.</p>
+                                        </div>
+                                    ) : (
+                                        getReviewsForDate(selectedDate).map((item, i) => {
+                                            const areaInfo = AREAS.find(a => a.id === item.topic.area) || AREAS[0];
+                                            const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[item.topic.area] || 'blue';
+                                            const acc = item.review.total > 0 ? Math.round((item.review.correct / item.review.total) * 100) : 0;
+                                            return (
+                                                <div key={i} className={`p-4 rounded-xl border relative overflow-hidden bg-white dark:bg-zinc-900 border-slate-200 dark:border-${c}-500/30 shadow-sm`}>
+                                                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${areaInfo.color.split(' ')[0].replace('bg-', 'bg-').replace('/20', '-500')}`}></div>
+                                                    <div className="flex justify-between items-start pl-3">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${areaInfo.color}`}>{areaInfo.name.toUpperCase()}</span>
+                                                                {item.topic.importance === 'high' && <span className="text-red-500 text-[10px] flex items-center"><Icons.Star size={10} fill="currentColor"/></span>}
+                                                            </div>
+                                                            <div className="font-bold text-slate-800 dark:text-white leading-tight mb-1">{item.topic.title}</div>
+                                                            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                                <span className="font-bold bg-slate-100 dark:bg-zinc-800 px-1.5 rounded text-slate-600 dark:text-slate-300">{item.review.label.split(':')[0]}</span>
+                                                                <span>{item.review.label.split(':')[1]} • {item.review.done ? `${item.review.correct}/${item.review.total} acertos` : `Meta: ${item.review.targetQ}q`}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col items-end gap-2">
+                                                            {item.review.done ? (<><span className={`text-sm font-black ${acc >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>{acc}%</span></>) : (<button onClick={() => { onOpenReview(item.topic.id, item.idx); }} className="text-xs font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-blue-500/20 shadow-lg">Revisar</button>)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const AddTopicModal = ({ isOpen, onClose, onSave }) => { if (!isOpen) return null; const [title, setTitle] = useState(''); const [area, setArea] = useState('clinica'); const [subarea, setSubarea] = useState(''); const [importance, setImportance] = useState('medium'); const [date, setDate] = useState(getTodayStr()); const [link, setLink] = useState(''); const { showToast } = useContext(ToastContext); const handleSubmit = (e) => { e.preventDefault(); if(!title) return; vibrate(VIBRATE_PATTERNS.tick); onSave({ title, area, subarea, importance, date, link }); showToast("Tópico criado com sucesso!"); setTitle(''); setSubarea(''); setLink(''); onClose(); }; return ( <ModalWrapper isOpen={isOpen} onClose={onClose} title="Novo Conteúdo"> <div className="p-6 space-y-5"> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">O que você estudou?</label> <input autoFocus type="text" placeholder="Ex: Insuficiência Cardíaca" className="w-full text-lg font-semibold bg-transparent border-b-2 border-slate-200 dark:border-zinc-700 focus:border-blue-500 outline-none py-2 placeholder-slate-300 dark:placeholder-zinc-600 dark:text-white transition-colors" value={title} onChange={e => setTitle(e.target.value)} /> </div> <div className="grid grid-cols-2 gap-4"> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Área</label> <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={area} onChange={e => { setArea(e.target.value); setSubarea(''); }}>{AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}</select> </div> <div> <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Subárea</label> <select className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm font-medium dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" value={subarea} onChange={e => setSubarea(e.target.value)}><option value="">Geral</option>{(SUB_AREAS[area]||[]).map(s => <option key={s} value={s}>{s}</option>)}</select> </div> </div> <div className="space-y-3"> <label className="block text-xs font-bold text-slate-500 uppercase">Prioridade</label> <div className="grid grid-cols-3 gap-3">{IMPORTANCE_LEVELS.map(lvl => (<button key={lvl.id} type="button" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setImportance(lvl.id); }} className={`py-3 rounded-xl text-sm font-bold border transition-all ${importance === lvl.id ? `border-${lvl.color.split('-')[1]}-500 bg-${lvl.color.split('-')[1]}-50 dark:bg-${lvl.color.split('-')[1]}-900/30 ${lvl.color}` : 'border-slate-200 dark:border-zinc-700 text-slate-400 hover:border-slate-300'}`}>{lvl.label}</button>))}</div> </div> <div className="grid grid-cols-1 gap-4"> <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Data</label><input type="date" className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={date} onChange={e => setDate(e.target.value)} /></div> <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Link (Opcional)</label><input type="url" placeholder="https://..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-sm dark:text-slate-200 outline-none" value={link} onChange={e => setLink(e.target.value)} /></div> </div> </div> <div className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 rounded-b-2xl"> <button onClick={handleSubmit} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition-all text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"><Icons.Plus size={20}/> Criar Plano</button> </div> </ModalWrapper> ); };
 
@@ -673,11 +696,29 @@
             const avgAccuracy = reviewsDone.length > 0 ? Math.round(reviewsDone.reduce((acc, r) => acc + (r.correct/r.total), 0) / reviewsDone.length * 100) : 0; 
             const isLate = topic.reviews.find(r => !r.done && r.date < getTodayStr()); 
             const c = { clinica: 'blue', cirurgia: 'red', pediatria: 'amber', go: 'purple', preventiva: 'emerald' }[topic.area] || 'blue'; 
-            const touchStartX = useRef(0); 
-            const touchEndX = useRef(0); 
             
+            // Custom Swipe Logic using Refs to be iOS/Windows friendly without huge libs
+            const touchStart = useRef(0);
+            const cardRef = useRef(null);
+
+            const handleTouchStart = (e) => { touchStart.current = e.targetTouches[0].clientX; };
+            const handleTouchEnd = (e) => {
+                const diff = touchStart.current - e.changedTouches[0].clientX;
+                if (diff > 80) { // Swipe Left to Review
+                    const nextReviewIndex = topic.reviews.findIndex(r => !r.done);
+                    if (nextReviewIndex !== -1) { vibrate(VIBRATE_PATTERNS.tick); onOpenReview(topic.id, nextReviewIndex); }
+                }
+            };
+
+            const latestReview = reviewsDone.length > 0 ? reviewsDone[reviewsDone.length-1] : null;
+
             return ( 
-                <div className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-${c}-900/50`} onTouchStart={e => touchStartX.current = e.targetTouches[0].clientX} onTouchMove={e => touchEndX.current = e.targetTouches[0].clientX} onTouchEnd={() => { if (touchEndX.current - touchStartX.current > 100) { const nextReviewIndex = topic.reviews.findIndex(r => !r.done); if (nextReviewIndex !== -1) { vibrate(VIBRATE_PATTERNS.tick); onOpenReview(topic.id, nextReviewIndex); } } }}> 
+                <div 
+                    ref={cardRef}
+                    className={`group bg-white dark:bg-zinc-900 rounded-2xl border-l-[6px] ${activeBorder} shadow-sm hover:shadow-xl dark:shadow-black/50 transition-all duration-300 mb-4 overflow-hidden relative border-y border-r border-slate-100 dark:border-${c}-900/50 touch-pan-y`}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
+                > 
                     <div className="p-4 cursor-pointer" onClick={() => setExpanded(!expanded)}> 
                         <div className="flex justify-between items-start"> 
                             <div className="flex-1 pr-4"> 
@@ -687,6 +728,16 @@
                                     {isLate && <span className="bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><Icons.Clock size={10}/> Atrasado</span>} 
                                 </div> 
                                 <h3 className={`font-bold text-slate-800 dark:text-slate-100 text-lg leading-tight group-hover:text-${c}-600 dark:group-hover:text-${c}-400 transition-colors`}>{topic.title}</h3> 
+                                {/* New Summary Line */}
+                                {reviewsDone.length > 0 && (
+                                    <div className="flex gap-2 mt-2 flex-wrap">
+                                        {reviewsDone.map((r, i) => (
+                                            <span key={i} className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+                                                {r.label.split(':')[0]}: {r.correct}/{r.total}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div> 
                             <div className="flex flex-col items-end gap-1.5"> 
                                 {reviewsDone.length > 0 && ( <span className={`text-xs font-black px-2 py-0.5 rounded-full ${avgAccuracy >= 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'}`}>{avgAccuracy}%</span> )} 
@@ -864,8 +915,8 @@
                     return { ...a, acc: q > 0 ? Math.round((c/q)*100) : 0, q }; 
                 }).sort((a,b) => b.acc - a.acc); 
                 
-                const last14Days = []; 
-                const today = new Date(); 
+                const last14Days = [];
+                const today = new Date();
                 for(let i=13; i>=0; i--) { 
                     const d = new Date(today); 
                     d.setDate(d.getDate() - i); 
@@ -964,32 +1015,31 @@
             const [dataLoaded, setDataLoaded] = useState(false);
             const [visibleCount, setVisibleCount] = useState(20);
             
-            // --- GESTURE LOGIC ---
-            const bind = React.useMemo(() => {
-                if (window.UseGesture) {
-                    return window.UseGesture.useDrag(({ swipe: [swipeX], tap, target }) => {
-                        if (tap && target.closest('header')) {
-                            // Double tap header to scroll top logic could go here
-                            // For now just simple tap
-                        }
-                        if (swipeX) {
-                            const views = ['list', 'calendar', 'dashboard', 'simulados', 'diary'];
-                            const currentIndex = views.indexOf(view);
-                            if (swipeX < 0 && currentIndex < views.length - 1) {
-                                setView(views[currentIndex + 1]);
-                                setSelectedDashboardArea(null);
-                            } else if (swipeX > 0) {
-                                if (selectedDashboardArea) {
-                                    setSelectedDashboardArea(null); // Back gesture for dashboard detail
-                                } else if (currentIndex > 0) {
-                                    setView(views[currentIndex - 1]);
-                                }
-                            }
-                        }
-                    }, { axis: 'x', filterTaps: true });
+            // Central Pomodoro State
+            const [timerState, setTimerState] = useState({ timeLeft: 25 * 60, isActive: false, mode: 'focus' });
+            
+            // --- GESTURE LOGIC (Standardized using standard touch events for better performance) ---
+            // Replaced use-gesture lib dependency with native lightweight implementation for stability
+            const mainContainerRef = useRef(null);
+            const touchStartX = useRef(0);
+            
+            const handleMainTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+            const handleMainTouchEnd = (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const diff = touchStartX.current - touchEndX;
+                const views = ['list', 'calendar', 'dashboard', 'simulados', 'diary'];
+                const currentIndex = views.indexOf(view);
+                
+                if (Math.abs(diff) > 100) { // Threshold
+                    if (diff > 0 && currentIndex < views.length - 1) {
+                        setView(views[currentIndex + 1]); // Swipe Left -> Next
+                        setSelectedDashboardArea(null);
+                    } else if (diff < 0) {
+                        if (selectedDashboardArea) setSelectedDashboardArea(null); // Back gesture for dashboard
+                        else if (currentIndex > 0) setView(views[currentIndex - 1]); // Swipe Right -> Prev
+                    }
                 }
-                return () => ({});
-            }, [view, selectedDashboardArea]);
+            };
 
             useEffect(() => { 
                 if (dataLoaded) return; 
@@ -1010,7 +1060,7 @@
             const [sortBy, setSortBy] = useState('date');
             const [searchTerm, setSearchTerm] = useState('');
             
-            // Theme State: 'light', 'dark', 'system'
+            // Theme State
             const [themeMode, setThemeMode] = useState(() => localStorage.getItem('reviewflow_theme_mode') || 'system');
             
             const [modalAddOpen, setModalAddOpen] = useState(false); 
@@ -1018,7 +1068,6 @@
             const [editingSimulado, setEditingSimulado] = useState(null);
             const [reviewModalData, setReviewModalData] = useState(null); 
             const [settingsOpen, setSettingsOpen] = useState(false); 
-            const [timerOpen, setTimerOpen] = useState(false);
             const [deleteConfirmId, setDeleteConfirmId] = useState(null); 
             const [deleteSimuladoConfirmId, setDeleteSimuladoConfirmId] = useState(null);
             const [selectedDashboardArea, setSelectedDashboardArea] = useState(null);
@@ -1029,7 +1078,8 @@
             const [isSearchOpen, setIsSearchOpen] = useState(false);
             const [filterModalOpen, setFilterModalOpen] = useState(false);
             const [sortModalOpen, setSortModalOpen] = useState(false);
-            const [fabOpen, setFabOpen] = useState(false); // FAB State
+            const [fabOpen, setFabOpen] = useState(false);
+            const [mobileTimerOpen, setMobileTimerOpen] = useState(false); // New state for mobile widget
 
             // Badges logic
             useEffect(() => {
@@ -1161,7 +1211,11 @@
             };
 
             return (
-                <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300 overflow-x-hidden touch-pan-y" {...(bind ? bind() : {})}>
+                <div 
+                    className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300 overflow-x-hidden touch-pan-y"
+                    onTouchStart={handleMainTouchStart}
+                    onTouchEnd={handleMainTouchEnd}
+                >
                     <div className="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
                          <div className="absolute top-0 left-0 -translate-x-1/4 -translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-blue-400/10 dark:bg-blue-600/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
                          <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 w-[80vw] h-[80vw] max-w-[800px] max-h-[800px] bg-purple-400/10 dark:bg-indigo-900/10 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen opacity-70 dark:opacity-15"></div>
@@ -1176,25 +1230,25 @@
                             <nav className="flex-1 space-y-2">
                                 {[{id:'list',l:'Início',i:Icons.Home},{id:'calendar',l:'Calendário',i:Icons.Calendar},{id:'dashboard',l:'Análise',i:Icons.PieChart},{id:'simulados',l:'Simulados',i:Icons.ClipboardList},{id:'diary',l:'Diário',i:Icons.Notebook}].map(item => (
                                     <button key={item.id} onClick={() => { setView(item.id); setSelectedDashboardArea(null); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${view === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-500 hover:bg-white hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-white'}`}>
-                                        <item.i size={20}/> {item.l}
+                                            <item.i size={20}/> {item.l}
                                     </button>
                                 ))}
                             </nav>
                             <div className="mt-auto space-y-2 pt-4 border-t border-slate-200 dark:border-white/5">
-                                <button onClick={() => setTimerOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-white transition-all"><Icons.Timer size={20}/> Pomodoro</button>
+                                {/* Desktop Pomodoro Widget Area */}
+                                <PomodoroWidget timerState={timerState} setTimerState={setTimerState} />
                                 <button onClick={() => setSettingsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-white transition-all"><Icons.Settings size={20}/> Ajustes</button>
                             </div>
                         </aside>
 
                         <main className="col-span-7 h-full flex flex-col relative">
-                            <div className="absolute inset-0 overflow-y-auto no-scrollbar pr-2">
+                            <div className="absolute inset-0 overflow-y-auto custom-scrollbar pr-2">
                                 <header className="flex justify-between items-center mb-6">
                                     <div>
                                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{view === 'list' ? 'Meus Estudos' : view === 'calendar' ? 'Calendário' : view === 'dashboard' ? 'Centro Estatístico' : view === 'simulados' ? 'Simulados' : 'Diário'}</h2>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">Bem-vindo de volta! Vamos evoluir hoje?</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => setTimerOpen(true)} className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all"><Icons.Timer size={20}/> Foco</button>
                                         <button onClick={() => setModalAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"><Icons.Plus size={20}/> Novo Tópico</button>
                                     </div>
                                 </header>
@@ -1203,7 +1257,7 @@
                         </main>
 
                         <aside className="col-span-3 h-full flex flex-col relative">
-                            <div className="absolute inset-0 overflow-y-auto no-scrollbar pl-2 space-y-6">
+                            <div className="absolute inset-0 overflow-y-auto custom-scrollbar pl-2 space-y-6">
                                 <DiaryWidget logs={logs} topics={topics} />
                                 <div className="bg-slate-100 dark:bg-zinc-900/50 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
                                     <h4 className="font-bold text-slate-500 uppercase text-xs mb-3">Status da Nuvem</h4>
@@ -1234,7 +1288,7 @@
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button aria-label="Buscar" onClick={() => { setIsSearchOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-500"><Icons.Search size={20}/></button>
-                                        <button aria-label="Modo Foco" onClick={() => { setTimerOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-blue-500"><Icons.Timer size={20}/></button>
+                                        <button aria-label="Modo Foco" onClick={() => { setMobileTimerOpen(!mobileTimerOpen); vibrate(VIBRATE_PATTERNS.tick); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 ${timerState.isActive ? 'text-amber-500 animate-pulse' : 'text-blue-500'}`}><Icons.Timer size={20}/></button>
                                         <button aria-label="Filtrar" onClick={() => { setFilterModalOpen(true); vibrate(VIBRATE_PATTERNS.tick); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 ${filter !== 'all' || areaFilter !== 'all' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Filter size={20}/></button>
                                         <button aria-label="Configurações" onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setSettingsOpen(true); }} className={`p-2 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors ${status === 'online' ? 'text-blue-500' : 'text-slate-500'}`}><Icons.Settings size={20}/></button>
                                     </div>
@@ -1243,27 +1297,29 @@
                         </div>
                     </div>
 
-                    <div className="lg:hidden min-h-screen pb-28 pt-safe mt-16">
+                    <div className="lg:hidden min-h-screen pb-28 pt-safe mt-16 ios-scroll">
+                        {mobileTimerOpen && (
+                            <div className="px-4 py-2 animate-slide-up">
+                                <PomodoroWidget timerState={timerState} setTimerState={setTimerState} />
+                            </div>
+                        )}
                         <main className="max-w-3xl mx-auto px-4 animate-fade-in">
                             <MainContent />
                         </main>
                         
                         {/* FAB Mobile */}
-                        <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3">
+                        <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end gap-3 pointer-events-none">
                             {fabOpen && (
-                                <>
+                                <div className="pointer-events-auto flex flex-col items-end gap-3">
                                     <button onClick={() => { setFabOpen(false); setEditingSimulado(null); setModalSimuladoOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
                                         Simulado <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white"><Icons.ClipboardList size={20}/></div>
-                                    </button>
-                                    <button onClick={() => { setFabOpen(false); setTimerOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
-                                        Pomodoro <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white"><Icons.Timer size={20}/></div>
                                     </button>
                                     <button onClick={() => { setFabOpen(false); setModalAddOpen(true); }} className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-zinc-800 text-slate-800 dark:text-white font-bold rounded-xl shadow-xl animate-slide-up border border-slate-100 dark:border-zinc-700">
                                         Tópico <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white"><Icons.BookOpen size={20}/></div>
                                     </button>
-                                </>
+                                </div>
                             )}
-                            <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setFabOpen(!fabOpen); }} className={`w-14 h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black shadow-xl flex items-center justify-center transition-transform ${fabOpen ? 'rotate-45' : ''}`}>
+                            <button onClick={() => { vibrate(VIBRATE_PATTERNS.tick); setFabOpen(!fabOpen); }} className={`pointer-events-auto w-14 h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black shadow-xl flex items-center justify-center transition-transform ${fabOpen ? 'rotate-45' : ''}`}>
                                 <Icons.Plus size={28}/>
                             </button>
                         </div>
@@ -1281,7 +1337,6 @@
                     <AddTopicModal isOpen={modalAddOpen} onClose={() => setModalAddOpen(false)} onSave={handleAddTopic} />
                     <AddSimuladoModal isOpen={modalSimuladoOpen} onClose={() => setModalSimuladoOpen(false)} onSave={handleAddSimulado} topics={topics} initialData={editingSimulado} />
                     <EditTopicModal isOpen={!!editingTopic} onClose={() => setEditingTopic(null)} onSave={handleUpdateTopic} topic={editingTopic} />
-                    <TimerModal isOpen={timerOpen} onClose={() => setTimerOpen(false)} />
                     <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} topics={topics} logs={logs} simulados={simulados} setTopics={setTopics} setLogs={setLogs} setSimulados={setSimulados} syncKey={syncKey} setSyncKey={setSyncKey} status={status} appId={appId} themeMode={themeMode} toggleTheme={toggleTheme} />
                     <FilterModal isOpen={filterModalOpen} onClose={() => setFilterModalOpen(false)} filter={filter} setFilter={setFilter} areaFilter={areaFilter} setAreaFilter={setAreaFilter} />
                     <SortModal isOpen={sortModalOpen} onClose={() => setSortModalOpen(false)} sortBy={sortBy} setSortBy={setSortBy} />
