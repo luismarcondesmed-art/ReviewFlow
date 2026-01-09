@@ -66,7 +66,12 @@
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); }
+        
+        /* Safe Area Utilities for iOS */
         .safe-top { padding-top: env(safe-area-inset-top); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
     </style>
 
 <link rel="stylesheet" href="/index.css">
@@ -81,7 +86,7 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/ReviewFlow/assets/index-Jm_OaiMI.js"></script>
+  <script type="module" crossorigin src="/ReviewFlow/assets/index-ZdUi6E4u.js"></script>
 </head>
 <body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500">
     <div id="root"></div>
