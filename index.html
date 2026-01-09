@@ -72,6 +72,9 @@
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+        
+        /* Ensure bottom nav doesn't cover content */
+        .content-safe-bottom { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
     </style>
 
 <link rel="stylesheet" href="/index.css">
@@ -82,13 +85,18 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "firebase/": "https://esm.sh/firebase@^12.7.0/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "path": "https://esm.sh/path@^0.12.7",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
-  <script type="module" crossorigin src="/ReviewFlow/assets/index-ZdUi6E4u.js"></script>
+  <script type="module" crossorigin src="/ReviewFlow/assets/main-DZ7OUJlg.js"></script>
 </head>
-<body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500">
+<body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden selection:bg-blue-500/30">
     <div id="root"></div>
     <script>
       if ('serviceWorker' in navigator) {
