@@ -1,12 +1,14 @@
 {
+  "id": "reviewflow-app",
   "name": "ReviewFlow",
   "short_name": "ReviewFlow",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f2f4f7",
   "theme_color": "#f2f4f7",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "./",
+  "categories": ["education", "productivity", "medical"],
   "icons": [
     {
       "src": "icon-192.png",
