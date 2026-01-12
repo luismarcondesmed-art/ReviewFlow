@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reviewflow-v5';
+const CACHE_NAME = 'reviewflow-v6';
 const ASSETS = [
   './',
   './index.html',
