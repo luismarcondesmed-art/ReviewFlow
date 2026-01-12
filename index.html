@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" class="antialiased">
 <head>
@@ -24,7 +25,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
@@ -38,11 +39,11 @@
                         zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' }
                     },
                     fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        sans: ['"Inter"', 'sans-serif'],
                     },
                     animation: {
-                        'scale-in': 'scaleIn 0.2s ease-out forwards',
-                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'fade-in': 'fadeIn 0.2s ease-out forwards',
                     },
                     keyframes: {
@@ -51,7 +52,7 @@
                             '100%': { transform: 'scale(1)', opacity: '1' },
                         },
                         slideUp: {
-                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' },
                         },
                         fadeIn: {
@@ -64,13 +65,16 @@
         }
     </script>
     <style>
-        :root { --glass-border: rgba(255,255,255,0.5); --glass-bg: rgba(255,255,255,0.65); }
+        :root { --glass-border: rgba(255,255,255,0.4); --glass-bg: rgba(255,255,255,0.65); }
         .dark { --glass-border: rgba(255,255,255,0.08); --glass-bg: rgba(20,20,23,0.65); }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
-        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; } 
+        @media (min-width: 1024px) {
+            ::-webkit-scrollbar { width: 6px; }
+            ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+            .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+        }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); }
         
         /* Safe Area Utilities for iOS */
         .safe-top { padding-top: env(safe-area-inset-top); }
@@ -96,7 +100,7 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/ReviewFlow/assets/main-hNWuKGkt.js"></script>
+  <script type="module" crossorigin src="/ReviewFlow/assets/main-C3sQFwU2.js"></script>
 </head>
 <body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden selection:bg-blue-500/30">
     <div id="root"></div>
@@ -104,8 +108,8 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registered!', reg))
-            .catch(err => console.log('SW registration failed', err));
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW failed', err));
         });
       }
     </script>
