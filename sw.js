@@ -1,94 +1,93 @@
-const CACHE_VERSION = 'v3';
-const STATIC_CACHE = `reviewflow-static-${CACHE_VERSION}`;
-const PAGE_CACHE = `reviewflow-pages-${CACHE_VERSION}`;
-
-const STATIC_ASSETS = [
+const CACHE_NAME = 'reviewflow-v5';
+const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// INSTALL
+// Install Event: Cache core assets
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
   );
 });
 
-// ACTIVATE
+// Activate Event: Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    caches.keys().then((keys) => {
+      return Promise.all(
         keys.map((key) => {
-          if (![STATIC_CACHE, PAGE_CACHE].includes(key)) {
+          if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
-      )
-    )
+      );
+    })
   );
   self.clients.claim();
 });
 
-// FETCH
+// Fetch Event
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith('http')) return;
 
-  // Apenas GET
-  if (request.method !== 'GET') return;
+  const url = new URL(event.request.url);
 
-  // Ignorar esquemas não http
-  if (!request.url.startsWith('http')) return;
-
-  const requestURL = new URL(request.url);
-
-  // HTML / SPA navigation → network-first
-  if (request.destination === 'document') {
+  // Strategy 1: Network First for HTML (Navigation)
+  // Ensures user always gets the latest version if online, falls back to cache if offline
+  if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(PAGE_CACHE).then((cache) => {
-            cache.put(request, responseClone);
+      fetch(event.request)
+        .then((networkResponse) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
           });
-          return response;
         })
-        .catch(() =>
-          caches.match(request).then((cached) => {
-            return cached || caches.match('./index.html');
-          })
-        )
+        .catch(() => {
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || caches.match('./index.html');
+          });
+        })
     );
     return;
   }
 
-  // Assets estáticos → stale-while-revalidate
+  // Strategy 2: Stale-While-Revalidate for static assets (JS, CSS, Images)
+  // Returns cached version immediately, then updates cache in background
   if (
-    ['script', 'style', 'image', 'font'].includes(request.destination)
+    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|json|woff2)$/) ||
+    ASSETS.includes(url.pathname)
   ) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (
-              networkResponse &&
-              networkResponse.status === 200 &&
-              networkResponse.type === 'basic'
-            ) {
-              const responseClone = networkResponse.clone();
-              caches.open(STATIC_CACHE).then((cache) => {
-                cache.put(request, responseClone);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        }).catch(() => {
+           // Network failed, do nothing (we already returned cache if available)
+        });
 
         return cachedResponse || fetchPromise;
       })
     );
+    return;
   }
+
+  // Strategy 3: Default (Network only for API/others)
+  event.respondWith(fetch(event.request));
 });
