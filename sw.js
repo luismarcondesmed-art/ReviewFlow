@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reviewflow-v6';
+const CACHE_NAME = 'reviewflow-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event: Clean up old caches
+// Activate Event: Clean up old caches immediately to prevent serving stale app versions
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -42,8 +42,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Strategy 1: Network First for HTML (Navigation)
-  // Ensures user always gets the latest version if online, falls back to cache if offline
+  // Strategy 1: Network First for HTML/Navigation (Ensure fresh updates)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -62,10 +61,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 2: Stale-While-Revalidate for static assets (JS, CSS, Images)
-  // Returns cached version immediately, then updates cache in background
+  // Strategy 2: Stale-While-Revalidate for static assets (Images, Fonts, etc)
   if (
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|json|woff2)$/) ||
+    url.pathname.match(/\.(png|jpg|jpeg|svg|json|woff2|ico)$/) ||
     ASSETS.includes(url.pathname)
   ) {
     event.respondWith(
@@ -79,7 +77,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-           // Network failed, do nothing (we already returned cache if available)
+           // Network failed, rely on cache
         });
 
         return cachedResponse || fetchPromise;
@@ -88,6 +86,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 3: Default (Network only for API/others)
+  // Strategy 3: Cache First for JS/CSS (Vite hashes filenames, so if the name changes, it's new)
+  if (url.pathname.match(/\.(js|css)$/)) {
+      event.respondWith(
+          caches.match(event.request).then((cachedResponse) => {
+              if (cachedResponse) return cachedResponse;
+              return fetch(event.request).then((networkResponse) => {
+                  if (networkResponse && networkResponse.status === 200) {
+                      const responseClone = networkResponse.clone();
+                      caches.open(CACHE_NAME).then((cache) => {
+                          cache.put(event.request, responseClone);
+                      });
+                  }
+                  return networkResponse;
+              });
+          })
+      );
+      return;
+  }
+
+  // Strategy 4: Default (Network only for API/others)
   event.respondWith(fetch(event.request));
 });
