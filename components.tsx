@@ -14,7 +14,7 @@ const getRankInfo = (level: number) => {
 };
 
 // --- Compact Level System (Sidebar) ---
-export const CompactLevelSystem = ({ totalQuestions }: { totalQuestions: number }) => {
+export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
     const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
     const rank = getRankInfo(level);
     const RankIcon = rank.icon;
@@ -54,10 +54,10 @@ export const CompactLevelSystem = ({ totalQuestions }: { totalQuestions: number 
             </button>
         </div>
     );
-};
+});
 
 // --- Level System (Full Widget - for Dashboard) ---
-export const LevelSystem = ({ totalQuestions }: { totalQuestions: number }) => {
+export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
     const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
     const rank = getRankInfo(level);
     const RankIcon = rank.icon;
@@ -104,11 +104,10 @@ export const LevelSystem = ({ totalQuestions }: { totalQuestions: number }) => {
             </div>
         </div>
     );
-};
+});
 
 // --- Activity Bar Chart ---
-export const ActivityBarChart = ({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    // ... existing implementation ...
+export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
     const data = useMemo(() => {
         const days = [];
         const today = new Date();
@@ -153,11 +152,10 @@ export const ActivityBarChart = ({ topics, simulados }: { topics: Topic[], simul
             ))}
         </div>
     )
-}
+});
 
 // --- Evolution Chart (Simulados) ---
-export const EvolutionChart = ({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
-    // ... existing implementation ...
+export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const data = useMemo(() => {
@@ -274,12 +272,11 @@ export const EvolutionChart = ({ simulados, targetAccuracy }: { simulados: Simul
             </div>
         </div>
     );
-};
+});
 
-export const SmartSuggestions = ({ topics, onReview }: { topics: Topic[], onReview: (id: string, idx: number) => void }) => {
-    // ... existing implementation ...
+export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topic[], onReview: (id: string, idx: number) => void }) => {
     const today = getTodayStr();
-    const suggestions = topics
+    const suggestions = useMemo(() => topics
         .filter(t => !t.deleted)
         .flatMap(t => t.reviews.map((r, idx) => ({ ...r, topic: t, idx })))
         .filter(r => !r.done && r.date <= today)
@@ -289,7 +286,7 @@ export const SmartSuggestions = ({ topics, onReview }: { topics: Topic[], onRevi
             if (a.topic.importance !== 'high' && b.topic.importance === 'high') return 1;
             return 0;
         })
-        .slice(0, 3); 
+        .slice(0, 3), [topics, today]);
 
     if (suggestions.length === 0) return (
         <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-[20px] border border-dashed border-slate-200 dark:border-white/10 text-center">
@@ -330,11 +327,10 @@ export const SmartSuggestions = ({ topics, onReview }: { topics: Topic[], onRevi
             })}
         </div>
     )
-};
+});
 
 // --- Heatmap Widget - Modern Dot Matrix ---
-export const HeatmapWidget = ({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    // ... existing implementation ...
+export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
     const days = useMemo(() => {
         const dArr = [];
         const today = new Date();
@@ -390,11 +386,10 @@ export const HeatmapWidget = ({ topics, simulados }: { topics: Topic[], simulado
             </div>
         </div>
     )
-};
+});
 
 // --- Topic Card ---
-export const TopicCard: React.FC<{ topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void }> = ({ topic, onReview, onDelete, onEdit }) => {
-    // ... existing implementation ...
+export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void }) => {
     const theme = getAreaTheme(topic.area);
     const nextReviewIdx = topic.reviews.findIndex(r => !r.done);
     const nextReview = topic.reviews[nextReviewIdx];
@@ -484,11 +479,10 @@ export const TopicCard: React.FC<{ topic: Topic; onReview: (id: string, idx: num
             </div>
         </div>
     )
-};
+});
 
 // --- Simulados Mini Widget ---
-export const SimuladosMiniWidget = ({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
-    // ... existing implementation ...
+export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
     const displayData = useMemo(() => {
         if (!simulados || simulados.length === 0) return null;
         const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());
@@ -527,4 +521,4 @@ export const SimuladosMiniWidget = ({ simulados, targetAccuracy }: { simulados: 
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 blur-[40px] rounded-full z-0 pointer-events-none"></div>
         </div>
     );
-};
+});

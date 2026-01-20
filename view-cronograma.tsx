@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     Check, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Map as MapIcon, ArrowUpDown, Info, X, Zap
 } from 'lucide-react';
@@ -15,6 +16,101 @@ const formatProfessorName = (name: string | undefined) => {
     // Return First Name + First letter of second name
     return `${parts[0]} ${parts[1][0]}.`;
 };
+
+// Priority Colors Helper
+const getPriorityData = (priority: string | undefined) => {
+    const p = (priority || '').toLowerCase();
+    // Weight 5 = Highest Priority
+    if (p.includes('azul')) return { weight: 5, bg: 'bg-blue-500', text: 'text-blue-500', bgSoft: 'bg-blue-500/10', label: 'Muito Alta' };
+    if (p.includes('verde')) return { weight: 4, bg: 'bg-emerald-500', text: 'text-emerald-500', bgSoft: 'bg-emerald-500/10', label: 'Alta' };
+    if (p.includes('amarelo')) return { weight: 3, bg: 'bg-amber-500', text: 'text-amber-500', bgSoft: 'bg-amber-500/10', label: 'Média' };
+    if (p.includes('vermelho')) return { weight: 2, bg: 'bg-red-500', text: 'text-red-500', bgSoft: 'bg-red-500/10', label: 'Baixa' };
+    if (p.includes('roxo')) return { weight: 1, bg: 'bg-purple-500', text: 'text-purple-500', bgSoft: 'bg-purple-500/10', label: 'Mínima' };
+    return { weight: 0, bg: 'bg-slate-300', text: 'text-slate-400', bgSoft: 'bg-slate-100 dark:bg-white/5', label: 'N/A' };
+};
+
+// Map Area Helper
+const mapArea = (area: string): string => {
+    if (area.includes("Clínica")) return 'clinica';
+    if (area.includes("Cirurgia")) return 'cirurgia';
+    if (area.includes("Pediatria")) return 'pediatria';
+    if (area.includes("Ginecologia") || area.includes("Obstetrícia")) return 'go';
+    if (area.includes("Preventiva")) return 'preventiva';
+    return 'default';
+};
+
+// Memoized Card Component
+const ScheduleCard = React.memo(({ item, isChecked, viewMode, onToggle }: { item: any, isChecked: boolean, viewMode: 'list' | 'grid', onToggle: (id: string, item: any) => void }) => {
+    const pData = getPriorityData(item.importancia);
+    const theme = getAreaTheme(mapArea(item.grandeArea) as any);
+
+    if (viewMode === 'grid') {
+        return (
+            <div 
+                onClick={() => onToggle(item.id, item)} 
+                className={`relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden group
+                    ${isChecked 
+                        ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60' 
+                        : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:shadow-blue-900/10'
+                    }
+                `}
+            >
+                {/* Color Strip */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${theme.bg.replace('100', '500').replace('/10', '')}`}></div>
+                
+                <div className="pl-3 flex flex-col h-full gap-3">
+                    <div className="flex justify-between items-start">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${theme.bg} ${theme.text} w-fit`}>
+                            {item.disciplina}
+                        </span>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
+                            {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
+                        </div>
+                    </div>
+                    
+                    <h4 className={`font-bold text-sm text-slate-800 dark:text-white leading-snug ${isChecked ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
+                        {item.aula}
+                    </h4>
+                    
+                    <div className="mt-auto pt-2 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
+                        <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">
+                            {formatProfessorName(item.professor)}
+                        </span>
+                        {item.importancia && (
+                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${pData.bgSoft}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${pData.bg}`}></div>
+                                <span className={`text-[9px] font-bold uppercase ${pData.text}`}>{item.importancia}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div 
+            onClick={() => onToggle(item.id, item)} 
+            className={`group flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${isChecked ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30'}`}
+        >
+            <div className={`w-1 h-8 rounded-full ${theme.bg.replace('100', '500').replace('/10', '')}`}></div>
+            <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
+                {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className={`text-sm font-bold text-slate-800 dark:text-white truncate ${isChecked ? 'line-through text-slate-400' : ''}`}>{item.aula}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] font-bold text-slate-400">{item.disciplina}</span>
+                    <span className="text-[10px] text-slate-300">•</span>
+                    <span className="text-[10px] text-slate-400 truncate">{formatProfessorName(item.professor)}</span>
+                </div>
+            </div>
+            {item.importancia && (
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${pData.bgSoft} ${pData.text}`}>{item.importancia}</span>
+            )}
+        </div>
+    );
+});
 
 export const CronogramaView = ({ 
     scheduleProgress, 
@@ -51,26 +147,6 @@ export const CronogramaView = ({
     const toggleDropdown = (e: React.MouseEvent, name: string) => {
         e.stopPropagation();
         setActiveDropdown(activeDropdown === name ? null : name);
-    };
-
-    const getPriorityData = (priority: string | undefined) => {
-        const p = (priority || '').toLowerCase();
-        // Weight 5 = Highest Priority
-        if (p.includes('azul')) return { weight: 5, bg: 'bg-blue-500', text: 'text-blue-500', bgSoft: 'bg-blue-500/10', label: 'Muito Alta' };
-        if (p.includes('verde')) return { weight: 4, bg: 'bg-emerald-500', text: 'text-emerald-500', bgSoft: 'bg-emerald-500/10', label: 'Alta' };
-        if (p.includes('amarelo')) return { weight: 3, bg: 'bg-amber-500', text: 'text-amber-500', bgSoft: 'bg-amber-500/10', label: 'Média' };
-        if (p.includes('vermelho')) return { weight: 2, bg: 'bg-red-500', text: 'text-red-500', bgSoft: 'bg-red-500/10', label: 'Baixa' };
-        if (p.includes('roxo')) return { weight: 1, bg: 'bg-purple-500', text: 'text-purple-500', bgSoft: 'bg-purple-500/10', label: 'Mínima' };
-        return { weight: 0, bg: 'bg-slate-300', text: 'text-slate-400', bgSoft: 'bg-slate-100 dark:bg-white/5', label: 'N/A' };
-    };
-
-    const mapArea = (area: string): string => {
-        if (area.includes("Clínica")) return 'clinica';
-        if (area.includes("Cirurgia")) return 'cirurgia';
-        if (area.includes("Pediatria")) return 'pediatria';
-        if (area.includes("Ginecologia") || area.includes("Obstetrícia")) return 'go';
-        if (area.includes("Preventiva")) return 'preventiva';
-        return 'default';
     };
 
     const currentScheduleData = useMemo(() => {
@@ -113,8 +189,13 @@ export const CronogramaView = ({
         }));
     }, [searchTerm, filterArea, sortBy, currentScheduleData]);
 
+    // Optimize initial collapse: only on mount or major schedule change
     useEffect(() => {
         if (groupedSchedule.length === 0) return;
+        // Check if user has interacted with blocks already? If collapsedBlocks is empty, do logic.
+        // Actually, we want to auto-collapse completed or future blocks initially.
+        // Let's just expand the first block that has uncompleted items.
+        
         const firstActiveBlock = groupedSchedule.find(g => g.items.some(i => !scheduleProgress[i.id]));
         if (firstActiveBlock) {
             const newSet = new Set<string>();
@@ -123,15 +204,23 @@ export const CronogramaView = ({
             });
             setCollapsedBlocks(newSet);
         }
-    }, [groupedSchedule.length]); 
+    }, [activeScheduleCode]); // Changed dependency to prevent re-collapsing on every check
 
-    const toggleCheck = (id: string, item: any) => {
-        const isChecking = !scheduleProgress[id];
-        setScheduleProgress((prev) => ({ ...prev, [id]: isChecking }));
-        if (isChecking && autoReview && onAutoCreateTopic) {
+    const toggleCheck = useCallback((id: string, item: any) => {
+        setScheduleProgress((prev) => {
+            const isChecking = !prev[id];
+            // Side effect needs to be handled carefully. 
+            // We can't access `autoReview` state here safely inside the setter if we want to be pure.
+            // But for this simple app, we can just trigger the callback outside.
+            return { ...prev, [id]: isChecking };
+        });
+        
+        // This is a bit dirty (using state value directly), but standard for this scale.
+        // Ideally we would use an effect but that's overkill.
+        if (!scheduleProgress[id] && autoReview && onAutoCreateTopic) {
             onAutoCreateTopic(item);
         }
-    };
+    }, [scheduleProgress, autoReview, onAutoCreateTopic]);
     
     const toggleBlock = (block: string) => setCollapsedBlocks(p => { const s = new Set(p); if(s.has(block)) s.delete(block); else s.add(block); return s; });
     
@@ -278,82 +367,15 @@ export const CronogramaView = ({
 
                                 {!isCollapsed && (
                                     <div className={`animate-slide-up ${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3' : 'flex flex-col gap-2'}`}>
-                                        {group.items.map((item) => {
-                                            const pData = getPriorityData(item.importancia);
-                                            const theme = getAreaTheme(mapArea(item.grandeArea) as any);
-                                            const isChecked = !!scheduleProgress[item.id];
-                                            
-                                            // Grid View Card
-                                            if (viewMode === 'grid') {
-                                                return (
-                                                    <div 
-                                                        key={item.id} 
-                                                        onClick={() => toggleCheck(item.id, item)} 
-                                                        className={`relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden group
-                                                            ${isChecked 
-                                                                ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60' 
-                                                                : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:shadow-blue-900/10'
-                                                            }
-                                                        `}
-                                                    >
-                                                        {/* Color Strip */}
-                                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${theme.bg.replace('100', '500').replace('/10', '')}`}></div>
-                                                        
-                                                        <div className="pl-3 flex flex-col h-full gap-3">
-                                                            <div className="flex justify-between items-start">
-                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${theme.bg} ${theme.text} w-fit`}>
-                                                                    {item.disciplina}
-                                                                </span>
-                                                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
-                                                                    {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <h4 className={`font-bold text-sm text-slate-800 dark:text-white leading-snug ${isChecked ? 'line-through decoration-slate-400 text-slate-400' : ''}`}>
-                                                                {item.aula}
-                                                            </h4>
-                                                            
-                                                            <div className="mt-auto pt-2 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
-                                                                <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">
-                                                                    {formatProfessorName(item.professor)}
-                                                                </span>
-                                                                {item.importancia && (
-                                                                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${pData.bgSoft}`}>
-                                                                        <div className={`w-1.5 h-1.5 rounded-full ${pData.bg}`}></div>
-                                                                        <span className={`text-[9px] font-bold uppercase ${pData.text}`}>{item.importancia}</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }
-
-                                            // List View Card
-                                            return (
-                                                <div 
-                                                    key={item.id} 
-                                                    onClick={() => toggleCheck(item.id, item)} 
-                                                    className={`group flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${isChecked ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 hover:border-blue-500/30'}`}
-                                                >
-                                                    <div className={`w-1 h-8 rounded-full ${theme.bg.replace('100', '500').replace('/10', '')}`}></div>
-                                                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
-                                                        {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className={`text-sm font-bold text-slate-800 dark:text-white truncate ${isChecked ? 'line-through text-slate-400' : ''}`}>{item.aula}</div>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] font-bold text-slate-400">{item.disciplina}</span>
-                                                            <span className="text-[10px] text-slate-300">•</span>
-                                                            <span className="text-[10px] text-slate-400 truncate">{formatProfessorName(item.professor)}</span>
-                                                        </div>
-                                                    </div>
-                                                    {item.importancia && (
-                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${pData.bgSoft} ${pData.text}`}>{item.importancia}</span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                        {group.items.map((item) => (
+                                            <ScheduleCard 
+                                                key={item.id} 
+                                                item={item} 
+                                                isChecked={!!scheduleProgress[item.id]} 
+                                                viewMode={viewMode} 
+                                                onToggle={toggleCheck} 
+                                            />
+                                        ))}
                                     </div>
                                 )}
                             </div>

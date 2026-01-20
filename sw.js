@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reviewflow-v8';
+const CACHE_NAME = 'reviewflow-v9';
 const ASSETS = [
   '/',
   '/index.html',
@@ -60,10 +60,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 2: Stale-While-Revalidate for static assets
+  // Strategy 2: Stale-While-Revalidate for static assets and CDN imports
   if (
     url.pathname.match(/\.(png|jpg|jpeg|svg|json|woff2|ico)$/) ||
-    ASSETS.includes(url.pathname)
+    ASSETS.includes(url.pathname) ||
+    url.hostname === 'esm.sh' || 
+    url.hostname === 'cdn.jsdelivr.net'
   ) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
@@ -84,7 +86,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Strategy 3: Cache First for JS/CSS (Vite hashes filenames)
-  if (url.pathname.match(/\.(js|css)$/)) {
+  if (url.pathname.match(/\.(js|css|mjs)$/)) {
       event.respondWith(
           caches.match(event.request).then((cachedResponse) => {
               if (cachedResponse) return cachedResponse;

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
@@ -151,7 +152,7 @@ export function App() {
         vibration.success();
     };
 
-    const handleAutoCreateFromSchedule = (item: any) => {
+    const handleAutoCreateFromSchedule = useCallback((item: any) => {
         // Map Area
         let area: AreaType = 'clinica';
         const ga = (item.grandeArea || '').toLowerCase();
@@ -178,7 +179,7 @@ export function App() {
 
         handleAddTopic(draftTopic);
         triggerConfetti();
-    };
+    }, [config.examDate, topics]);
 
     const handleUpdateTopic = (updated: Topic) => {
         const old = topics.find(t => t.id === updated.id);
