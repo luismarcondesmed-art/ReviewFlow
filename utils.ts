@@ -4,14 +4,16 @@ import { AreaType, ImportanceType, Review, Topic, Simulado } from './types';
 
 export const APP_ID = 'reviewflow';
 
+// Configuração segura usando Variáveis de Ambiente
+// Uses optional chaining (?.) to prevent runtime crash if import.meta.env is undefined
 export const USER_FIREBASE_CONFIG = { 
-    apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s", 
-    authDomain: "med-heklp.firebaseapp.com", 
-    projectId: "med-heklp", 
-    storageBucket: "med-heklp.firebasestorage.app", 
-    messagingSenderId: "675054342845", 
-    appId: "1:675054342845:web:91e53e21060a087123ddd4", 
-    measurementId: "G-BLWYTWFFTZ" 
+    apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY, 
+    authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN, 
+    projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID, 
+    storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET, 
+    messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID, 
+    appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID, 
+    measurementId: (import.meta as any).env?.VITE_FIREBASE_MEASUREMENT_ID 
 };
 
 export const AREAS: { id: AreaType; name: string; full: string }[] = [
@@ -164,45 +166,30 @@ export const generateSmartSchedule = (
     const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
     const today = getTodayStr();
     
-    // Determine effective exam date (fallback to 1 year if not set)
     const effectiveExamDate = examDate && examDate > today ? examDate : addDays(today, 365);
     
-    // Calculate days remaining from study date to exam
     const startMs = new Date(studyDate + 'T12:00:00').getTime();
     const examMs = new Date(effectiveExamDate + 'T12:00:00').getTime();
     const daysUntilExam = (examMs - startMs) / (1000 * 60 * 60 * 24);
     
-    // Define "Study Window" - we want to finish R3 at least 7 days before the exam
-    // to leave room for the R_FINAL.
     const studyWindow = Math.max(0, daysUntilExam - 7);
     
-    // Standard Intervals (Cumulative days from start):
-    // R1: +7 days
-    // R2: +28 days (7 + 21)
-    // R3: +58 days (28 + 30)
     const standardTotalDuration = 58; 
 
-    // Calculate Compression Factor
-    // If we have less time than the standard duration, we compress proportionally.
-    // We cap compression at 0.1 (10%) to prevent absurdity, though emergency mode handles severe cases.
     let compressionFactor = 1.0;
     if (studyWindow < standardTotalDuration) {
         compressionFactor = Math.max(0.1, studyWindow / standardTotalDuration);
     }
 
-    // Apply Compression to Intervals
-    // Using Math.max(1, ...) to ensure at least 1 day spacing in severe compression
     let r1Gap = Math.round(7 * compressionFactor);
     let r2Gap = Math.round(21 * compressionFactor);
     let r3Gap = Math.round(30 * compressionFactor);
 
-    // Emergency Mode: If window is extremely small (< 15 days), force tightest spacing
     if (studyWindow < 15) {
         r1Gap = 1;
         r2Gap = 3;
         r3Gap = 5;
     } else {
-        // Ensure minimal spacing for non-emergency but compressed schedules
         r1Gap = Math.max(2, r1Gap);
         r2Gap = Math.max(5, r2Gap);
         r3Gap = Math.max(7, r3Gap);
@@ -211,7 +198,6 @@ export const generateSmartSchedule = (
     const busyDates = getBusyDates(existingTopics, currentTopicId);
     const schedule: Review[] = [];
     
-    // R0 (Always on Study Date)
     schedule.push({ 
         type: 'R0', 
         date: studyDate, 
@@ -220,31 +206,26 @@ export const generateSmartSchedule = (
         targetQ: impObj.baseQ 
     });
     
-    // R1
     let r1Ideal = addDays(studyDate, r1Gap);
     let r1Actual = findNextEmptyDate(r1Ideal, busyDates);
     busyDates.add(r1Actual);
     schedule.push({ type: 'R1', date: r1Actual, label: 'R1: Pico', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R1', null) });
 
-    // R2
     let r2Ideal = addDays(r1Actual, r2Gap);
     let r2Actual = findNextEmptyDate(r2Ideal, busyDates);
     busyDates.add(r2Actual);
     schedule.push({ type: 'R2', date: r2Actual, label: 'R2: Manutenção', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R2', null) });
 
-    // R3
     let r3Ideal = addDays(r2Actual, r3Gap);
     let r3Actual = findNextEmptyDate(r3Ideal, busyDates);
     busyDates.add(r3Actual);
     schedule.push({ type: 'R3', date: r3Actual, label: 'R3: Longo Prazo', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R3', null) });
 
-    // R_FINAL (Scheduled in the last week before exam, if timeline permits)
     if (daysUntilExam > 7) {
         const finalStart = addDays(effectiveExamDate, -7);
         let finalActual = finalStart;
         let found = false;
         
-        // Try to find a slot in the final week
         for (let d = 0; d < 5; d++) {
             const check = addDays(finalStart, d);
             if (!busyDates.has(check)) {
@@ -253,14 +234,12 @@ export const generateSmartSchedule = (
                 break;
             }
         }
-        if (!found) finalActual = finalStart; // Overlap allowed in final week if full
+        if (!found) finalActual = finalStart;
 
-        // Ensure R_Final is logically after R3, even if we have to push it
         if (finalActual <= r3Actual) {
             finalActual = addDays(r3Actual, 2);
         }
 
-        // Only add if it still falls before or on exam date
         if (finalActual <= effectiveExamDate) {
              schedule.push({ type: 'R_FINAL', date: finalActual, label: 'Revisão Final', done: false, correct: 0, total: 0, difficulty: null, targetQ: impObj.baseQ * 1.5 });
         }
@@ -269,7 +248,6 @@ export const generateSmartSchedule = (
     return schedule;
 };
 
-// Keeping for legacy compatibility but not using
 export const generateSchedule = (date: string, importanceId: ImportanceType): Review[] => {
     return generateSmartSchedule(date, undefined, importanceId, []);
 };
@@ -316,8 +294,6 @@ export const triggerConfetti = () => {
     if (window.confetti) window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] }); 
 };
 
-// --- ROBUST OPTIMIZATION ALGORITHM (RESPEC SYSTEM) ---
-
 export interface OptimizationChange {
     title: string;
     label: string;
@@ -333,13 +309,12 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
     const todayDate = new Date(todayStr + 'T12:00:00');
     const ONE_DAY_MS = 86400000;
 
-    // CONSTRAINTS
     const MAX_QUESTIONS_PER_DAY = 150;
     const MAX_HIGH_R1_PER_DAY = 1;
     const MAX_REVIEWS_PER_TOPIC_PER_DAY = 2;
 
     const dailyLoad = new Map<string, { totalQ: number, highR1: number }>();
-    const dailyTopicCounts = new Map<string, Map<string, number>>(); // date -> topicId -> count
+    const dailyTopicCounts = new Map<string, Map<string, number>>(); 
 
     const canFit = (date: string, q: number, isHighR1: boolean, topicId: string): boolean => {
         const current = dailyLoad.get(date) || { totalQ: 0, highR1: 0 };
@@ -403,7 +378,6 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
         });
     });
 
-    // Sort by Priority
     pendingItems.sort((a, b) => b.score - a.score);
 
     pendingItems.forEach(item => {
@@ -468,7 +442,6 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
         }
     });
 
-    // Final Sort: Ensure topics are sorted by their next pending review date
     newTopics.sort((a, b) => {
         const nextA = a.reviews.find(r => !r.done)?.date || '9999-99-99';
         const nextB = b.reviews.find(r => !r.done)?.date || '9999-99-99';
