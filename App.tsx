@@ -1,9 +1,9 @@
 
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense } from 'react';
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download
+    ArrowLeft, Download, Sparkles
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -14,15 +14,30 @@ import {
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { LevelSystem, TopicCard, CompactLevelSystem } from './components';
-import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
-import { CalendarView, SimuladosView, HubView, DatabaseView, CronogramaView } from './views';
+import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, AIGeneratorModal } from './modals';
+
+// Lazy Load Views to reduce initial bundle size
+const CalendarView = React.lazy(() => import('./view-calendar').then(module => ({ default: module.CalendarView })));
+const SimuladosView = React.lazy(() => import('./view-simulados').then(module => ({ default: module.SimuladosView })));
+const HubView = React.lazy(() => import('./view-hub').then(module => ({ default: module.HubView })));
+const DatabaseView = React.lazy(() => import('./view-database').then(module => ({ default: module.DatabaseView })));
+const CronogramaView = React.lazy(() => import('./view-cronograma').then(module => ({ default: module.CronogramaView })));
+const AnalyticsHub = React.lazy(() => import('./view-analytics').then(module => ({ default: module.AnalyticsHub })));
+
+// Loading Skeleton Component
+const ViewLoading = () => (
+    <div className="w-full h-full flex flex-col items-center justify-center animate-pulse">
+        <Activity size={40} className="text-slate-200 dark:text-white/10 mb-4" />
+        <div className="h-4 w-32 bg-slate-200 dark:bg-white/10 rounded-full"></div>
+    </div>
+);
 
 export function App() {
     const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, loaded, status, syncKey, setSyncKey } = useSync();
     const vibration = useVibration();
     
     // UI State
-    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database'>('list');
+    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'dashboard'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
     
@@ -43,6 +58,7 @@ export function App() {
 
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
+    const [aiModalOpen, setAiModalOpen] = useState(false);
     const [editTopic, setEditTopic] = useState<Topic | null>(null);
     const [reviewData, setReviewData] = useState<{tId: string, rIdx: number} | null>(null);
     const [historyEditData, setHistoryEditData] = useState<{tId: string, rIdx: number} | null>(null);
@@ -149,6 +165,7 @@ export function App() {
         const newTopic: Topic = { ...t, id: newTopicId, reviews: reviews, deleted: false, updatedAt: Date.now() };
         setTopics(prev => [newTopic, ...prev]);
         setAddModalOpen(false);
+        setAiModalOpen(false);
         vibration.success();
     };
 
@@ -286,6 +303,7 @@ export function App() {
         { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
         { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
         { id: 'simulados', label: 'Simulados', icon: ClipboardList, title: 'Simulados' },
+        { id: 'dashboard', label: 'Stats', icon: Activity, title: 'Estatísticas' },
         { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
         { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
     ];
@@ -416,6 +434,9 @@ export function App() {
                                     </button>
                                     {desktopNewMenuOpen && (
                                         <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-1.5 pointer-events-auto">
+                                            <button onClick={() => { setAiModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
+                                                <Sparkles size={16} className="text-amber-500"/> Criar com IA
+                                            </button>
                                             <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
                                                 <BookOpen size={16} className="text-blue-500"/> Nova Matéria
                                             </button>
@@ -434,75 +455,90 @@ export function App() {
                 </header>
 
                 <div className="flex-1 p-4 lg:p-8 pt-2 max-w-[1200px] mx-auto w-full">
-                    {view === 'list' && (
-                        <HubView 
-                            topics={activeTopics} 
-                            simulados={activeSimulados}
-                            config={config}
-                            onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
-                            onEditTopic={(id) => {
-                                const t = topics.find(topic => topic.id === id);
-                                if(t) setEditTopic(t);
-                            }}
-                            searchTerm={searchTerm}
-                            sortOrder={sortOrder}
-                            setSortOrder={setSortOrder}
-                            filterArea={filterArea}
-                            setFilterArea={setFilterArea}
-                        >
-                            <div className="grid grid-cols-1 gap-4">
-                                {filteredTopics.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
-                                        <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                                            <BookOpen size={24}/>
+                    <Suspense fallback={<ViewLoading />}>
+                        {view === 'list' && (
+                            <HubView 
+                                topics={activeTopics} 
+                                simulados={activeSimulados}
+                                config={config}
+                                onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
+                                onEditTopic={(id) => {
+                                    const t = topics.find(topic => topic.id === id);
+                                    if(t) setEditTopic(t);
+                                }}
+                                searchTerm={searchTerm}
+                                sortOrder={sortOrder}
+                                setSortOrder={setSortOrder}
+                                filterArea={filterArea}
+                                setFilterArea={setFilterArea}
+                            >
+                                <div className="grid grid-cols-1 gap-4">
+                                    {filteredTopics.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
+                                            <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                                                <BookOpen size={24}/>
+                                            </div>
+                                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Nada encontrado</h4>
+                                            <p className="text-sm text-slate-500">Tente ajustar os filtros.</p>
                                         </div>
-                                        <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Nada encontrado</h4>
-                                        <p className="text-sm text-slate-500">Tente ajustar os filtros.</p>
-                                    </div>
-                                ) : (
-                                    filteredTopics.map(t => (
-                                        <TopicCard 
-                                            key={t.id} 
-                                            topic={t} 
-                                            onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
-                                            onDelete={handleDeleteTopic} 
-                                            onEdit={() => setEditTopic(t)} 
-                                        />
-                                    ))
-                                )}
-                            </div>
-                        </HubView>
-                    )}
-                    {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
-                    
-                    {view === 'database' && (
-                        <DatabaseView 
-                            topics={activeTopics} 
-                            onEdit={(t) => setEditTopic(t)} 
-                            onDelete={handleDeleteTopic}
-                            simulados={activeSimulados}
-                            onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
-                            onDeleteSimulado={handleDeleteSimulado}
-                            config={config}
-                            searchTerm={searchTerm}
-                        />
-                    )}
-                    
-                    {view === 'simulados' && <SimuladosView simulados={activeSimulados} topics={activeTopics} config={config} onDelete={handleDeleteSimulado} onEdit={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} searchTerm={searchTerm} />}
+                                    ) : (
+                                        filteredTopics.map(t => (
+                                            <TopicCard 
+                                                key={t.id} 
+                                                topic={t} 
+                                                onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
+                                                onDelete={handleDeleteTopic} 
+                                                onEdit={() => setEditTopic(t)} 
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            </HubView>
+                        )}
+                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
+                        
+                        {view === 'database' && (
+                            <DatabaseView 
+                                topics={activeTopics} 
+                                onEdit={(t) => setEditTopic(t)} 
+                                onDelete={handleDeleteTopic}
+                                simulados={activeSimulados}
+                                onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
+                                onDeleteSimulado={handleDeleteSimulado}
+                                config={config}
+                                searchTerm={searchTerm}
+                            />
+                        )}
+                        
+                        {view === 'simulados' && <SimuladosView simulados={activeSimulados} topics={activeTopics} config={config} onDelete={handleDeleteSimulado} onEdit={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} searchTerm={searchTerm} />}
 
-                    {view === 'cronograma' && (
-                        <CronogramaView 
-                            scheduleProgress={scheduleProgress} 
-                            setScheduleProgress={setScheduleProgress} 
-                            config={config} 
-                            searchTerm={searchTerm} 
-                            onScheduleChange={(schedule) => {
-                                setConfig(prev => ({ ...prev, activeSchedule: schedule }));
-                                vibration.tick();
-                            }}
-                            onAutoCreateTopic={handleAutoCreateFromSchedule}
-                        />
-                    )}
+                        {view === 'cronograma' && (
+                            <CronogramaView 
+                                scheduleProgress={scheduleProgress} 
+                                setScheduleProgress={setScheduleProgress} 
+                                config={config} 
+                                searchTerm={searchTerm} 
+                                onScheduleChange={(schedule) => {
+                                    setConfig(prev => ({ ...prev, activeSchedule: schedule }));
+                                    vibration.tick();
+                                }}
+                                onAutoCreateTopic={handleAutoCreateFromSchedule}
+                            />
+                        )}
+
+                        {view === 'dashboard' && (
+                            <AnalyticsHub 
+                                topics={activeTopics} 
+                                simulados={activeSimulados} 
+                                config={config} 
+                                onEditTopic={(id) => {
+                                    const t = topics.find(topic => topic.id === id);
+                                    if(t) setEditTopic(t);
+                                }}
+                                onEditHistory={(tId, rIdx) => setHistoryEditData({tId, rIdx})}
+                            />
+                        )}
+                    </Suspense>
                 </div>
             </main>
 
@@ -522,6 +558,13 @@ export function App() {
                                         Instalar App
                                     </button>
                                 )}
+                                <button 
+                                    onClick={() => { setAiModalOpen(true); setIsActionMenuOpen(false); }}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                >
+                                    <div className="p-1.5 bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 rounded-lg"><Sparkles size={16}/></div>
+                                    Criar com IA
+                                </button>
                                 <button 
                                     onClick={() => { setAddModalOpen(true); setIsActionMenuOpen(false); }}
                                     className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
@@ -568,6 +611,12 @@ export function App() {
             </div>
 
             {/* Modals */}
+            <AIGeneratorModal 
+                isOpen={aiModalOpen}
+                onClose={() => setAiModalOpen(false)}
+                onGenerate={(t) => handleAddTopic(t)}
+            />
+
             <EditTopicModal 
                 isOpen={addModalOpen} 
                 onClose={() => setAddModalOpen(false)} 
