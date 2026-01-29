@@ -1,7 +1,7 @@
 
 export type AreaType = 'clinica' | 'cirurgia' | 'pediatria' | 'go' | 'preventiva';
 export type ImportanceType = 'high' | 'medium' | 'low';
-export type ReviewType = 'R0' | 'R1' | 'R2' | 'R3' | 'R_FINAL' | 'extra';
+export type ReviewType = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R_FINAL' | 'extra';
 
 declare global {
   interface Window {
@@ -32,6 +32,10 @@ export interface Topic {
   reviews: Review[];
   deleted?: boolean;
   updatedAt: number;
+  customSettings?: {
+      intervals: number[]; // Array of days, e.g. [1, 7, 30]
+      baseQuestions: number;
+  };
 }
 
 export interface Simulado {

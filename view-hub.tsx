@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { 
     Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle
@@ -52,12 +53,18 @@ export const HubView = ({
             });
     }, [filteredActiveTopics, today]);
 
+    const startQuickSession = () => {
+        if (dueItems.length > 0) {
+            onReview(dueItems[0].topic.id, dueItems[0].idx);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-6 lg:gap-8 h-full pb-32 lg:pb-0 animate-scale-in">
             <div className="hidden lg:grid grid-cols-12 gap-8 h-full">
                 <div className="col-span-8 flex flex-col gap-8">
                     
-                    {/* --- NEW TO DO TODAY SECTION (DESIGN MATCH) --- */}
+                    {/* --- TO DO TODAY SECTION --- */}
                     <div className="relative w-full bg-white dark:bg-[#18181b] border-2 border-blue-100 dark:border-blue-900/30 rounded-[32px] p-8 shadow-sm overflow-hidden group hover:border-blue-200 dark:hover:border-blue-800/50 transition-all duration-500">
                         {/* Decorative Background Elements */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[100px] pointer-events-none -z-0"></div>
@@ -72,7 +79,7 @@ export const HubView = ({
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Para Fazer Hoje</span>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                                            {dueItems.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>}
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-5xl font-black text-slate-800 dark:text-white tracking-tighter">{dueItems.length}</span>
@@ -81,14 +88,27 @@ export const HubView = ({
                                     </div>
                                 </div>
 
-                                {/* Stats Pill */}
-                                <div className="hidden sm:flex items-center gap-4 bg-purple-50 dark:bg-purple-900/10 px-5 py-3 rounded-2xl border border-purple-100 dark:border-purple-500/20">
-                                    <div className="p-2 bg-white dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-300 shadow-sm">
-                                        <Activity size={20} />
-                                    </div>
-                                    <div>
-                                        <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">Questões Totais</div>
-                                        <div className="text-xl font-black text-slate-800 dark:text-white leading-none">{stats.totalQ}</div>
+                                <div className="flex items-center gap-3">
+                                    {/* Quick Start Button */}
+                                    {dueItems.length > 0 && (
+                                        <button 
+                                            onClick={startQuickSession}
+                                            className="flex flex-col items-center justify-center w-20 h-20 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all group/btn"
+                                        >
+                                            <PlayCircle size={28} strokeWidth={2} className="mb-1"/>
+                                            <span className="text-[9px] font-black uppercase">Iniciar</span>
+                                        </button>
+                                    )}
+
+                                    {/* Stats Pill */}
+                                    <div className="hidden sm:flex items-center gap-4 bg-purple-50 dark:bg-purple-900/10 px-5 py-3 rounded-2xl border border-purple-100 dark:border-purple-500/20 h-20">
+                                        <div className="p-2 bg-white dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-300 shadow-sm">
+                                            <Activity size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">Total</div>
+                                            <div className="text-xl font-black text-slate-800 dark:text-white leading-none">{stats.totalQ}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -216,15 +236,22 @@ export const HubView = ({
 
             {/* Mobile View */}
             <div className="lg:hidden flex flex-col gap-6 px-1">
+                
                 <div className="bg-white dark:bg-[#18181b] p-5 rounded-[28px] border border-black/5 dark:border-white/5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">PARA FAZER HOJE</h2>
                             <div className="text-3xl font-black text-slate-800 dark:text-white">{dueItems.length} <span className="text-sm text-slate-400">pendentes</span></div>
                         </div>
-                        <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600 dark:text-blue-400">
-                            <Clock size={24} strokeWidth={2.5}/>
-                        </div>
+                        {dueItems.length > 0 ? (
+                            <button onClick={startQuickSession} className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg active:scale-95 transition-transform">
+                                <PlayCircle size={24} strokeWidth={2.5}/>
+                            </button>
+                        ) : (
+                            <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-2xl text-blue-600 dark:text-blue-400">
+                                <Clock size={24} strokeWidth={2.5}/>
+                            </div>
+                        )}
                     </div>
                     {dueItems.length > 0 ? (
                         <div className="space-y-2">

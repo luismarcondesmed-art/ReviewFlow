@@ -1,4 +1,4 @@
-import { AreaType, ImportanceType, Review, Topic, Simulado } from './types';
+import { AreaType, ImportanceType, Review, Topic, Simulado, ReviewType } from './types';
 
 // --- Constants ---
 
@@ -161,11 +161,55 @@ export const generateSmartSchedule = (
     examDate: string | undefined, 
     importanceId: ImportanceType,
     existingTopics: Topic[] = [],
-    currentTopicId?: string
+    currentTopicId?: string,
+    customSettings?: { intervals: number[], baseQuestions: number }
 ): Review[] => {
     const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
     const today = getTodayStr();
     
+    // --- CUSTOM SCHEDULE LOGIC ---
+    if (customSettings && customSettings.intervals.length > 0) {
+        const schedule: Review[] = [];
+        const busyDates = getBusyDates(existingTopics, currentTopicId);
+        
+        // R0 is always the study date
+        schedule.push({ 
+            type: 'R0', 
+            date: studyDate, 
+            label: 'R0: Estudo', 
+            done: false, correct: 0, total: 0, difficulty: null, 
+            targetQ: customSettings.baseQuestions || impObj.baseQ 
+        });
+
+        let previousDate = studyDate;
+
+        customSettings.intervals.forEach((intervalDays, index) => {
+            const idealDate = addDays(previousDate, intervalDays);
+            // We can optionally use findNextEmptyDate here, but custom schedules usually imply strict adherence.
+            // Let's stick to strict dates for custom, or basic busy logic. Let's use busy logic for UX niceness.
+            let actualDate = findNextEmptyDate(idealDate, busyDates);
+            busyDates.add(actualDate);
+            
+            // Note: In custom logic, gap is usually "from previous review".
+            // So we update previousDate.
+            previousDate = actualDate; 
+
+            schedule.push({
+                type: `R${index + 1}` as ReviewType,
+                date: actualDate,
+                label: `R${index + 1}: +${intervalDays}d`,
+                done: false,
+                correct: 0,
+                total: 0,
+                difficulty: null,
+                targetQ: customSettings.baseQuestions || calculateNextLoad(importanceId, 'medium', `R${index+1}`, null)
+            });
+        });
+
+        return schedule;
+    }
+
+    // --- STANDARD AI SCHEDULE LOGIC ---
     const effectiveExamDate = examDate && examDate > today ? examDate : addDays(today, 365);
     
     const startMs = new Date(studyDate + 'T12:00:00').getTime();
