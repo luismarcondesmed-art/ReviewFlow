@@ -256,20 +256,20 @@ export const CronogramaView = ({
             {/* Toolbar */}
             <div className="flex flex-col gap-4 mb-6 sticky top-0 z-30 pt-2 pb-2 bg-[#f2f4f7] dark:bg-black/95 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <h3 className="hidden sm:flex text-2xl font-black text-slate-800 dark:text-white tracking-tight items-center gap-2">Cronograma</h3>
-                        
-                        <div className="relative">
-                            <button onClick={(e) => toggleDropdown(e, 'schedule')} className="px-3 py-2 bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors shadow-sm">
-                                {activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'} <ChevronDown size={12}/>
-                            </button>
-                            {activeDropdown === 'schedule' && (
-                                <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in">
-                                    <button onClick={() => onScheduleChange('MEDCOF')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div> MedCof</button>
-                                    <button onClick={() => onScheduleChange('ESTRATEGIA')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Estratégia</button>
-                                </div>
-                            )}
-                        </div>
+                    {/* Schedule Selector Toggle */}
+                    <div className="flex p-1 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-xl w-full sm:w-auto shadow-sm">
+                        <button 
+                            onClick={() => onScheduleChange('MEDCOF')}
+                            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
+                        >
+                            MedCof
+                        </button>
+                        <button 
+                            onClick={() => onScheduleChange('ESTRATEGIA')}
+                            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
+                        >
+                            Estratégia
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-2 bg-white dark:bg-[#18181b] p-1.5 rounded-xl border border-black/5 dark:border-white/10 shadow-sm overflow-x-auto no-scrollbar">

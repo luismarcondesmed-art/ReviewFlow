@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, Clock, AlertTriangle, X, Minus, Plus, Smile, Meh, Frown } from 'lucide-react';
 import { Topic, Simulado } from './types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo } from './utils';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight } from './utils';
 
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
@@ -108,6 +108,7 @@ export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: num
 
 // --- Activity Bar Chart ---
 export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    // ... (Implementation remains the same)
     const data = useMemo(() => {
         const days = [];
         const today = new Date();
@@ -159,6 +160,7 @@ export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Top
 
 // --- Evolution Chart (Simulados) with Spline Smoothing ---
 export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
+    // ... (Implementation remains the same as provided previously)
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const data = useMemo(() => {
@@ -292,6 +294,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
 });
 
 export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topic[], onReview: (id: string, idx: number) => void }) => {
+    // ... (Implementation remains the same)
     const today = getTodayStr();
     const suggestions = useMemo(() => topics
         .filter(t => !t.deleted)
@@ -348,6 +351,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
 
 // --- Heatmap Widget - Modern Dot Matrix ---
 export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    // ... (Implementation remains the same)
     const days = useMemo(() => {
         const dArr = [];
         const today = new Date();
@@ -616,8 +620,48 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit, onQuic
     )
 });
 
+// --- Simulado Card (New) ---
+export const SimuladoCard = React.memo(({ simulado, onDelete, onEdit }: { simulado: Simulado; onDelete?: (id: string) => void; onEdit?: (s: Simulado) => void }) => {
+    const acc = simulado.totalQuestions > 0 ? Math.round((simulado.correctCount / simulado.totalQuestions) * 100) : 0;
+    const pillClass = getPerformanceBgLight(acc, 80);
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm relative group hover:border-purple-500/30 transition-all p-5 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-sm">
+                    <ClipboardList size={22}/>
+                </div>
+                <div>
+                    <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{simulado.name}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{simulado.year}</span>
+                        <span className="text-[10px] font-bold text-slate-300">•</span>
+                        <span className="text-[10px] font-bold text-slate-400">{formatDate(simulado.dateTaken.split('T')[0])}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+                <div className={`px-3 py-1.5 rounded-xl font-black text-sm ${pillClass} flex items-center gap-1.5`}>
+                    {acc}% <span className="text-[10px] opacity-60 font-bold hidden sm:inline">({simulado.correctCount}/{simulado.totalQuestions})</span>
+                </div>
+                
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {onEdit && (
+                        <button onClick={() => onEdit(simulado)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-blue-500 transition-colors"><Edit size={16}/></button>
+                    )}
+                    {onDelete && (
+                        <button onClick={() => onDelete(simulado.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+});
+
 // --- Simulados Mini Widget ---
 export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
+    // ... existing implementation
     const displayData = useMemo(() => {
         if (!simulados || simulados.length === 0) return null;
         const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());

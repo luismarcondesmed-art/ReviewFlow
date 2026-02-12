@@ -20,7 +20,6 @@ import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, Review
 const HubView = lazy(() => import('./view-hub').then(module => ({ default: module.HubView })));
 const CalendarView = lazy(() => import('./view-calendar').then(module => ({ default: module.CalendarView })));
 const DatabaseView = lazy(() => import('./view-database').then(module => ({ default: module.DatabaseView })));
-const SimuladosView = lazy(() => import('./view-simulados').then(module => ({ default: module.SimuladosView })));
 const CronogramaView = lazy(() => import('./view-cronograma').then(module => ({ default: module.CronogramaView })));
 
 // --- Loading Skeleton ---
@@ -35,7 +34,7 @@ export function App() {
     const vibration = useVibration();
     
     // UI State
-    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database'>('list');
+    const [view, setView] = useState<'list' | 'cronograma' | 'calendar' | 'database'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
     
@@ -88,9 +87,7 @@ export function App() {
     // PWA Install Prompt Listener
     useEffect(() => {
         const handler = (e: any) => {
-            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             setInstallPrompt(e);
         };
         window.addEventListener('beforeinstallprompt', handler);
@@ -99,9 +96,7 @@ export function App() {
 
     const handleInstallApp = async () => {
         if (!installPrompt) return;
-        // Show the install prompt
         installPrompt.prompt();
-        // Wait for the user to respond to the prompt
         const { outcome } = await installPrompt.userChoice;
         if (outcome === 'accepted') {
             setInstallPrompt(null);
@@ -115,33 +110,6 @@ export function App() {
         const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0);
         return { totalAnswered: totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0) };
     }, [activeTopics, activeSimulados]);
-
-    // Filtered Topics Logic
-    const filteredTopics = useMemo(() => {
-        let filtered = activeTopics.filter(t => {
-            if (filterArea !== 'all' && t.area !== filterArea) return false;
-            if (searchTerm && !t.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-            return true;
-        });
-
-        return filtered.sort((a, b) => {
-            if (sortOrder === 'date') {
-                return (b.updatedAt || 0) - (a.updatedAt || 0);
-            }
-            if (sortOrder === 'priority') {
-                const pMap = { high: 3, medium: 2, low: 1 };
-                const pA = pMap[a.importance] || 2;
-                const pB = pMap[b.importance] || 2;
-                return pB - pA;
-            }
-            if (sortOrder === 'questions') {
-                const totalA = a.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0);
-                const totalB = b.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0);
-                return totalB - totalA;
-            }
-            return 0;
-        });
-    }, [activeTopics, filterArea, searchTerm, sortOrder]);
 
     // --- Actions ---
     const handleDeleteTopic = (id: string) => {
@@ -169,7 +137,6 @@ export function App() {
     };
 
     const handleAutoCreateFromSchedule = useCallback((item: any) => {
-        // Map Area
         let area: AreaType = 'clinica';
         const ga = (item.grandeArea || '').toLowerCase();
         if (ga.includes('cirurgia')) area = 'cirurgia';
@@ -177,18 +144,17 @@ export function App() {
         else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go';
         else if (ga.includes('preventiva')) area = 'preventiva';
 
-        // Determine Priority: "Azul" in Medcof = High, otherwise Medium
         const isHighPriority = item.importancia && item.importancia.toLowerCase().includes('azul');
         const importance: ImportanceType = isHighPriority ? 'high' : 'medium';
 
         const draftTopic: Topic = {
-            id: '', // Will be generated
+            id: '', 
             title: item.aula,
             area: area,
             subarea: item.disciplina,
             importance: importance,
             studyDate: getTodayStr(),
-            reviews: [], // Will be generated
+            reviews: [], 
             deleted: false,
             updatedAt: 0
         };
@@ -212,7 +178,6 @@ export function App() {
         vibration.success();
     };
 
-    // Generic handler that can be called from Modal OR Inline
     const processReviewSubmission = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
         const { correct, total, difficulty } = data;
         setTopics(prev => prev.map(t => {
@@ -235,7 +200,6 @@ export function App() {
         setReviewData(null);
     };
 
-    // Handler for Inline Quick Review
     const handleQuickReview = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
         processReviewSubmission(topicId, reviewIdx, data);
     };
@@ -311,9 +275,8 @@ export function App() {
     const NAV_ITEMS = [
         { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
         { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
-        { id: 'simulados', label: 'Simulados', icon: ClipboardList, title: 'Simulados' },
-        { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
         { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
+        { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
     ];
 
     const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
@@ -415,7 +378,6 @@ export function App() {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                {/* Install App Button (Visible when prompted) */}
                                 {installPrompt && (
                                     <button 
                                         onClick={handleInstallApp}
@@ -432,7 +394,7 @@ export function App() {
                                 
                                 <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
 
-                                {/* Add Button (Desktop only, mobile has FAB) */}
+                                {/* Add Button (Desktop only) */}
                                 <div className="relative hidden lg:block">
                                     <button 
                                         onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
@@ -471,6 +433,7 @@ export function App() {
                                     const t = topics.find(topic => topic.id === id);
                                     if(t) setEditTopic(t);
                                 }}
+                                onDeleteTopic={handleDeleteTopic}
                                 searchTerm={searchTerm}
                                 sortOrder={sortOrder}
                                 setSortOrder={setSortOrder}
@@ -481,30 +444,10 @@ export function App() {
                                 setIsCreatingTopic={setIsCreatingTopic}
                                 onAddTopic={handleAddTopic}
                                 onOpenFullAddModal={() => setAddModalOpen(true)}
-                            >
-                                <div className="grid grid-cols-1 gap-4">
-                                    {filteredTopics.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
-                                            <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                                                <BookOpen size={24}/>
-                                            </div>
-                                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Nada encontrado</h4>
-                                            <p className="text-sm text-slate-500">Tente ajustar os filtros.</p>
-                                        </div>
-                                    ) : (
-                                        filteredTopics.map(t => (
-                                            <TopicCard 
-                                                key={t.id} 
-                                                topic={t} 
-                                                onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
-                                                onDelete={handleDeleteTopic} 
-                                                onEdit={() => setEditTopic(t)} 
-                                                onQuickReview={handleQuickReview}
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            </HubView>
+                                onAddSimulado={handleSaveSimulado}
+                                onDeleteSimulado={handleDeleteSimulado}
+                                onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
+                            />
                         )}
                         {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
                         
@@ -521,8 +464,6 @@ export function App() {
                             />
                         )}
                         
-                        {view === 'simulados' && <SimuladosView simulados={activeSimulados} topics={activeTopics} config={config} onDelete={handleDeleteSimulado} onEdit={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} searchTerm={searchTerm} />}
-
                         {view === 'cronograma' && (
                             <CronogramaView 
                                 scheduleProgress={scheduleProgress} 
