@@ -221,21 +221,9 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                 reviews = newSchedule;
             } else {
                 // Merge logic: Keep done reviews, append new schedule for future
-                // This is complex. Simplest valid approach:
-                // 1. Keep all done reviews.
-                // 2. Find the last done review date.
-                // 3. The new schedule generates from Start Date.
-                // If user changed start date, we respect that.
-                // If user just changed intervals, we probably want to apply to *remaining*?
-                // For simplicity and predictability: Regenerate ALL, then mark the ones that match previous "done" as done?
-                // No, better: "Future" logic.
-                // Actually, if custom intervals are set [1, 7, 30], it expects R1 at +1, R2 at +7.
-                // Let's just replace the whole schedule but keep the 'done' status if the indices match?
-                // Or simply: Replace all *pending* reviews with new calculation.
-                
                 const doneReviews = reviews.filter(r => r.done);
-                // If we fully regenerate based on studyDate, we might duplicate R0 if it was done.
-                // Let's rely on the generateSmartSchedule to give us the full plan, then overlay existing done status.
+                // Simple logic: Replace all *pending* reviews with new calculation.
+                // We map new schedule items to old done items if they exist to keep data integrity where possible
                 
                 reviews = newSchedule.map((newR, i) => {
                     // Try to map to existing done review at same index?
@@ -248,11 +236,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                 });
             }
         } else if (safeTopic.importance !== importance && !customSettings) {
-             // Just update targetQ for pending
-             // ... existing logic handles this in handleUpdateTopic usually, but here we construct the object
-             // We can let the parent handle minor updates, but since we are constructing the object here:
-             // Let's leave reviews as is, the parent (App.tsx) logic for 'handleUpdateTopic' usually handles importance shifts.
-             // BUT, since we added customSettings here, we need to pass the updated reviews if customSettings is active.
+             // Just update targetQ for pending (handled by parent usually, but good to have safety)
         }
 
         const updated = {
@@ -343,7 +327,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                             placeholder="Ex: 1, 7, 15, 30" 
                                             className="w-full p-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                                         />
-                                        <p className="text-[9px] text-slate-400">Separe os dias por vírgula. Isso substitui o agendamento automático.</p>
+                                        <p className="text-[9px] text-slate-400">Dias a partir do início: Ex: "1" é amanhã, "7" é uma semana do início.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Meta de Questões</label>

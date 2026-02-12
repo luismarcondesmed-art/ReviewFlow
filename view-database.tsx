@@ -1,7 +1,255 @@
+
 import React, { useState, useMemo } from 'react';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2 } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, TrendingUp, Target, Brain, CalendarClock, Layers, CheckCircle2, XCircle } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from './types';
-import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from './utils';
+import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor, getTodayStr, addDays } from './utils';
+
+// --- Helper: SVG Line Chart for Evolution ---
+const TinyLineChart = ({ data, color, height = 40 }: { data: number[], color: string, height?: number }) => {
+    if (data.length < 2) return null;
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    
+    const points = data.map((val, i) => {
+        const x = (i / (data.length - 1)) * 100;
+        const y = 100 - ((val - min) / range) * 100;
+        return `${x},${y}`;
+    }).join(' ');
+
+    return (
+        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+            <polyline fill="none" stroke={color} strokeWidth="2" points={points} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+};
+
+// --- Helper: Workload Bar Chart ---
+const WorkloadChart = ({ data }: { data: { day: string, count: number }[] }) => {
+    const max = Math.max(...data.map(d => d.count), 1);
+    return (
+        <div className="flex items-end justify-between h-full gap-1">
+            {data.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center group relative">
+                    <div 
+                        className="w-full bg-blue-500/20 dark:bg-blue-500/40 rounded-t-sm hover:bg-blue-500 transition-colors"
+                        style={{ height: `${(d.count / max) * 100}%` }}
+                    ></div>
+                    <div className="absolute bottom-full mb-1 text-[9px] font-bold bg-slate-900 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        {d.count}q
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// --- NEW: Database Analytics Component ---
+const DatabaseAnalytics = ({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const stats = useMemo(() => {
+        // 1. Aggregation
+        let totalCorrect = 0;
+        let totalAnswered = 0;
+        const historyMap = new Map<string, {c: number, t: number}>();
+        const areaStats = new Map<string, {correct: number, total: number, topics: number}>();
+
+        // Process Topics
+        topics.forEach(t => {
+            if (t.deleted) return;
+            
+            // Area Stats
+            const aStat = areaStats.get(t.area) || { correct: 0, total: 0, topics: 0 };
+            aStat.topics += 1;
+            
+            t.reviews.forEach(r => {
+                if (r.done) {
+                    totalCorrect += r.correct;
+                    totalAnswered += r.total;
+                    
+                    const d = r.date;
+                    const h = historyMap.get(d) || { c: 0, t: 0 };
+                    h.c += r.correct;
+                    h.t += r.total;
+                    historyMap.set(d, h);
+
+                    aStat.correct += r.correct;
+                    aStat.total += r.total;
+                }
+            });
+            areaStats.set(t.area, aStat);
+        });
+
+        // Process Simulados
+        simulados.forEach(s => {
+            if (s.deleted) return;
+            totalCorrect += s.correctCount;
+            totalAnswered += s.totalQuestions;
+            
+            const d = s.dateTaken.split('T')[0];
+            const h = historyMap.get(d) || { c: 0, t: 0 };
+            h.c += s.correctCount;
+            h.t += s.totalQuestions;
+            historyMap.set(d, h);
+        });
+
+        // 2. Metrics
+        const globalAccuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+        const totalWrong = totalAnswered - totalCorrect;
+
+        // 3. Evolution Data (Last 30 Active Days)
+        const sortedDates = Array.from(historyMap.keys()).sort();
+        const evolutionData = sortedDates.slice(-30).map(date => {
+            const h = historyMap.get(date)!;
+            return Math.round((h.c / h.t) * 100);
+        });
+
+        // 4. Future Workload (Next 7 Days)
+        const today = new Date();
+        const workload = Array.from({length: 7}).map((_, i) => {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            const dStr = d.toISOString().split('T')[0];
+            let count = 0;
+            topics.forEach(t => {
+                if (!t.deleted) {
+                    t.reviews.forEach(r => {
+                        if (!r.done && r.date === dStr) count += r.targetQ;
+                    });
+                }
+            });
+            return { day: dStr, count };
+        });
+
+        // 5. Area Breakdown List
+        const areaList = Array.from(areaStats.entries()).map(([area, data]) => ({
+            area,
+            accuracy: data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0,
+            volume: data.total,
+            topicsCount: data.topics
+        })).sort((a,b) => b.volume - a.volume);
+
+        return { totalCorrect, totalWrong, totalAnswered, globalAccuracy, evolutionData, workload, areaList };
+    }, [topics, simulados]);
+
+    if (stats.totalAnswered === 0 && stats.workload.every(w => w.count === 0)) return null;
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-8 animate-scale-in">
+            {/* Main Stats Card */}
+            <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                        <Brain size={14} className="text-blue-500"/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Questões</span>
+                    </div>
+                    <div>
+                        <span className="text-2xl font-black text-slate-800 dark:text-white">{stats.totalAnswered.toLocaleString()}</span>
+                        <div className="text-[10px] font-medium text-slate-400 mt-1">Total Realizado</div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                        <Target size={14} className={getPerformanceColor(stats.globalAccuracy, 80, 'text')}/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Precisão</span>
+                    </div>
+                    <div>
+                        <span className={`text-2xl font-black ${getPerformanceColor(stats.globalAccuracy, 80, 'text')}`}>{stats.globalAccuracy}%</span>
+                        <div className="text-[10px] font-medium text-slate-400 mt-1">Taxa de Acerto</div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                        <CheckCircle2 size={14} className="text-emerald-500"/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Hits</span>
+                    </div>
+                    <div className="flex items-end gap-2">
+                        <div>
+                            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalCorrect}</span>
+                            <div className="text-[10px] font-medium text-slate-400 mt-1">Acertos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                        <XCircle size={14} className="text-red-500"/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Misses</span>
+                    </div>
+                    <div>
+                        <span className="text-2xl font-black text-red-500">{stats.totalWrong}</span>
+                        <div className="text-[10px] font-medium text-slate-400 mt-1">Erros</div>
+                    </div>
+                </div>
+
+                {/* Evolution Graph Card - Spans full width of the 4 columns on mobile, 2 columns on desktop */}
+                <div className="col-span-2 sm:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                        <div className="flex items-center gap-2 text-slate-400">
+                            <TrendingUp size={14} className="text-purple-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Evolução (30d)</span>
+                        </div>
+                    </div>
+                    <div className="h-12 w-full relative z-10">
+                        {stats.evolutionData.length > 1 ? (
+                            <TinyLineChart data={stats.evolutionData} color="#a855f7" />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-[9px] text-slate-300 uppercase font-bold">Dados insuficientes</div>
+                        )}
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-purple-500/10 to-transparent pointer-events-none"></div>
+                </div>
+
+                {/* Workload Forecast Card */}
+                <div className="col-span-2 sm:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-slate-400">
+                            <CalendarClock size={14} className="text-blue-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Previsão (7 dias)</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500">{stats.workload.reduce((a,b) => a+b.count,0)} questões</span>
+                    </div>
+                    <div className="h-12 w-full">
+                        <WorkloadChart data={stats.workload} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Area Breakdown Side Panel */}
+            <div className="md:col-span-4 bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col h-full min-h-[200px]">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2 text-slate-400">
+                        <Layers size={14} className="text-amber-500"/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Desempenho por Área</span>
+                    </div>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+                    {stats.areaList.map(area => (
+                        <div key={area.area} className="space-y-1">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px]">{area.area}</span>
+                                <div className="flex gap-2">
+                                    <span className="font-bold text-slate-400 text-[10px]">{area.volume}q</span>
+                                    <span className={`font-black text-[10px] ${getPerformanceColor(area.accuracy, 80, 'text')}`}>{area.accuracy}%</span>
+                                </div>
+                            </div>
+                            <div className="flex h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div 
+                                    className={`h-full rounded-full ${getPerformanceColor(area.accuracy, 80, 'bg')}`} 
+                                    style={{width: `${area.accuracy}%`}}
+                                ></div>
+                            </div>
+                        </div>
+                    ))}
+                    {stats.areaList.length === 0 && (
+                        <div className="text-center text-xs text-slate-400 py-4">Nenhum dado registrado.</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- Mini Chart Component (CSS Bar Chart for Robustness) ---
 export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
@@ -102,6 +350,17 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
         }).sort((a,b) => new Date(b.dateTaken).getTime() - new Date(a.dateTaken).getTime());
     }, [simulados, searchTerm]);
 
+    // Combined filtered data for the Analytics component
+    // We only pass what's visible to make the analytics "Context Aware"
+    const analyticsTopics = useMemo(() => {
+        return topics.filter(t => !t.deleted).filter(t => {
+            if (filterArea !== 'all' && t.area !== filterArea) return false;
+            return true;
+        });
+    }, [topics, filterArea]);
+
+    const analyticsSimulados = useMemo(() => simulados?.filter(s => !s.deleted) || [], [simulados]);
+
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
             {/* Header: Tabs + Filter */}
@@ -136,7 +395,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                 )}
             </div>
 
-            <div className="flex-1 bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
+            {/* --- NEW ANALYTICS SECTION --- */}
+            <DatabaseAnalytics topics={analyticsTopics} simulados={analyticsSimulados} />
+
+            <div className="flex-1 bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">

@@ -138,12 +138,15 @@ export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Top
     return (
         <div className="flex items-end justify-between h-24 w-full gap-1 pt-2">
             {data.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center group">
+                <div key={i} className="flex-1 flex flex-col items-center group cursor-default">
                     <div className="relative w-full flex items-end justify-center h-16 bg-slate-100/50 dark:bg-white/5 rounded-lg overflow-hidden backdrop-blur-sm">
                         <div 
                             className="w-full bg-blue-500 group-hover:bg-blue-400 transition-all duration-500 rounded-t-[3px] shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                             style={{ height: `${(d.count / maxQ) * 100}%` }}
                         ></div>
+                        {d.count > 0 && (
+                            <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">{d.count}</div>
+                        )}
                     </div>
                     <div className="mt-1.5 flex flex-col items-center">
                         <span className="text-[8px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors">{d.weekDay}</span>
@@ -154,7 +157,7 @@ export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Top
     )
 });
 
-// --- Evolution Chart (Simulados) ---
+// --- Evolution Chart (Simulados) with Spline Smoothing ---
 export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -182,7 +185,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
         );
     }
 
-    const minVal = 40; 
+    const minVal = 30; // Better baseline for charts
     const maxVal = 100;
     const valRange = maxVal - minVal;
     const paddingY = 20; 
@@ -198,22 +201,33 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
         return (100 - paddingY) - (normalized * (100 - paddingY * 2));
     }
 
+    // Helper for Bezier Control Points
+    const getControlPoint = (current: {x:number,y:number}, previous: {x:number,y:number}, next: {x:number,y:number}, reverse?: boolean) => {
+        const p = previous || current;
+        const n = next || current;
+        const smoothing = 0.2;
+        const o = {
+            x: (n.x - p.x) * smoothing,
+            y: (n.y - p.y) * smoothing
+        };
+        return reverse ? { x: current.x - o.x, y: current.y - o.y } : { x: current.x + o.x, y: current.y + o.y };
+    };
+
     let dPath = '';
-    if (data.length > 1) {
-        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
-        for (let i = 0; i < data.length - 1; i++) {
-            const x0 = getX(i);
-            const y0 = getY(data[i].acc);
-            const x1 = getX(i + 1);
-            const y1 = getY(data[i+1].acc);
-            const cX = (x0 + x1) / 2;
-            dPath += ` C ${cX} ${y0}, ${cX} ${y1}, ${x1} ${y1}`;
+    const points = data.map((d, i) => ({ x: getX(i), y: getY(d.acc) }));
+
+    if (points.length > 1) {
+        dPath = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const cp1 = getControlPoint(points[i], points[i-1], points[i+1]);
+            const cp2 = getControlPoint(points[i+1], points[i], points[i+2], true);
+            dPath += ` C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${points[i+1].x} ${points[i+1].y}`;
         }
-    } else if (data.length === 1) {
-        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
+    } else if (points.length === 1) {
+        dPath = `M 0 ${points[0].y} L 100 ${points[0].y}`;
     }
 
-    const areaPath = data.length > 1 ? `${dPath} L 100 100 L 0 100 Z` : '';
+    const areaPath = points.length > 1 ? `${dPath} L 100 100 L 0 100 Z` : '';
     const targetY = getY(targetAccuracy);
 
     return (
@@ -225,14 +239,17 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
                         <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0"/>
                     </linearGradient>
                 </defs>
-                {[60, 80, 100].map(val => (
+                {/* Guidelines */}
+                {[50, 75, 100].map(val => (
                     <line key={val} x1="0" y1={getY(val)} x2="100" y2={getY(val)} stroke="currentColor" className="text-slate-200 dark:text-white/5" strokeWidth="0.5" strokeDasharray="4" vectorEffect="non-scaling-stroke"/>
                 ))}
+                {/* Target Line */}
                 <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="currentColor" className="text-emerald-500/50" strokeWidth="1" strokeDasharray="4" vectorEffect="non-scaling-stroke"/>
+                {/* Chart Paths */}
                 {data.length > 1 && (
                     <>
                         <path d={areaPath} fill="url(#chartGradient)" vectorEffect="non-scaling-stroke" />
-                        <path d={dPath} fill="none" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className="drop-shadow-sm"/>
+                        <path d={dPath} fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className="drop-shadow-sm"/>
                     </>
                 )}
             </svg>

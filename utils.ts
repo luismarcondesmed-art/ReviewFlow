@@ -5,7 +5,6 @@ import { AreaType, ImportanceType, Review, Topic, Simulado, ReviewType } from '.
 export const APP_ID = 'reviewflow';
 
 // Configuração segura usando Variáveis de Ambiente
-// Uses optional chaining (?.) to prevent runtime crash if import.meta.env is undefined
 export const USER_FIREBASE_CONFIG = { 
     apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY, 
     authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN, 
@@ -129,7 +128,7 @@ export const calculateNextLoad = (importanceId: ImportanceType, diffId: string |
 
 // --- NEW SMART SCHEDULING LOGIC ---
 
-const addDays = (dateStr: string, days: number): string => {
+export const addDays = (dateStr: string, days: number): string => {
     const d = new Date(dateStr + 'T12:00:00');
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];
@@ -172,7 +171,7 @@ export const generateSmartSchedule = (
         const schedule: Review[] = [];
         const busyDates = getBusyDates(existingTopics, currentTopicId);
         
-        // R0 is always the study date
+        // R0 is always the study date (base anchor)
         schedule.push({ 
             type: 'R0', 
             date: studyDate, 
@@ -181,23 +180,46 @@ export const generateSmartSchedule = (
             targetQ: customSettings.baseQuestions || impObj.baseQ 
         });
 
+        // Intervals are usually from Day 0 (Study Date)
+        // e.g. [1, 7, 30] means Day+1, Day+7, Day+30
         let previousDate = studyDate;
 
-        customSettings.intervals.forEach((intervalDays, index) => {
-            const idealDate = addDays(previousDate, intervalDays);
-            // We can optionally use findNextEmptyDate here, but custom schedules usually imply strict adherence.
-            // Let's stick to strict dates for custom, or basic busy logic. Let's use busy logic for UX niceness.
+        customSettings.intervals.forEach((daysFromStart, index) => {
+            // We assume custom intervals provided are absolute offsets from Study Date
+            // If the user entered [1, 7, 30], we treat them as offsets.
+            // However, to avoid weekends/busy days, we still use findNextEmptyDate
+            // but we start searching from the 'Ideal' date.
+            
+            // Note: If intervals are [1, 7, 15], does it mean +1 from prev, or +7 from start?
+            // Usually in spaced repetition inputs it implies offsets from 0.
+            // Let's implement as Offsets from Study Date for consistency.
+            // Wait, standard UI usually implies [1d, 7d, 30d] gaps. 
+            // Implementation: We will treat them as Gaps between reviews if accumulated, 
+            // OR simple offsets. Let's do simple offsets from Study Date for clarity in the UI.
+            // Actually, `addDays(studyDate, gap)` is safer.
+            
+            // BUT, if user inputs "1, 7, 30", they usually mean:
+            // R1 = +1 day
+            // R2 = +7 days (from start)
+            // R3 = +30 days (from start)
+            
+            const idealDate = addDays(studyDate, daysFromStart);
+            
+            // Respect busy dates logic to avoid overload, but stick close to ideal
             let actualDate = findNextEmptyDate(idealDate, busyDates);
+            
+            // Ensure strict ordering (R2 cannot be before R1)
+            if (schedule.length > 0 && actualDate <= schedule[schedule.length - 1].date) {
+                actualDate = addDays(schedule[schedule.length - 1].date, 1);
+                actualDate = findNextEmptyDate(actualDate, busyDates);
+            }
+
             busyDates.add(actualDate);
             
-            // Note: In custom logic, gap is usually "from previous review".
-            // So we update previousDate.
-            previousDate = actualDate; 
-
             schedule.push({
                 type: `R${index + 1}` as ReviewType,
                 date: actualDate,
-                label: `R${index + 1}: +${intervalDays}d`,
+                label: `R${index + 1} (+${daysFromStart}d)`,
                 done: false,
                 correct: 0,
                 total: 0,
@@ -427,6 +449,9 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
     pendingItems.forEach(item => {
         const topic = newTopics.find(t => t.id === item.topicId)!;
         const review = topic.reviews[item.reviewIdx];
+
+        // Skip optimization for custom schedules to preserve user intent
+        if (topic.customSettings) return;
 
         let searchDate = new Date(item.originalDate > todayStr ? item.originalDate : todayStr);
         if (item.originalDate > todayStr) {

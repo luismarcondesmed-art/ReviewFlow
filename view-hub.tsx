@@ -61,113 +61,13 @@ export const HubView = ({
 
     return (
         <div className="flex flex-col gap-6 lg:gap-8 h-full pb-32 lg:pb-0 animate-scale-in">
-            <div className="hidden lg:grid grid-cols-12 gap-8 h-full">
-                <div className="col-span-8 flex flex-col gap-8">
-                    
-                    {/* --- TO DO TODAY SECTION --- */}
-                    <div className="relative w-full bg-white dark:bg-[#18181b] border-2 border-blue-100 dark:border-blue-900/30 rounded-[32px] p-8 shadow-sm overflow-hidden group hover:border-blue-200 dark:hover:border-blue-800/50 transition-all duration-500">
-                        {/* Decorative Background Elements */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[100px] pointer-events-none -z-0"></div>
-                        
-                        <div className="relative z-10 flex flex-col gap-6">
-                            {/* Header Row */}
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                                        <Clock size={32} strokeWidth={2.5} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Para Fazer Hoje</span>
-                                            {dueItems.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>}
-                                        </div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-5xl font-black text-slate-800 dark:text-white tracking-tighter">{dueItems.length}</span>
-                                            <span className="text-xl font-bold text-slate-400">pendentes</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    {/* Quick Start Button */}
-                                    {dueItems.length > 0 && (
-                                        <button 
-                                            onClick={startQuickSession}
-                                            className="flex flex-col items-center justify-center w-20 h-20 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition-all group/btn"
-                                        >
-                                            <PlayCircle size={28} strokeWidth={2} className="mb-1"/>
-                                            <span className="text-[9px] font-black uppercase">Iniciar</span>
-                                        </button>
-                                    )}
-
-                                    {/* Stats Pill */}
-                                    <div className="hidden sm:flex items-center gap-4 bg-purple-50 dark:bg-purple-900/10 px-5 py-3 rounded-2xl border border-purple-100 dark:border-purple-500/20 h-20">
-                                        <div className="p-2 bg-white dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-300 shadow-sm">
-                                            <Activity size={20} />
-                                        </div>
-                                        <div>
-                                            <div className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">Total</div>
-                                            <div className="text-xl font-black text-slate-800 dark:text-white leading-none">{stats.totalQ}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* List Area */}
-                            <div className="flex flex-col gap-3 mt-2">
-                                {dueItems.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-8 bg-slate-50/50 dark:bg-black/20 rounded-3xl border border-dashed border-slate-200 dark:border-white/5">
-                                        <CheckCircle2 size={32} className="text-emerald-500 mb-2 opacity-50" />
-                                        <span className="text-xs font-bold text-slate-400">Tudo em dia por hoje!</span>
-                                    </div>
-                                ) : (
-                                    dueItems.slice(0, 4).map((item) => {
-                                        const theme = getAreaTheme(item.topic.area);
-                                        const initials = getAreaInitials(item.topic.area);
-                                        return (
-                                            <div 
-                                                key={`${item.topic.id}-${item.idx}`} 
-                                                onClick={() => onReview(item.topic.id, item.idx)}
-                                                className="group/card flex items-center justify-between p-4 bg-white dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-500/30 transition-all cursor-pointer"
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shrink-0 ${theme.bg} ${theme.text}`}>
-                                                        {initials}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-sm text-slate-800 dark:text-white">{item.topic.title}</h4>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <span className={`text-[10px] font-bold uppercase tracking-wide bg-slate-100 dark:bg-white/10 text-slate-500 px-2 py-0.5 rounded-md`}>{item.topic.area}</span>
-                                                            <span className="text-[10px] text-slate-300">•</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{item.label}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="opacity-0 group-hover/card:opacity-100 transform translate-x-2 group-hover/card:translate-x-0 transition-all duration-300">
-                                                    <button className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-lg shadow-lg">
-                                                        REVISAR
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                                {dueItems.length > 4 && (
-                                    <div className="text-center pt-2">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase cursor-pointer hover:text-blue-500 transition-colors">
-                                            + {dueItems.length - 4} outros pendentes
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    
+            <div className="hidden lg:grid grid-cols-12 gap-8 items-start">
+                {/* LEFT COLUMN (MAIN PANEL - FOCUS) */}
+                <div className="col-span-8 flex flex-col gap-6">
                     {/* Control Panel */}
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between px-2">
-                            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 tracking-tight hidden lg:block">Painel</h3>
+                            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 tracking-tight hidden lg:block">Painel de Estudos</h3>
                             <div className="flex gap-2">
                                 <div className="relative group">
                                     <button className="p-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl text-slate-500 hover:text-blue-500 transition-colors">
@@ -190,28 +90,104 @@ export const HubView = ({
                                 </button>
                             </div>
                         </div>
-                        {children}
+                        
+                        {/* Topic List */}
+                        <div className="min-h-0">
+                             {children}
+                        </div>
                     </div>
                 </div>
 
-                <div className="col-span-4 flex flex-col gap-6">
-                    <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden">
+                {/* RIGHT COLUMN (SIDEBAR - WIDGETS) */}
+                <div className="col-span-4 flex flex-col gap-6 sticky top-24">
+                    
+                    {/* --- TO DO TODAY WIDGET --- */}
+                    <div className="relative w-full bg-white dark:bg-[#18181b] border border-blue-100 dark:border-blue-900/30 rounded-[32px] p-6 shadow-sm overflow-hidden group hover:border-blue-300 dark:hover:border-blue-800/50 transition-all duration-500">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[60px] pointer-events-none -z-0"></div>
+                        
+                        <div className="relative z-10 flex flex-col gap-5">
+                            {/* Header */}
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                        <Clock size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Para Hoje</div>
+                                        <div className="text-3xl font-black text-slate-800 dark:text-white tracking-tight leading-none">{dueItems.length}</div>
+                                    </div>
+                                </div>
+                                {dueItems.length > 0 && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>}
+                            </div>
+
+                            {/* Action Button */}
+                            {dueItems.length > 0 ? (
+                                <button 
+                                    onClick={startQuickSession}
+                                    className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                >
+                                    <PlayCircle size={18} strokeWidth={2.5}/>
+                                    <span className="text-xs font-black uppercase tracking-wide">Iniciar Sessão</span>
+                                </button>
+                            ) : (
+                                <div className="w-full py-3 bg-slate-50 dark:bg-white/5 text-slate-400 rounded-xl flex items-center justify-center gap-2 border border-slate-100 dark:border-white/5">
+                                    <CheckCircle2 size={16}/>
+                                    <span className="text-xs font-bold">Tudo feito!</span>
+                                </div>
+                            )}
+
+                            {/* Mini List */}
+                            <div className="flex flex-col gap-2">
+                                {dueItems.slice(0, 3).map((item) => {
+                                    const theme = getAreaTheme(item.topic.area);
+                                    const initials = getAreaInitials(item.topic.area);
+                                    return (
+                                        <div 
+                                            key={`${item.topic.id}-${item.idx}`} 
+                                            onClick={() => onReview(item.topic.id, item.idx)}
+                                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:border-blue-100 dark:hover:border-blue-500/20 transition-all cursor-pointer group/item"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${theme.bg} ${theme.text}`}>
+                                                    {initials}
+                                                </div>
+                                                <div className="truncate">
+                                                    <h4 className="font-bold text-xs text-slate-700 dark:text-slate-200 truncate">{item.topic.title}</h4>
+                                                    <div className="text-[9px] font-bold text-slate-400">{item.label}</div>
+                                                </div>
+                                            </div>
+                                            <ChevronRight size={14} className="text-slate-300 group-hover/item:text-blue-500 transition-colors"/>
+                                        </div>
+                                    );
+                                })}
+                                {dueItems.length > 3 && (
+                                    <div className="text-center">
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase cursor-pointer hover:text-blue-500 transition-colors">
+                                            + {dueItems.length - 3} outros
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden shrink-0">
                         <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2 self-start relative z-10"><Flame size={16} className="text-orange-500"/> Constância</h4>
                         <div className="relative z-10"><HeatmapWidget topics={activeTopics} simulados={activeSimulados} /></div>
                         <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none"></div>
                     </div>
                     
-                    <div className="h-56"><SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config.targetAccuracy} /></div>
+                    <div className="h-56 shrink-0"><SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config.targetAccuracy} /></div>
 
                     <div className="glass-panel rounded-[32px] p-6 shadow-sm flex-1 overflow-hidden flex flex-col min-h-[300px]">
-                        <h4 className="font-bold text-xs text-slate-800 dark:text-white mb-6 uppercase tracking-widest flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Feed de Estudos</h4>
+                        <h4 className="font-bold text-xs text-slate-800 dark:text-white mb-6 uppercase tracking-widest flex items-center gap-2"><Activity size={14} className="text-blue-500"/> Feed</h4>
                         <div className="overflow-y-auto custom-scrollbar flex-1 pr-1 space-y-2">
                             {(() => {
                                 const recents = [];
                                 activeTopics.forEach(t => t.reviews.forEach(r => { if(r.done) recents.push({ ...r, title: t.title, k: t.id + r.date + r.type, id: t.id }); }));
                                 recents.sort((a,b) => b.date.localeCompare(a.date));
                                 const display = recents.slice(0, 15);
-                                if (display.length === 0) return <div className="text-[10px] text-slate-400 text-center py-10 font-bold uppercase tracking-wide">Sem atividades recentes</div>;
+                                if (display.length === 0) return <div className="text-[10px] text-slate-400 text-center py-10 font-bold uppercase tracking-wide">Sem atividades</div>;
                                 return display.map((r, i) => {
                                     const acc = r.correct/r.total * 100;
                                     const pillClass = getPerformanceBgLight(acc, config.targetAccuracy);
@@ -236,7 +212,6 @@ export const HubView = ({
 
             {/* Mobile View */}
             <div className="lg:hidden flex flex-col gap-6 px-1">
-                
                 <div className="bg-white dark:bg-[#18181b] p-5 rounded-[28px] border border-black/5 dark:border-white/5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                         <div>
