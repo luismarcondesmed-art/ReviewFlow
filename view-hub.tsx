@@ -1,10 +1,10 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle
+    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, SlidersHorizontal, ChevronDown, Calendar, BookOpen
 } from 'lucide-react';
-import { Topic, Simulado, UserConfig } from './types';
-import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight } from './utils';
+import { Topic, Simulado, UserConfig, AreaType, ImportanceType } from './types';
+import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, AREAS } from './utils';
 import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard } from './components';
 
 const getAreaInitials = (area: string) => {
@@ -18,14 +18,98 @@ const getAreaInitials = (area: string) => {
     }
 };
 
+const InlineTopicCreator = ({ onAdd, onCancel, onOpenFullModal }: { onAdd: (t: any) => void, onCancel: () => void, onOpenFullModal: () => void }) => {
+    const [title, setTitle] = useState('');
+    const [area, setArea] = useState<AreaType>('clinica');
+    const [importance, setImportance] = useState<ImportanceType>('medium');
+    const [date, setDate] = useState(getTodayStr());
+
+    const handleAdd = () => {
+        if (!title.trim()) return;
+        onAdd({ title, area, importance, studyDate: date });
+        setTitle('');
+    };
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 border-2 border-blue-500/20 dark:border-blue-500/10 rounded-[24px] p-5 mb-6 animate-scale-in shadow-lg shadow-blue-500/5">
+            <div className="flex justify-between items-center mb-4">
+                <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                    <Plus size={16} className="text-blue-500"/> Nova Matéria
+                </h4>
+                <button onClick={onCancel} className="text-slate-400 hover:text-red-500 text-xs font-bold uppercase">Cancelar</button>
+            </div>
+            
+            <div className="space-y-4">
+                <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="Título da matéria (ex: Diabetes, HAS...)" 
+                    className="w-full text-lg font-bold bg-slate-50 dark:bg-black/20 p-3 rounded-xl outline-none text-slate-900 dark:text-white placeholder-slate-400"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAdd()}
+                />
+                
+                <div className="flex flex-wrap gap-2">
+                    <div className="relative">
+                        <select 
+                            value={area} 
+                            onChange={(e) => setArea(e.target.value as AreaType)}
+                            className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-black/20 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                        >
+                            {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                    </div>
+
+                    <div className="flex bg-slate-50 dark:bg-black/20 rounded-lg p-1">
+                        {['low','medium','high'].map((imp) => (
+                            <button 
+                                key={imp}
+                                onClick={() => setImportance(imp as any)}
+                                className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${importance === imp ? 'bg-white dark:bg-white/10 shadow-sm text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                {imp === 'high' ? 'Alta' : imp === 'medium' ? 'Média' : 'Baixa'}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="relative">
+                        <input 
+                            type="date" 
+                            value={date} 
+                            onChange={e => setDate(e.target.value)}
+                            className="pl-8 pr-3 py-2 bg-slate-50 dark:bg-black/20 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 outline-none cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                        />
+                        <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                    <button onClick={onOpenFullModal} className="px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs font-bold flex items-center gap-2">
+                        <SlidersHorizontal size={14}/> Avançado
+                    </button>
+                    <button onClick={handleAdd} className="flex-1 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                        Adicionar Matéria
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const HubView = ({ 
     topics, simulados, config, onReview, onEditTopic, 
-    children, setSortOrder, setFilterArea, sortOrder, filterArea, searchTerm 
+    children, setSortOrder, setFilterArea, sortOrder, filterArea, searchTerm,
+    onQuickReview, isCreatingTopic, setIsCreatingTopic, onAddTopic, onOpenFullAddModal
 }: { 
     topics: Topic[], simulados: Simulado[], config: UserConfig, 
     onReview: (id: string, idx: number) => void, onEditTopic: (id: string) => void, 
     children?: React.ReactNode, setSortOrder: any, setFilterArea: any, 
-    sortOrder: string, filterArea: string, searchTerm?: string 
+    sortOrder: string, filterArea: string, searchTerm?: string,
+    onQuickReview?: (id: string, idx: number, data: any) => void,
+    isCreatingTopic?: boolean, setIsCreatingTopic?: (v: boolean) => void,
+    onAddTopic?: (t: any) => void, onOpenFullAddModal?: () => void
 }) => {
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
@@ -36,11 +120,6 @@ export const HubView = ({
         const lower = searchTerm.toLowerCase();
         return activeTopics.filter(t => t.title.toLowerCase().includes(lower));
     }, [activeTopics, searchTerm]);
-
-    const stats = useMemo(() => {
-        const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0) + activeSimulados.reduce((acc,s) => acc + (s.totalQuestions || 0), 0);
-        return { totalQ };
-    }, [activeTopics, activeSimulados]);
 
     const dueItems = useMemo(() => {
         return filteredActiveTopics
@@ -91,6 +170,15 @@ export const HubView = ({
                             </div>
                         </div>
                         
+                        {/* Inline Creator */}
+                        {isCreatingTopic && setIsCreatingTopic && onAddTopic && (
+                            <InlineTopicCreator 
+                                onAdd={(t) => { onAddTopic(t); setIsCreatingTopic(false); }} 
+                                onCancel={() => setIsCreatingTopic(false)} 
+                                onOpenFullModal={() => { setIsCreatingTopic(false); if(onOpenFullAddModal) onOpenFullAddModal(); }}
+                            />
+                        )}
+
                         {/* Topic List */}
                         <div className="min-h-0">
                              {children}
@@ -228,6 +316,16 @@ export const HubView = ({
                             </div>
                         )}
                     </div>
+                    {/* Inline Creator Mobile */}
+                    {isCreatingTopic && setIsCreatingTopic && onAddTopic && (
+                        <div className="mb-4">
+                            <InlineTopicCreator 
+                                onAdd={(t) => { onAddTopic(t); setIsCreatingTopic(false); }} 
+                                onCancel={() => setIsCreatingTopic(false)} 
+                                onOpenFullModal={() => { setIsCreatingTopic(false); if(onOpenFullAddModal) onOpenFullAddModal(); }}
+                            />
+                        </div>
+                    )}
                     {dueItems.length > 0 ? (
                         <div className="space-y-2">
                             {dueItems.slice(0,3).map(item => (

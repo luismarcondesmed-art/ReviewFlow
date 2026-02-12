@@ -51,6 +51,9 @@ export function App() {
     const [sortOrder, setSortOrder] = useState<string>('date');
     const [filterArea, setFilterArea] = useState<string>('all');
     
+    // New Feature State
+    const [isCreatingTopic, setIsCreatingTopic] = useState(false);
+    
     // Mobile Navigation
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
 
@@ -209,22 +212,32 @@ export function App() {
         vibration.success();
     };
 
-    const handleReviewSubmit = (data: { correct: number; total: number; difficulty: string }) => {
-        if (!reviewData) return;
+    // Generic handler that can be called from Modal OR Inline
+    const processReviewSubmission = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
         const { correct, total, difficulty } = data;
         setTopics(prev => prev.map(t => {
-            if (t.id !== reviewData.tId) return t;
+            if (t.id !== topicId) return t;
             const newReviews = [...t.reviews];
-            newReviews[reviewData.rIdx] = { ...newReviews[reviewData.rIdx], done: true, correct, total, difficulty: difficulty as any, completedAt: new Date().toISOString() };
-            if (reviewData.rIdx + 1 < newReviews.length) {
+            newReviews[reviewIdx] = { ...newReviews[reviewIdx], done: true, correct, total, difficulty: difficulty as any, completedAt: new Date().toISOString() };
+            if (reviewIdx + 1 < newReviews.length) {
                 const acc = total > 0 ? correct/total : 0;
-                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc);
+                newReviews[reviewIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewIdx+1].type, acc);
             }
             return { ...t, reviews: newReviews, updatedAt: Date.now() };
         }));
-        setReviewData(null);
         vibration.complete();
         triggerConfetti();
+    };
+
+    const handleReviewModalSubmit = (data: { correct: number; total: number; difficulty: string }) => {
+        if (!reviewData) return;
+        processReviewSubmission(reviewData.tId, reviewData.rIdx, data);
+        setReviewData(null);
+    };
+
+    // Handler for Inline Quick Review
+    const handleQuickReview = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
+        processReviewSubmission(topicId, reviewIdx, data);
     };
 
     const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
@@ -429,7 +442,7 @@ export function App() {
                                     </button>
                                     {desktopNewMenuOpen && (
                                         <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-1.5 pointer-events-auto">
-                                            <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
+                                            <button onClick={() => { setIsCreatingTopic(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
                                                 <BookOpen size={16} className="text-blue-500"/> Nova Matéria
                                             </button>
                                             <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
@@ -463,6 +476,11 @@ export function App() {
                                 setSortOrder={setSortOrder}
                                 filterArea={filterArea}
                                 setFilterArea={setFilterArea}
+                                onQuickReview={handleQuickReview}
+                                isCreatingTopic={isCreatingTopic}
+                                setIsCreatingTopic={setIsCreatingTopic}
+                                onAddTopic={handleAddTopic}
+                                onOpenFullAddModal={() => setAddModalOpen(true)}
                             >
                                 <div className="grid grid-cols-1 gap-4">
                                     {filteredTopics.length === 0 ? (
@@ -481,6 +499,7 @@ export function App() {
                                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
                                                 onDelete={handleDeleteTopic} 
                                                 onEdit={() => setEditTopic(t)} 
+                                                onQuickReview={handleQuickReview}
                                             />
                                         ))
                                     )}
@@ -538,7 +557,7 @@ export function App() {
                                     </button>
                                 )}
                                 <button 
-                                    onClick={() => { setAddModalOpen(true); setIsActionMenuOpen(false); }}
+                                    onClick={() => { setIsCreatingTopic(true); setIsActionMenuOpen(false); }}
                                     className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg"><BookOpen size={16}/></div>
@@ -632,7 +651,7 @@ export function App() {
                 onClose={() => setReviewData(null)} 
                 topic={currentReviewTopic} 
                 reviewIdx={reviewData?.rIdx ?? null} 
-                onSubmit={handleReviewSubmit}
+                onSubmit={handleReviewModalSubmit}
                 targetAccuracy={config.targetAccuracy}
             />
 
