@@ -1,8 +1,8 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, Clock, AlertTriangle, X, Minus, Plus, Smile, Meh, Frown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp } from 'lucide-react';
 import { Topic, Simulado } from './types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight } from './utils';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo } from './utils';
 
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
@@ -108,7 +108,6 @@ export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: num
 
 // --- Activity Bar Chart ---
 export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    // ... (Implementation remains the same)
     const data = useMemo(() => {
         const days = [];
         const today = new Date();
@@ -160,7 +159,6 @@ export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Top
 
 // --- Evolution Chart (Simulados) with Spline Smoothing ---
 export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
-    // ... (Implementation remains the same as provided previously)
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const data = useMemo(() => {
@@ -294,7 +292,6 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
 });
 
 export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topic[], onReview: (id: string, idx: number) => void }) => {
-    // ... (Implementation remains the same)
     const today = getTodayStr();
     const suggestions = useMemo(() => topics
         .filter(t => !t.deleted)
@@ -351,7 +348,6 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
 
 // --- Heatmap Widget - Modern Dot Matrix ---
 export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    // ... (Implementation remains the same)
     const days = useMemo(() => {
         const dArr = [];
         const today = new Date();
@@ -409,259 +405,101 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
     )
 });
 
-// --- Topic Card (Redesigned with Inline Review) ---
-export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit, onQuickReview }: { topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void; onQuickReview?: (id: string, idx: number, data: {correct:number, total:number, difficulty:string}) => void }) => {
+// --- Topic Card ---
+export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void }) => {
     const theme = getAreaTheme(topic.area);
     const nextReviewIdx = topic.reviews.findIndex(r => !r.done);
     const nextReview = topic.reviews[nextReviewIdx];
+    const progress = topic.reviews.filter(r => r.done).length / topic.reviews.length * 100;
+    const prevReview = nextReviewIdx > 0 ? topic.reviews[nextReviewIdx - 1] : null;
+    const errorRate = prevReview && prevReview.total > 0 ? Math.round(((prevReview.total - prevReview.correct) / prevReview.total) * 100) : null;
     const today = getTodayStr();
     const priority = getPriorityInfo(topic.importance);
 
-    // Inline Review State
-    const [isReviewing, setIsReviewing] = useState(false);
-    const [reviewForm, setReviewForm] = useState({ correct: 0, total: 20, difficulty: 'medium' });
-
-    // Initialize Review Form when entering review mode
-    useEffect(() => {
-        if (isReviewing && nextReview) {
-            setReviewForm({ 
-                correct: 0, 
-                total: nextReview.targetQ || 20, 
-                difficulty: 'medium' 
-            });
-        }
-    }, [isReviewing, nextReview]);
-
-    const handleSubmitQuickReview = () => {
-        if (onQuickReview && nextReview) {
-            onQuickReview(topic.id, nextReviewIdx, reviewForm);
-            setIsReviewing(false);
-        }
-    };
-
-    // Status Determination
-    const isDue = nextReview && nextReview.date <= today;
-    const isOverdue = nextReview && nextReview.date < today;
-    const daysLate = isOverdue ? Math.floor((new Date(today).getTime() - new Date(nextReview.date).getTime()) / (1000*60*60*24)) : 0;
-
     return (
-        <div className={`
-            bg-white dark:bg-zinc-900 rounded-3xl border shadow-sm relative group hover:border-blue-500/30 transition-all overflow-hidden flex flex-col sm:flex-row
-            ${isDue ? 'border-blue-200 dark:border-blue-900/30' : 'border-black/5 dark:border-white/5'}
-        `}>
-            {/* Urgency Strip */}
-            {isOverdue && <div className="absolute top-0 left-0 w-full sm:w-1.5 h-1.5 sm:h-full bg-red-500 z-10"></div>}
-            {!isOverdue && isDue && <div className="absolute top-0 left-0 w-full sm:w-1.5 h-1.5 sm:h-full bg-blue-500 z-10"></div>}
-
-            <div className="p-5 flex-1 flex flex-col gap-4">
-                {/* Header */}
-                <div className="flex justify-between items-start pl-1 sm:pl-3">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${theme.bg} ${theme.text}`}>
-                            <BookOpen size={20}/>
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 dark:text-white leading-tight line-clamp-1">{topic.title}</h4>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
-                                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${priority.bg} ${priority.text} border border-transparent`}>{priority.label}</span>
-                            </div>
+        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm relative group hover:border-blue-500/30 transition-all">
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${theme.bg} ${theme.text}`}>
+                        <BookOpen size={20}/>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{topic.title}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${priority.bg} ${priority.text}`}>{priority.label}</span>
                         </div>
                     </div>
-                    {!isReviewing && (
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button onClick={onEdit} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-blue-500 transition-colors"><Edit size={16}/></button>
-                             {onDelete && (
-                                 <button onClick={() => onDelete(topic.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
-                             )}
-                        </div>
-                    )}
                 </div>
-
-                {/* Timeline Visualization */}
-                <div className="flex items-center gap-1 pl-1 sm:pl-3 relative h-8">
-                    <div className="absolute top-1/2 left-3 right-3 h-0.5 bg-slate-100 dark:bg-white/5 -z-0"></div>
-                    {topic.reviews.map((r, i) => {
-                        const isDone = r.done;
-                        const isCurrent = !isDone && i === nextReviewIdx;
-                        let dotClass = 'w-2 h-2 bg-slate-200 dark:bg-white/10';
-                        if (isDone) dotClass = 'w-2.5 h-2.5 bg-emerald-500 ring-2 ring-white dark:ring-zinc-900';
-                        if (isCurrent) dotClass = 'w-3 h-3 bg-white dark:bg-black border-2 border-blue-500 ring-2 ring-blue-500/30';
-
-                        return (
-                            <div key={i} className="flex-1 flex flex-col items-center justify-center relative group/dot z-10">
-                                <div className={`rounded-full transition-all ${dotClass}`}></div>
-                                <div className={`absolute top-full mt-1.5 text-[9px] font-bold uppercase whitespace-nowrap transition-colors ${isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300 dark:text-slate-600'}`}>
-                                    {r.label.split(':')[0]}
-                                </div>
-                                <div className="absolute bottom-full mb-2 opacity-0 group-hover/dot:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] px-2 py-1 rounded pointer-events-none whitespace-nowrap">
-                                    {formatDate(r.date)}
-                                </div>
-                            </div>
-                        )
-                    })}
+                <div className="flex gap-1 transition-opacity">
+                     <button onClick={onEdit} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
+                     {onDelete && (
+                         <button onClick={() => onDelete(topic.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                     )}
                 </div>
             </div>
 
-            {/* Action Panel (Right Side / Bottom) */}
-            <div className={`
-                p-4 sm:w-56 flex flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-50 dark:border-white/5
-                ${isDue && !isReviewing ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-slate-50/30 dark:bg-white/[0.02]'}
-                ${isReviewing ? 'bg-white dark:bg-[#18181b]' : ''}
-            `}>
-                {isReviewing ? (
-                    // Inline Review Form
-                    <div className="flex flex-col gap-3 animate-fade-in w-full">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-[10px] font-bold uppercase text-slate-400">Registrar</span>
-                            <button onClick={() => setIsReviewing(false)} className="text-slate-400 hover:text-red-500"><X size={14}/></button>
-                        </div>
-                        
-                        {/* Score Inputs */}
-                        <div className="flex gap-2">
-                            <div className="flex-1 bg-slate-50 dark:bg-black/20 rounded-xl p-1.5 flex flex-col items-center">
-                                <span className="text-[9px] font-bold text-emerald-500 uppercase mb-1">Acertos</span>
-                                <div className="flex items-center gap-1 w-full justify-between">
-                                    <button onClick={() => setReviewForm(s => ({...s, correct: Math.max(0, s.correct - 1)}))} className="w-5 h-5 flex items-center justify-center rounded bg-white dark:bg-white/10 shadow-sm text-slate-500 hover:text-emerald-500"><Minus size={10}/></button>
-                                    <input 
-                                        className="w-6 text-center text-sm font-black bg-transparent outline-none text-slate-800 dark:text-white p-0" 
-                                        value={reviewForm.correct}
-                                        onChange={e => setReviewForm(s => ({...s, correct: parseInt(e.target.value)||0}))}
-                                    />
-                                    <button onClick={() => setReviewForm(s => ({...s, correct: s.correct + 1}))} className="w-5 h-5 flex items-center justify-center rounded bg-emerald-500 text-white shadow-sm"><Plus size={10}/></button>
-                                </div>
-                            </div>
-                            <div className="flex-1 bg-slate-50 dark:bg-black/20 rounded-xl p-1.5 flex flex-col items-center">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase mb-1">Total</span>
-                                <div className="flex items-center gap-1 w-full justify-between">
-                                    <button onClick={() => setReviewForm(s => ({...s, total: Math.max(1, s.total - 1)}))} className="w-5 h-5 flex items-center justify-center rounded bg-white dark:bg-white/10 shadow-sm text-slate-500"><Minus size={10}/></button>
-                                    <input 
-                                        className="w-6 text-center text-sm font-black bg-transparent outline-none text-slate-800 dark:text-white p-0" 
-                                        value={reviewForm.total}
-                                        onChange={e => setReviewForm(s => ({...s, total: parseInt(e.target.value)||1}))}
-                                    />
-                                    <button onClick={() => setReviewForm(s => ({...s, total: s.total + 1}))} className="w-5 h-5 flex items-center justify-center rounded bg-white dark:bg-white/10 shadow-sm text-slate-500"><Plus size={10}/></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Difficulty */}
-                        <div className="flex gap-1">
-                            {[
-                                { id: 'easy', icon: Smile, color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/20', active: 'ring-1 ring-emerald-500' },
-                                { id: 'medium', icon: Meh, color: 'text-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/20', active: 'ring-1 ring-amber-500' },
-                                { id: 'hard', icon: Frown, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/20', active: 'ring-1 ring-red-500' }
-                            ].map(d => (
-                                <button 
-                                    key={d.id} 
-                                    onClick={() => setReviewForm(s => ({...s, difficulty: d.id}))}
-                                    className={`flex-1 py-1.5 rounded-lg flex items-center justify-center transition-all ${reviewForm.difficulty === d.id ? `${d.bg} ${d.color} ${d.active}` : 'bg-slate-50 dark:bg-white/5 text-slate-300 hover:text-slate-500'}`}
-                                >
-                                    <d.icon size={16}/>
-                                </button>
-                            ))}
-                        </div>
-
-                        <button onClick={handleSubmitQuickReview} className="w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold shadow-lg active:scale-95 transition-all">
-                            Confirmar
-                        </button>
+            <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${theme.bg.replace('bg-', 'bg-').replace('100', '500')}`} style={{width: `${progress}%`}}></div>
+                </div>
+                {errorRate !== null && (
+                    <div className="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded flex items-center gap-1" title="Taxa de erro da última revisão">
+                        <AlertCircle size={10}/> {errorRate}% Erro
                     </div>
-                ) : (
-                    // Standard View
-                    <>
-                        {nextReview ? (
-                            <>
-                                <div className="text-center">
-                                    {isOverdue ? (
-                                        <div className="flex items-center gap-1.5 text-red-500 mb-1 justify-center">
-                                            <AlertTriangle size={14}/>
-                                            <span className="text-[10px] font-bold uppercase tracking-wide">Atrasado {daysLate}d</span>
-                                        </div>
-                                    ) : isDue ? (
-                                        <div className="flex items-center gap-1.5 text-blue-500 mb-1 justify-center">
-                                            <Clock size={14}/>
-                                            <span className="text-[10px] font-bold uppercase tracking-wide">Para Hoje</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1.5 text-slate-400 mb-1 justify-center">
-                                            <Calendar size={14}/>
-                                            <span className="text-[10px] font-bold uppercase tracking-wide">{formatDate(nextReview.date)}</span>
-                                        </div>
-                                    )}
-                                    
-                                    <div className="text-xs font-black text-slate-700 dark:text-slate-200 mb-2">{nextReview.label}</div>
-                                </div>
-
-                                <button 
-                                    onClick={() => {
-                                        if (onQuickReview) setIsReviewing(true);
-                                        else onReview(topic.id, nextReviewIdx);
-                                    }}
-                                    className={`
-                                        w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm active:scale-95 transition-all
-                                        ${isDue 
-                                            ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500' 
-                                            : 'bg-white dark:bg-white/10 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/15'}
-                                    `}
-                                >
-                                    {isDue ? 'Revisar Agora' : 'Adiantar'}
-                                </button>
-                            </>
-                        ) : (
-                            <div className="text-center text-emerald-500">
-                                <Check size={24} className="mx-auto mb-1"/>
-                                <span className="text-[10px] font-bold uppercase tracking-wide">Concluído</span>
-                            </div>
-                        )}
-                    </>
                 )}
+            </div>
+
+            {/* Next Action Box */}
+            {nextReview ? (
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-black/20 p-3 rounded-xl mb-4">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Calendar size={14} className="text-slate-400"/>
+                            <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                {nextReview.label} <span className="text-slate-400 font-medium">• {formatDate(nextReview.date)}</span>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-bold text-blue-500 flex items-center gap-1">
+                            <Target size={10}/> Meta: {nextReview.targetQ} questões
+                        </div>
+                    </div>
+                    {/* Allow review button regardless of date */}
+                    <button onClick={() => onReview(topic.id, nextReviewIdx)} className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-lg shadow-lg active:scale-95 transition-all uppercase tracking-wide">
+                        Revisar
+                    </button>
+                </div>
+            ) : (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide mb-4">
+                    <Check size={16}/> Ciclo Concluído
+                </div>
+            )}
+
+            {/* Full Schedule List (Timeline) */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 custom-scrollbar opacity-60 group-hover:opacity-100 transition-opacity">
+                {topic.reviews.map((r, i) => {
+                    const isDone = r.done;
+                    const isNext = !isDone && i === nextReviewIdx;
+                    return (
+                        <div key={i} className={`flex-shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-lg border text-[9px] font-bold min-w-[50px] ${
+                            isDone 
+                                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                : isNext 
+                                    ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
+                                    : 'bg-transparent border-slate-100 dark:border-white/5 text-slate-400'
+                        }`}>
+                            <span className="uppercase tracking-wide">{r.label.split(':')[0]}</span>
+                            <span className="mt-0.5">{formatDate(r.date)}</span>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
 });
 
-// --- Simulado Card (New) ---
-export const SimuladoCard = React.memo(({ simulado, onDelete, onEdit }: { simulado: Simulado; onDelete?: (id: string) => void; onEdit?: (s: Simulado) => void }) => {
-    const acc = simulado.totalQuestions > 0 ? Math.round((simulado.correctCount / simulado.totalQuestions) * 100) : 0;
-    const pillClass = getPerformanceBgLight(acc, 80);
-
-    return (
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm relative group hover:border-purple-500/30 transition-all p-5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-sm">
-                    <ClipboardList size={22}/>
-                </div>
-                <div>
-                    <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{simulado.name}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{simulado.year}</span>
-                        <span className="text-[10px] font-bold text-slate-300">•</span>
-                        <span className="text-[10px] font-bold text-slate-400">{formatDate(simulado.dateTaken.split('T')[0])}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <div className={`px-3 py-1.5 rounded-xl font-black text-sm ${pillClass} flex items-center gap-1.5`}>
-                    {acc}% <span className="text-[10px] opacity-60 font-bold hidden sm:inline">({simulado.correctCount}/{simulado.totalQuestions})</span>
-                </div>
-                
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {onEdit && (
-                        <button onClick={() => onEdit(simulado)} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-blue-500 transition-colors"><Edit size={16}/></button>
-                    )}
-                    {onDelete && (
-                        <button onClick={() => onDelete(simulado.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-});
-
 // --- Simulados Mini Widget ---
 export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
-    // ... existing implementation
     const displayData = useMemo(() => {
         if (!simulados || simulados.length === 0) return null;
         const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());

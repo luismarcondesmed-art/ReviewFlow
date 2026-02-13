@@ -128,7 +128,7 @@ export const calculateNextLoad = (importanceId: ImportanceType, diffId: string |
 
 // --- NEW SMART SCHEDULING LOGIC ---
 
-export const addDays = (dateStr: string, days: number): string => {
+const addDays = (dateStr: string, days: number): string => {
     const d = new Date(dateStr + 'T12:00:00');
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];

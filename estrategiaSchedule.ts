@@ -1,14 +1,44 @@
 
 import { ScheduleItem } from './types';
 
-// Helper to map Discipline to Grand Area
+// Helper to map Discipline to Grand Area more accurately
 const mapGrandeArea = (disciplina: string): string => {
     const d = disciplina.toLowerCase();
-    if (d.includes('cirurgia') || d.includes('trauma') || d.includes('ortopedia') || d.includes('oftalmo') || d.includes('otorrino') || d.includes('urologia')) return 'Cirurgia';
-    if (d.includes('pediatria') || d.includes('neonatologia') || d.includes('puericultura')) return 'Pediatria';
-    if (d.includes('ginecologia') || d.includes('obstetrícia') || d.includes('mastologia')) return 'Ginecologia e Obstetrícia';
-    if (d.includes('preventiva') || d.includes('sus') || d.includes('epidemiologia') || d.includes('medicina de família') || d.includes('medicina legal')) return 'Preventiva';
-    return 'Clínica Médica'; // Default catch-all (Cardio, Pneumo, Gastro, etc)
+    
+    // Cirurgia
+    if (d.includes('cirurgia') || d.includes('trauma') || d.includes('urologia') || d.includes('ortopedia') || d.includes('oftalmo') || d.includes('otorrino')) {
+        return 'Cirurgia Geral';
+    }
+    
+    // Pediatria
+    if (d.includes('pediatria') || d.includes('neonatologia') || d.includes('puericultura')) {
+        return 'Pediatria';
+    }
+    
+    // G.O.
+    if (d.includes('ginecologia') || d.includes('obstetrícia') || d.includes('obstetricia') || d.includes('mastologia')) {
+        return 'Ginecologia e Obstetrícia';
+    }
+    
+    // Preventiva
+    if (d.includes('preventiva') || d.includes('sus') || d.includes('epidemiologia') || d.includes('família') || d.includes('legal') || d.includes('trabalho') || d.includes('mfc')) {
+        return 'Medicina Preventiva';
+    }
+    
+    // Clínica Médica (Fallback for specific medical specialties)
+    return 'Clínica Médica';
+};
+
+const normalizeDisciplinas = (disciplina: string): string => {
+    const d = disciplina.toLowerCase();
+    if (d === 'endocrino') return 'Endocrinologia';
+    if (d === 'gastro') return 'Gastroenterologia';
+    if (d === 'neuro') return 'Neurologia';
+    if (d === 'pneumo') return 'Pneumologia';
+    if (d === 'reumato') return 'Reumatologia';
+    if (d === 'hemato') return 'Hematologia';
+    if (d === 'dermato') return 'Dermatologia';
+    return disciplina;
 };
 
 const generateId = (week: string, subject: string, topic: string) => {
@@ -401,8 +431,8 @@ export const ESTRATEGIA_SCHEDULE: ScheduleItem[] = RAW_DATA.map(item => ({
     id: generateId(item.s, item.d, item.a),
     bloco: item.s,
     grandeArea: mapGrandeArea(item.d),
-    disciplina: item.d,
+    disciplina: normalizeDisciplinas(item.d),
     aula: item.a,
-    professor: "", // Empty as requested/unavailable
-    importancia: "" // Empty as requested/unavailable
+    professor: "", 
+    importancia: "" 
 }));
