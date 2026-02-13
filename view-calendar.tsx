@@ -5,9 +5,13 @@ import { Topic, Simulado, UserConfig } from './types';
 import { getTodayStr, formatFullDate } from './utils';
 import { useCalendar } from './hooks';
 
-export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig }) => {
+export const CalendarView = ({ topics, simulados, onOpenReview, config, viewMode = 'calendar', setViewMode }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig, viewMode?: 'calendar' | 'list', setViewMode?: (v: 'calendar' | 'list') => void }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    // Internal state backup if prop not provided (for desktop compatibility)
+    const [internalViewMode, setInternalViewMode] = useState<'calendar' | 'list'>('calendar');
+    const actualViewMode = viewMode || internalViewMode;
+    const handleSetViewMode = setViewMode || setInternalViewMode;
+
     const [activeDropdownDay, setActiveDropdownDay] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -36,13 +40,14 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
              <div className="flex flex-row items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-4">
                      <h3 className="hidden sm:flex text-3xl font-black text-slate-800 dark:text-white tracking-tight items-center gap-3"><CalendarCheck size={28} className="text-blue-500"/> Agenda</h3>
-                     <div className="flex bg-slate-100 dark:bg-[#18181b] p-1 rounded-lg shrink-0 border border-transparent dark:border-white/5">
-                        <button onClick={() => setViewMode('calendar')} className={`p-1.5 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-500' : 'text-slate-400'}`}><CalendarIcon size={16}/></button>
-                        <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-500' : 'text-slate-400'}`}><AlignJustify size={16}/></button>
+                     {/* Desktop Toggle (Hidden on Mobile) */}
+                     <div className="hidden lg:flex bg-slate-100 dark:bg-[#18181b] p-1 rounded-lg shrink-0 border border-transparent dark:border-white/5">
+                        <button onClick={() => handleSetViewMode('calendar')} className={`p-1.5 rounded-md transition-all ${actualViewMode === 'calendar' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-500' : 'text-slate-400'}`}><CalendarIcon size={16}/></button>
+                        <button onClick={() => handleSetViewMode('list')} className={`p-1.5 rounded-md transition-all ${actualViewMode === 'list' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-500' : 'text-slate-400'}`}><AlignJustify size={16}/></button>
                      </div>
                 </div>
                 
-                {viewMode === 'calendar' && (
+                {actualViewMode === 'calendar' && (
                     <div className="flex items-center gap-1 bg-white dark:bg-[#18181b] p-1 rounded-lg border border-black/5 dark:border-white/5 shadow-sm sm:self-auto flex-1 sm:flex-none justify-between sm:justify-start">
                         <button onClick={handlePrevMonth} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400"><ChevronLeft size={16}/></button>
                         <button onClick={handleToday} className="px-2 py-1.5 text-xs font-black uppercase text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg whitespace-nowrap">{new Date(year, month).toLocaleString('default', { month: 'short' }).replace('.', '')} {year}</button>
@@ -51,7 +56,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                 )}
             </div>
 
-            {viewMode === 'calendar' ? (
+            {actualViewMode === 'calendar' ? (
                 <div className="flex flex-col gap-4 flex-1 min-h-0 relative">
                     {/* Calendar Grid */}
                     <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-slate-200 dark:border-white/5 shadow-sm overflow-visible flex flex-col shrink-0">

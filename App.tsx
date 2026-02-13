@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download
+    ArrowLeft, Download, Filter
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -37,6 +37,11 @@ export function App() {
     const [view, setView] = useState<'list' | 'cronograma' | 'calendar' | 'database'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
+    
+    // View Control States (Lifted Up for Mobile Header Control)
+    const [hubTab, setHubTab] = useState<'topics' | 'simulados'>('topics');
+    const [calendarMode, setCalendarMode] = useState<'calendar' | 'list'>('calendar');
+    const [dbTab, setDbTab] = useState<'topics' | 'simulados'>('topics');
     
     // PWA Install State
     const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -220,11 +225,13 @@ export function App() {
 
     const handleSaveSimulado = (newS: Simulado) => {
         const sWithId = { ...newS, id: newS.id || generateId() };
-        if (editingSimulado) {
-            setSimulados(prev => prev.map(s => s.id === editingSimulado.id ? sWithId : s));
-        } else {
-            setSimulados(prev => [...prev, sWithId]);
-        }
+        setSimulados(prev => {
+            const exists = prev.some(s => s.id === sWithId.id);
+            if (exists) {
+                return prev.map(s => s.id === sWithId.id ? sWithId : s);
+            }
+            return [...prev, sWithId];
+        });
         setSimuladoModalOpen(false);
         setEditingSimulado(null);
         vibration.success();
@@ -281,11 +288,50 @@ export function App() {
 
     const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
 
+    // --- Components for the Mobile Header ---
+    const MobileControlHub = () => {
+        // iOS Segmented Control Style
+        const btnBase = "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-[8px] transition-all duration-200 leading-none flex items-center justify-center";
+        const btnActive = "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] scale-[1.02]";
+        const btnInactive = "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200";
+        const containerClass = "flex bg-slate-200/60 dark:bg-white/10 p-1 rounded-[10px] w-full max-w-[220px] transition-colors";
+
+        return (
+            <div className="flex-1 flex items-center justify-center animate-fade-in">
+                {view === 'list' && (
+                    <div className={containerClass}>
+                        <button onClick={() => { vibration.tick(); setHubTab('topics'); }} className={`${btnBase} ${hubTab === 'topics' ? btnActive : btnInactive}`}>Matérias</button>
+                        <button onClick={() => { vibration.tick(); setHubTab('simulados'); }} className={`${btnBase} ${hubTab === 'simulados' ? btnActive : btnInactive}`}>Simulados</button>
+                    </div>
+                )}
+                {view === 'calendar' && (
+                    <div className={containerClass}>
+                        <button onClick={() => { vibration.tick(); setCalendarMode('calendar'); }} className={`${btnBase} ${calendarMode === 'calendar' ? btnActive : btnInactive}`}>Mês</button>
+                        <button onClick={() => { vibration.tick(); setCalendarMode('list'); }} className={`${btnBase} ${calendarMode === 'list' ? btnActive : btnInactive}`}>Lista</button>
+                    </div>
+                )}
+                {view === 'database' && (
+                    <div className={containerClass}>
+                        <button onClick={() => { vibration.tick(); setDbTab('topics'); }} className={`${btnBase} ${dbTab === 'topics' ? btnActive : btnInactive}`}>Matérias</button>
+                        <button onClick={() => { vibration.tick(); setDbTab('simulados'); }} className={`${btnBase} ${dbTab === 'simulados' ? btnActive : btnInactive}`}>Simulados</button>
+                    </div>
+                )}
+                {view === 'cronograma' && (
+                    <div className={`${containerClass} max-w-[240px]`}>
+                        <button onClick={() => { vibration.tick(); setConfig(p => ({...p, activeSchedule: 'MEDCOF'})); }} className={`${btnBase} ${config.activeSchedule === 'MEDCOF' ? btnActive : btnInactive}`}>MedCof</button>
+                        <button onClick={() => { vibration.tick(); setConfig(p => ({...p, activeSchedule: 'ESTRATEGIA'})); }} className={`${btnBase} ${config.activeSchedule === 'ESTRATEGIA' ? btnActive : btnInactive}`}>Estratégia</button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30">
             
             {/* Desktop Navigation (Sidebar) */}
             <aside className="hidden lg:flex flex-col w-72 h-screen fixed left-0 top-0 glass-panel border-r border-white/20 dark:border-white/5 p-6 z-50">
+                {/* ... Sidebar Content ... */}
                 <div className="flex items-center gap-4 mb-8 px-2 mt-2">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                         <Activity size={20} strokeWidth={2.5}/>
@@ -321,7 +367,7 @@ export function App() {
             </aside>
 
             {/* Mobile Top Navigation (Clean) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 safe-top">
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-[#f2f4f7]/90 dark:bg-black/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 safe-top transition-colors duration-300">
                 <nav className="flex items-center justify-between px-4 py-2 overflow-x-auto no-scrollbar">
                     {NAV_ITEMS.map((item) => {
                         const isActive = view === item.id;
@@ -337,6 +383,7 @@ export function App() {
                                 <item.icon 
                                     size={20} 
                                     strokeWidth={isActive ? 2.5 : 2} 
+                                    className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}
                                 />
                                 <span className={`text-[9px] font-bold whitespace-nowrap transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
                             </button>
@@ -348,8 +395,37 @@ export function App() {
             {/* Main Content */}
             <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0">
                 
-                {/* Floating Sticky Header */}
-                <header className="sticky top-0 z-[60] px-4 pt-safe pointer-events-none">
+                {/* --- MOBILE CONTROL HUB (Replaces standard header on Mobile) --- */}
+                <div className="lg:hidden sticky top-0 z-[60] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 py-2 safe-top border-b border-slate-200/50 dark:border-white/5 shadow-sm transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                        {isSearchActive ? (
+                            <div className="flex-1 flex items-center bg-white dark:bg-zinc-800 rounded-xl px-3 py-2 animate-fade-in border border-slate-200 dark:border-white/10 shadow-sm">
+                                <Search size={16} className="text-slate-400 mr-2"/>
+                                <input 
+                                    ref={searchInputRef}
+                                    type="text"
+                                    className="bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white w-full placeholder-slate-400"
+                                    placeholder="Buscar..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    onBlur={() => !searchTerm && setIsSearchActive(false)}
+                                />
+                                <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="bg-slate-100 dark:bg-white/10 p-1 rounded-full text-slate-500"><X size={12}/></button>
+                            </div>
+                        ) : (
+                            <MobileControlHub />
+                        )}
+                        
+                        {!isSearchActive && (
+                            <button onClick={() => setIsSearchActive(true)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/5 shadow-sm hover:text-blue-500 transition-colors">
+                                <Search size={18}/>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* --- DESKTOP HEADER (Unchanged) --- */}
+                <header className="hidden lg:block sticky top-0 z-[60] px-4 pt-safe pointer-events-none">
                     <div className="mx-auto max-w-[600px] w-full pt-4 pb-2 flex justify-center">
                         <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/20 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/40 dark:border-white/10 bg-[#f2f4f7]/50 dark:bg-black/50">
                             
@@ -378,23 +454,7 @@ export function App() {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                {installPrompt && (
-                                    <button 
-                                        onClick={handleInstallApp}
-                                        className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full text-[10px] font-bold shadow-md active:scale-95 transition-all"
-                                    >
-                                        <Download size={12} strokeWidth={2.5}/> Instalar App
-                                    </button>
-                                )}
-
-                                {/* Sync Status Dot */}
-                                {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>}
-                                {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500"></div>}
-                                {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-300"></div>}
-                                
-                                <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
-
-                                {/* Add Button (Desktop only) */}
+                                {/* Desktop Add Button */}
                                 <div className="relative hidden lg:block">
                                     <button 
                                         onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
@@ -413,21 +473,20 @@ export function App() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="lg:hidden text-slate-400">
-                                    <Activity size={16}/>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="flex-1 p-4 lg:p-8 pt-2 max-w-[1200px] mx-auto w-full">
+                <div className="flex-1 p-4 lg:p-8 pt-4 lg:pt-2 max-w-[1200px] mx-auto w-full">
                     <Suspense fallback={<LoadingSpinner />}>
                         {view === 'list' && (
                             <HubView 
                                 topics={activeTopics} 
                                 simulados={activeSimulados}
                                 config={config}
+                                activeTab={hubTab} 
+                                setActiveTab={setHubTab} 
                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
                                 onEditTopic={(id) => {
                                     const t = topics.find(topic => topic.id === id);
@@ -449,18 +508,33 @@ export function App() {
                                 onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
                             />
                         )}
-                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
+                        {view === 'calendar' && (
+                            <CalendarView 
+                                topics={activeTopics} 
+                                simulados={activeSimulados} 
+                                onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
+                                config={config}
+                                viewMode={calendarMode}
+                                setViewMode={setCalendarMode}
+                            />
+                        )}
                         
                         {view === 'database' && (
                             <DatabaseView 
                                 topics={activeTopics} 
                                 onEdit={(t) => setEditTopic(t)} 
+                                onUpdateTopic={handleUpdateTopic}
+                                onAddTopic={handleAddTopic}
                                 onDelete={handleDeleteTopic}
                                 simulados={activeSimulados}
                                 onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
+                                onUpdateSimulado={handleSaveSimulado}
+                                onAddSimulado={handleSaveSimulado}
                                 onDeleteSimulado={handleDeleteSimulado}
                                 config={config}
                                 searchTerm={searchTerm}
+                                activeTab={dbTab}
+                                setActiveTab={setDbTab}
                             />
                         )}
                         
@@ -483,6 +557,7 @@ export function App() {
 
             {/* --- Mobile Action Button (Bottom Right) --- */}
             <div className="lg:hidden fixed bottom-6 right-4 z-[90]">
+                {/* ... existing mobile FAB code ... */}
                 <div className="relative pointer-events-auto">
                     {isActionMenuOpen && (
                         <>
@@ -510,17 +585,6 @@ export function App() {
                                 >
                                     <div className="p-1.5 bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg"><ClipboardList size={16}/></div>
                                     Novo Simulado
-                                </button>
-                                <button 
-                                    onClick={() => { 
-                                        setIsActionMenuOpen(false); 
-                                        setIsSearchActive(true);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
-                                >
-                                    <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Search size={16}/></div>
-                                    Pesquisar
                                 </button>
                                 <button 
                                     onClick={() => { setSettingsOpen(true); setIsActionMenuOpen(false); }}

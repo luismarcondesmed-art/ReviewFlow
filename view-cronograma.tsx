@@ -253,77 +253,59 @@ export const CronogramaView = ({
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            {/* Toolbar */}
+            {/* Toolbar - Redesigned to remove schedule switch (now in header) */}
             <div className="flex flex-col gap-4 mb-6 sticky top-0 z-30 pt-2 pb-2 bg-[#f2f4f7] dark:bg-black/95 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Schedule Selector Toggle */}
-                    <div className="flex p-1 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-xl w-full sm:w-auto shadow-sm">
-                        <button 
-                            onClick={() => onScheduleChange('MEDCOF')}
-                            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
-                        >
-                            MedCof
+                <div className="flex items-center gap-2 bg-white dark:bg-[#18181b] p-1.5 rounded-xl border border-black/5 dark:border-white/10 shadow-sm overflow-x-auto no-scrollbar w-full sm:w-auto">
+                    <div className="relative">
+                        <button onClick={(e) => toggleDropdown(e, 'filter')} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${filterArea !== 'all' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>
+                            <Filter size={14}/> <span>{filterArea === 'all' ? 'Todos' : filterArea}</span>
                         </button>
-                        <button 
-                            onClick={() => onScheduleChange('ESTRATEGIA')}
-                            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
-                        >
-                            Estratégia
-                        </button>
+                        {activeDropdown === 'filter' && (
+                            <div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in">
+                                <button onClick={() => setFilterArea('all')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Todos</button>
+                                <button onClick={() => setFilterArea('clinica')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Clínica</button>
+                                <button onClick={() => setFilterArea('cirurgia')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Cirurgia</button>
+                                <button onClick={() => setFilterArea('pediatria')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Pediatria</button>
+                                <button onClick={() => setFilterArea('go')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">G.O.</button>
+                                <button onClick={() => setFilterArea('preventiva')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Preventiva</button>
+                            </div>
+                        )}
                     </div>
+                    
+                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
+                    
+                    {/* Group By Area Toggle */}
+                    <button 
+                        onClick={() => setGroupByArea(!groupByArea)} 
+                        className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${groupByArea ? 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`} 
+                        title="Agrupar por Área"
+                    >
+                        <Layers size={16}/>
+                        <span className="text-[10px] font-bold uppercase hidden sm:inline">Agrupar</span>
+                    </button>
 
-                    <div className="flex items-center gap-2 bg-white dark:bg-[#18181b] p-1.5 rounded-xl border border-black/5 dark:border-white/10 shadow-sm overflow-x-auto no-scrollbar">
-                        <div className="relative">
-                            <button onClick={(e) => toggleDropdown(e, 'filter')} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${filterArea !== 'all' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>
-                                <Filter size={14}/> <span>{filterArea === 'all' ? 'Todos' : filterArea}</span>
-                            </button>
-                            {activeDropdown === 'filter' && (
-                                <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in">
-                                    <button onClick={() => setFilterArea('all')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Todos</button>
-                                    <button onClick={() => setFilterArea('clinica')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Clínica</button>
-                                    <button onClick={() => setFilterArea('cirurgia')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Cirurgia</button>
-                                    <button onClick={() => setFilterArea('pediatria')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Pediatria</button>
-                                    <button onClick={() => setFilterArea('go')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">G.O.</button>
-                                    <button onClick={() => setFilterArea('preventiva')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Preventiva</button>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-                        
-                        {/* Group By Area Toggle */}
-                        <button 
-                            onClick={() => setGroupByArea(!groupByArea)} 
-                            className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${groupByArea ? 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`} 
-                            title="Agrupar por Área"
-                        >
-                            <Layers size={16}/>
-                            <span className="text-[10px] font-bold uppercase hidden sm:inline">Agrupar</span>
-                        </button>
+                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
 
-                        <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-
-                        <button 
-                            onClick={() => setShowLegend(!showLegend)} 
-                            className={`p-1.5 rounded-lg transition-all ${showLegend ? 'bg-slate-100 dark:bg-white/10 text-blue-500' : 'text-slate-400 hover:text-slate-600'}`} 
-                            title="Ajuda"
-                        >
-                            <Info size={16}/>
-                        </button>
-                        <button 
-                            onClick={() => setAutoReview(!autoReview)} 
-                            className={`p-1.5 rounded-lg transition-all flex items-center gap-2 ${autoReview ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600'}`} 
-                            title="Criar revisão automaticamente"
-                        >
-                            <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
-                            {autoReview && <span className="text-[10px] font-bold uppercase mr-1">Auto</span>}
-                        </button>
-                        
-                        <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-                        
-                        <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={16}/></button>
-                        <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><List size={16}/></button>
-                    </div>
+                    <button 
+                        onClick={() => setShowLegend(!showLegend)} 
+                        className={`p-1.5 rounded-lg transition-all ${showLegend ? 'bg-slate-100 dark:bg-white/10 text-blue-500' : 'text-slate-400 hover:text-slate-600'}`} 
+                        title="Ajuda"
+                    >
+                        <Info size={16}/>
+                    </button>
+                    <button 
+                        onClick={() => setAutoReview(!autoReview)} 
+                        className={`p-1.5 rounded-lg transition-all flex items-center gap-2 ${autoReview ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600'}`} 
+                        title="Criar revisão automaticamente"
+                    >
+                        <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
+                        {autoReview && <span className="text-[10px] font-bold uppercase mr-1">Auto</span>}
+                    </button>
+                    
+                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10 ml-auto"></div>
+                    
+                    <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={16}/></button>
+                    <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><List size={16}/></button>
                 </div>
 
                 {/* Legend Panel */}
