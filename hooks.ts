@@ -82,8 +82,6 @@ export const useSync = () => {
                         if (snap.exists()) {
                             const d = snap.data();
                             
-                            // Merge logic with existing state ref to prevent overwrite of newer local changes if race condition
-                            // Simplification: We trust the mergeItems mostly handles timestamps
                             if (d.topics) {
                                 const merged = mergeItems(stateRef.current.topics, d.topics);
                                 if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.topics)) {
@@ -298,7 +296,7 @@ export const useAnalytics = (
     return { institutions, years, groupedData, metrics, filteredSimuladosForChart };
 };
 
-// --- New Hook: useCalendar (OPTIMIZED O(N)) ---
+// --- New Hook: useCalendar ---
 export const useCalendar = (topics: Topic[], simulados: Simulado[], currentDate: Date, examDate?: string) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -307,73 +305,66 @@ export const useCalendar = (topics: Topic[], simulados: Simulado[], currentDate:
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDay = new Date(year, month, 1).getDay();
 
-    // 1. Create Data Map (O(N)) - Iterate topics ONCE, map to dates
-    const dataMap = useMemo(() => {
-        const map: Record<string, { reviews: any[], sims: any[] }> = {};
-        
-        const addToMap = (dateStr: string, item: any, type: 'review'|'sim') => {
-            if (!map[dateStr]) map[dateStr] = { reviews: [], sims: [] };
-            if (type === 'review') map[dateStr].reviews.push(item);
-            else map[dateStr].sims.push(item);
-        };
-
-        topics.forEach(t => {
-            if(t.deleted) return;
-            t.reviews.forEach((r, idx) => {
-                addToMap(r.date, { ...r, topicId: t.id, topicTitle: t.title, idx }, 'review');
-            });
-        });
-
-        simulados.forEach(s => {
-            const d = s.dateTaken.split('T')[0];
-            addToMap(d, s, 'sim');
-        });
-
-        return map;
-    }, [topics, simulados]); // Only recalculate when data changes, not when month changes
-
-    // 2. Generate Calendar Grid (O(Days)) - Just lookup in map
     const monthData = useMemo(() => {
         const data: Record<string, { reviews: any[], sims: any[] }> = {};
         for(let i=1; i<=daysInMonth; i++) {
+             // Create date string manually to avoid timezone shifts
              const d = new Date(year, month, i);
+             // Manually format to YYYY-MM-DD
              const y = d.getFullYear();
              const m = String(d.getMonth() + 1).padStart(2, '0');
              const day = String(d.getDate()).padStart(2, '0');
              const dateStr = `${y}-${m}-${day}`;
              
-             data[dateStr] = dataMap[dateStr] || { reviews: [], sims: [] };
+             data[dateStr] = { reviews: [], sims: [] };
         }
+        topics.forEach(t => {
+            if(t.deleted) return;
+            t.reviews.forEach((r, idx) => {
+                if (data[r.date]) data[r.date].reviews.push({ ...r, topicId: t.id, topicTitle: t.title, idx });
+            });
+        });
+        simulados.forEach(s => {
+            const d = s.dateTaken.split('T')[0];
+             if (data[d]) data[d].sims.push(s);
+        });
         return data;
-    }, [dataMap, year, month, daysInMonth]);
+    }, [topics, simulados, year, month, daysInMonth]);
 
     const timelineDays = useMemo(() => {
         const list = [];
+        // Use a pure date string approach to avoid timezone issues
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2); 
         
         for(let i=0; i<30; i++) {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
+            
+            // Format to YYYY-MM-DD manually
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
             const dateStr = `${y}-${m}-${day}`;
             
-            const dayContent = dataMap[dateStr];
-            
-            if (dayContent || dateStr === today || dateStr === examDate) {
-                // Filter incomplete reviews for timeline
-                const pendingReviews = dayContent?.reviews.filter((r: any) => !r.done) || [];
-                const sims = dayContent?.sims || [];
+            const reviews: any[] = [];
+            topics.forEach(t => {
+                if(t.deleted) return;
+                t.reviews.forEach((r, idx) => {
+                    if (r.date === dateStr && !r.done) {
+                        reviews.push({ ...r, topicId: t.id, topicTitle: t.title, area: t.area, idx });
+                    }
+                });
+            });
 
-                if (pendingReviews.length > 0 || sims.length > 0 || dateStr === examDate) {
-                    list.push({ date: dateStr, reviews: pendingReviews, sims, isToday: dateStr === today });
-                }
+            const sims = simulados.filter(s => s.dateTaken.split('T')[0] === dateStr);
+
+            if (reviews.length > 0 || sims.length > 0 || dateStr === today || dateStr === examDate) {
+                list.push({ date: dateStr, reviews, sims, isToday: dateStr === today });
             }
         }
         return list;
-    }, [dataMap, today, examDate]);
+    }, [topics, simulados, today, examDate]);
 
     return { monthData, timelineDays, daysInMonth, firstDay };
 };

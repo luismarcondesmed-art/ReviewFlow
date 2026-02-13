@@ -9,13 +9,6 @@ declare global {
   }
 }
 
-export interface FSRSState {
-    stability: number; // Interval in days where R=90%
-    difficulty: number; // 1 (Easiest) to 10 (Hardest)
-    lastReview: string; // ISO Date
-    retrievability?: number; // Calculated on the fly
-}
-
 export interface Review {
   type: ReviewType;
   date: string; // ISO date string YYYY-MM-DD (Scheduled Date)
@@ -43,8 +36,6 @@ export interface Topic {
       intervals: number[]; // Array of days, e.g. [1, 7, 30]
       baseQuestions: number;
   };
-  fsrs?: FSRSState; // New FSRS Memory State
-  linkedScheduleIds?: string[]; // IDs of linked ScheduleItems
 }
 
 export interface Simulado {
