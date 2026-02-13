@@ -1,3 +1,4 @@
+
 import { AreaType, ImportanceType, Review, Topic, Simulado, ReviewType } from './types';
 
 // --- Constants ---
@@ -43,7 +44,14 @@ const SYSTEM_PARAMS = {
 
 // --- Logic ---
 
-export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+// Adjusted to handle local timezone correctly instead of naive UTC logic
+export const getTodayStr = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
 
@@ -171,7 +179,6 @@ export const generateSmartSchedule = (
         const schedule: Review[] = [];
         const busyDates = getBusyDates(existingTopics, currentTopicId);
         
-        // R0 is always the study date (base anchor)
         schedule.push({ 
             type: 'R0', 
             date: studyDate, 
@@ -180,35 +187,10 @@ export const generateSmartSchedule = (
             targetQ: customSettings.baseQuestions || impObj.baseQ 
         });
 
-        // Intervals are usually from Day 0 (Study Date)
-        // e.g. [1, 7, 30] means Day+1, Day+7, Day+30
-        let previousDate = studyDate;
-
         customSettings.intervals.forEach((daysFromStart, index) => {
-            // We assume custom intervals provided are absolute offsets from Study Date
-            // If the user entered [1, 7, 30], we treat them as offsets.
-            // However, to avoid weekends/busy days, we still use findNextEmptyDate
-            // but we start searching from the 'Ideal' date.
-            
-            // Note: If intervals are [1, 7, 15], does it mean +1 from prev, or +7 from start?
-            // Usually in spaced repetition inputs it implies offsets from 0.
-            // Let's implement as Offsets from Study Date for consistency.
-            // Wait, standard UI usually implies [1d, 7d, 30d] gaps. 
-            // Implementation: We will treat them as Gaps between reviews if accumulated, 
-            // OR simple offsets. Let's do simple offsets from Study Date for clarity in the UI.
-            // Actually, `addDays(studyDate, gap)` is safer.
-            
-            // BUT, if user inputs "1, 7, 30", they usually mean:
-            // R1 = +1 day
-            // R2 = +7 days (from start)
-            // R3 = +30 days (from start)
-            
             const idealDate = addDays(studyDate, daysFromStart);
-            
-            // Respect busy dates logic to avoid overload, but stick close to ideal
             let actualDate = findNextEmptyDate(idealDate, busyDates);
             
-            // Ensure strict ordering (R2 cannot be before R1)
             if (schedule.length > 0 && actualDate <= schedule[schedule.length - 1].date) {
                 actualDate = addDays(schedule[schedule.length - 1].date, 1);
                 actualDate = findNextEmptyDate(actualDate, busyDates);
@@ -369,7 +351,11 @@ export interface OptimizationChange {
 }
 
 export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: OptimizationChange[] } => {
-    const newTopics: Topic[] = JSON.parse(JSON.stringify(topics));
+    // Optimization: Use structuredClone if available, otherwise fallback
+    const newTopics: Topic[] = typeof structuredClone === 'function' 
+        ? structuredClone(topics) 
+        : JSON.parse(JSON.stringify(topics));
+        
     const changes: OptimizationChange[] = [];
     const todayStr = getTodayStr();
     const todayDate = new Date(todayStr + 'T12:00:00');

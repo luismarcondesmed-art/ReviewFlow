@@ -38,6 +38,12 @@ const mapAreaInfo = (area: string) => {
     return { id: 'default', icon: Circle, label: area };
 };
 
+// Stable ID generator
+const generateStableId = (item: any) => {
+    // Uses Block, Discipline and Lesson Name. Omits professor to allow data corrections without data loss.
+    return `${item.bloco}-${item.disciplina}-${item.aula}`.replace(/\s+/g, '-').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 // Memoized Card Component
 const ScheduleCard = React.memo(({ item, isChecked, viewMode, onToggle }: { item: any, isChecked: boolean, viewMode: 'list' | 'grid', onToggle: (id: string, item: any) => void }) => {
     const pData = getPriorityData(item.importancia);
@@ -156,7 +162,12 @@ export const CronogramaView = ({
     };
 
     const currentScheduleData = useMemo(() => {
-        return activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
+        const raw = activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
+        // Inject stable IDs dynamically if they are not in the raw file yet
+        return raw.map(item => ({
+            ...item,
+            id: generateStableId(item) 
+        }));
     }, [activeScheduleCode]);
 
     const groupedSchedule = useMemo(() => {
