@@ -41,6 +41,7 @@ const SimuladoCreator = ({ onAdd, onCancel }: { onAdd: (s: any) => void, onCance
                         className="w-24 p-2.5 rounded-lg bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 text-xs font-bold outline-none text-slate-800 dark:text-white"
                         value={year}
                         onChange={e => setYear(e.target.value)}
+                        onWheel={(e) => e.currentTarget.blur()}
                     />
                     <input 
                         type="date" 
@@ -58,6 +59,7 @@ const SimuladoCreator = ({ onAdd, onCancel }: { onAdd: (s: any) => void, onCance
                             placeholder="0"
                             value={correct}
                             onChange={e => setCorrect(e.target.value)}
+                            onWheel={(e) => e.currentTarget.blur()}
                         />
                     </div>
                     <span className="text-slate-300">/</span>
@@ -69,6 +71,7 @@ const SimuladoCreator = ({ onAdd, onCancel }: { onAdd: (s: any) => void, onCance
                             placeholder="100"
                             value={total}
                             onChange={e => setTotal(e.target.value)}
+                            onWheel={(e) => e.currentTarget.blur()}
                         />
                     </div>
                 </div>
@@ -180,6 +183,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, onU
                                                     className="w-16 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded px-2 py-1 text-xs font-bold"
                                                     value={editForm.year}
                                                     onChange={e => setEditForm({...editForm, year: e.target.value})}
+                                                    onWheel={(e) => e.currentTarget.blur()}
                                                 />
                                             </td>
                                             <td className="p-3">
@@ -197,6 +201,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, onU
                                                         className="w-12 text-center bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded px-1 py-1 text-xs font-bold text-emerald-600"
                                                         value={editForm.correctCount}
                                                         onChange={e => setEditForm({...editForm, correctCount: parseInt(e.target.value)||0})}
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                     />
                                                     <span>/</span>
                                                     <input 
@@ -204,6 +209,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, onU
                                                         className="w-12 text-center bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded px-1 py-1 text-xs font-bold text-slate-500"
                                                         value={editForm.totalQuestions}
                                                         onChange={e => setEditForm({...editForm, totalQuestions: parseInt(e.target.value)||100})}
+                                                        onWheel={(e) => e.currentTarget.blur()}
                                                     />
                                                 </div>
                                             </td>

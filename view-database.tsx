@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, TrendingUp, Target, Brain, CalendarClock, Layers, CheckCircle2, XCircle, Filter, Flame, Plus, Save, X, Calendar, Check } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, TrendingUp, Target, Brain, CalendarClock, Layers, CheckCircle2, XCircle, Filter, Flame, Plus, Save, X, Calendar, Check, SlidersHorizontal } from 'lucide-react';
 import { Topic, Simulado, UserConfig, AreaType, ImportanceType } from './types';
-import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor, getTodayStr, addDays } from './utils';
+import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor, getTodayStr, addDays, IMPORTANCE_LEVELS } from './utils';
 import { useAnalytics } from './hooks';
-import { HeatmapWidget, EvolutionChart } from './components';
+import { EvolutionChart } from './components';
 
 // --- Local Component: Inline Database Creator ---
 const DatabaseTopicCreator = ({ onAdd, onCancel }: { onAdd: (t: any) => void, onCancel: () => void }) => {
@@ -12,11 +12,29 @@ const DatabaseTopicCreator = ({ onAdd, onCancel }: { onAdd: (t: any) => void, on
     const [area, setArea] = useState<AreaType>('clinica');
     const [importance, setImportance] = useState<ImportanceType>('medium');
     const [date, setDate] = useState(getTodayStr());
+    
+    // Advanced fields
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [intervalsStr, setIntervalsStr] = useState('');
+    const [baseQuestions, setBaseQuestions] = useState<number | ''>('');
 
     const handleAdd = () => {
         if (!title.trim()) return;
-        onAdd({ title, area, importance, studyDate: date });
+        
+        let customSettings = undefined;
+        if (showAdvanced && (intervalsStr.trim() || baseQuestions)) {
+            const intervals = intervalsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+            const baseQ = typeof baseQuestions === 'number' ? baseQuestions : IMPORTANCE_LEVELS.find(i => i.id === importance)?.baseQ || 20;
+            if (intervals.length > 0 || baseQuestions) {
+                if (intervals.length > 0) customSettings = { intervals, baseQuestions: baseQ };
+            }
+        }
+
+        onAdd({ title, area, importance, studyDate: date, customSettings });
         setTitle('');
+        setShowAdvanced(false);
+        setIntervalsStr('');
+        setBaseQuestions('');
     };
 
     return (
@@ -57,9 +75,39 @@ const DatabaseTopicCreator = ({ onAdd, onCancel }: { onAdd: (t: any) => void, on
                     </div>
                 </div>
             </div>
-            <div className="flex justify-end gap-3 mt-3">
-                <button onClick={onCancel} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400">Cancelar</button>
-                <button onClick={handleAdd} className="px-6 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-blue-500 transition-colors">Adicionar</button>
+            
+            {showAdvanced && (
+                <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-white/5 animate-scale-in">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Intervalos</label>
+                        <input 
+                            className="w-full p-2 rounded-lg bg-white dark:bg-black/20 text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-white/10"
+                            placeholder="Ex: 1, 7, 30"
+                            value={intervalsStr}
+                            onChange={e => setIntervalsStr(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase">Questões</label>
+                        <input 
+                            type="number"
+                            className="w-full p-2 rounded-lg bg-white dark:bg-black/20 text-xs text-slate-900 dark:text-white border border-slate-200 dark:border-white/10"
+                            placeholder="Ex: 20"
+                            value={baseQuestions}
+                            onChange={e => setBaseQuestions(parseInt(e.target.value) || '')}
+                        />
+                    </div>
+                </div>
+            )}
+
+            <div className="flex justify-between items-center mt-3">
+                <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 hover:text-blue-500">
+                    <SlidersHorizontal size={12}/> {showAdvanced ? 'Menos Opções' : 'Configuração do Módulo'}
+                </button>
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400">Cancelar</button>
+                    <button onClick={handleAdd} className="px-6 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-blue-500 transition-colors">Adicionar</button>
+                </div>
             </div>
         </div>
     );
@@ -85,42 +133,184 @@ const WorkloadChart = ({ data }: { data: { day: string, count: number }[] }) => 
     );
 };
 
+// --- Global Evolution Chart (Topics) ---
+const GlobalEvolutionChart = ({ topics, period }: { topics: Topic[], period: '7d'|'30d'|'all' }) => {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+    const data = useMemo(() => {
+        const dailyMap = new Map<string, { correct: number, total: number }>();
+        
+        const now = new Date();
+        let minDate = new Date('2000-01-01');
+        if (period === '7d') minDate = new Date(now.getTime() - 7 * 86400000);
+        if (period === '30d') minDate = new Date(now.getTime() - 30 * 86400000);
+        const minDateStr = minDate.toISOString().split('T')[0];
+
+        topics.forEach(t => {
+            if (t.deleted) return;
+            t.reviews.forEach(r => {
+                if (r.done && r.date >= minDateStr) {
+                    const curr = dailyMap.get(r.date) || { correct: 0, total: 0 };
+                    curr.correct += r.correct;
+                    curr.total += r.total;
+                    dailyMap.set(r.date, curr);
+                }
+            });
+        });
+
+        return Array.from(dailyMap.entries())
+            .map(([date, stats]) => ({
+                date,
+                label: formatDate(date),
+                acc: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
+                total: stats.total
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+    }, [topics, period]);
+
+    if (data.length === 0) return (
+        <div className="h-full w-full flex items-center justify-center text-[10px] text-slate-400 font-bold uppercase tracking-wide opacity-50 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-xl">
+            Sem dados no período
+        </div>
+    );
+
+    const getX = (i: number) => data.length <= 1 ? 50 : (i / (data.length - 1)) * 100;
+    const getY = (v: number) => 100 - Math.max(10, v); // Margin top/bottom
+
+    let dPath = '';
+    if (data.length > 1) {
+        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
+        for (let i = 0; i < data.length - 1; i++) {
+            const curr = data[i];
+            const next = data[i+1];
+            const x0 = getX(i);
+            const y0 = getY(curr.acc);
+            const x1 = getX(i+1);
+            const y1 = getY(next.acc);
+            
+            const cp1x = x0 + (x1 - x0) * 0.5;
+            const cp2x = x1 - (x1 - x0) * 0.5;
+            dPath += ` C ${cp1x} ${y0}, ${cp2x} ${y1}, ${x1} ${y1}`;
+        }
+    } else if (data.length === 1) {
+        // Point only
+        dPath = `M 0 ${getY(data[0].acc)} L 100 ${getY(data[0].acc)}`; // Line across if single point? Or just dot.
+    }
+
+    return (
+        <div className="w-full h-full relative px-1 py-2">
+            <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="globalChartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.3"/>
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+                
+                {/* Guides */}
+                <line x1="0" y1="20" x2="100" y2="20" stroke="currentColor" className="text-emerald-500/20" strokeWidth="0.5" strokeDasharray="2"/>
+                <line x1="0" y1="40" x2="100" y2="40" stroke="currentColor" className="text-slate-200 dark:text-white/5" strokeWidth="0.5" strokeDasharray="2"/>
+
+                {data.length > 1 && (
+                    <>
+                        <path d={`${dPath} L 100 120 L 0 120 Z`} fill="url(#globalChartGradient)" vectorEffect="non-scaling-stroke"/>
+                        <path d={dPath} fill="none" stroke="currentColor" className="text-purple-500" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+                    </>
+                )}
+            </svg>
+            
+            <div className="absolute inset-0 px-1 py-2 pointer-events-none">
+                {data.map((d, i) => (
+                    <div 
+                        key={d.date} 
+                        className="absolute w-2 h-2 bg-purple-500 rounded-full border-2 border-white dark:border-zinc-900 shadow-sm transform -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer hover:scale-150 transition-transform"
+                        style={{ left: `${getX(i)}%`, top: `${getY(d.acc)}%` }}
+                        onMouseEnter={() => setHoveredIndex(i)}
+                        onMouseLeave={() => setHoveredIndex(null)}
+                    >
+                        {hoveredIndex === i && (
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap z-50 animate-scale-in">
+                                {d.label}: {d.acc}% ({d.total}q)
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 // --- Mini Chart Component (Table) ---
 export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
-    const doneReviews = useMemo(() => {
-         return reviews.filter(r => r.done).sort((a,b) => a.date.localeCompare(b.date));
+    const data = useMemo(() => {
+         return reviews
+            .filter(r => r.done)
+            .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .map(r => ({
+                date: r.date,
+                label: formatDate(r.date),
+                acc: r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0,
+            }));
     }, [reviews]);
 
-    if (doneReviews.length === 0) return (
+    if (data.length === 0) return (
         <div className="h-full w-full flex items-center justify-center text-[9px] text-slate-400 font-bold uppercase tracking-wide opacity-50 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-xl">
             Sem dados
         </div>
     );
 
-    return (
-        <div className="w-full h-full flex flex-col justify-end relative px-2 pb-2">
-            <div className="flex items-end justify-around h-full gap-2 sm:gap-4 z-10 w-full pb-1">
-                {doneReviews.map((r, i) => {
-                    const acc = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
-                    let barColor = 'bg-red-500';
-                    if (acc >= 80) barColor = 'bg-emerald-500'; 
-                    else if (acc >= 60) barColor = 'bg-amber-500'; 
+    const getX = (i: number) => data.length <= 1 ? 50 : (i / (data.length - 1)) * 100;
+    const getY = (v: number) => 100 - Math.max(20, v); // Ensure points don't hit bottom edge, min height 20%
 
-                    return (
-                        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group max-w-[60px] min-w-[20px] relative">
-                            <div className="absolute bottom-[calc(100%+8px)] opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-20 pointer-events-none">
-                                <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl whitespace-nowrap flex flex-col items-center">
-                                    <span>{formatDate(r.date)}</span>
-                                    <span className="opacity-80 font-medium">{r.correct}/{r.total}</span>
-                                </div>
-                            </div>
-                            <div 
-                                className={`w-full ${barColor} rounded-t-md opacity-90 group-hover:opacity-100 transition-all duration-500 relative shadow-sm`}
-                                style={{ height: `${Math.max(acc, 10)}%` }}
-                            ></div>
+    let dPath = '';
+    if (data.length > 1) {
+        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
+        for (let i = 0; i < data.length - 1; i++) {
+            const curr = data[i];
+            const next = data[i+1];
+            const x0 = getX(i);
+            const y0 = getY(curr.acc);
+            const x1 = getX(i+1);
+            const y1 = getY(next.acc);
+            
+            const cp1x = x0 + (x1 - x0) * 0.5;
+            const cp2x = x1 - (x1 - x0) * 0.5;
+            dPath += ` C ${cp1x} ${y0}, ${cp2x} ${y1}, ${x1} ${y1}`;
+        }
+    }
+
+    return (
+        <div className="w-full h-full relative px-3 py-4">
+            <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="miniChartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3"/>
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+                
+                <line x1="0" y1="20" x2="100" y2="20" stroke="currentColor" className="text-emerald-500/30" strokeWidth="0.5" strokeDasharray="3"/>
+                
+                {data.length > 1 && (
+                    <>
+                        <path d={`${dPath} L 100 120 L 0 120 Z`} fill="url(#miniChartGradient)" vectorEffect="non-scaling-stroke"/>
+                        <path d={dPath} fill="none" stroke="currentColor" className="text-blue-500" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+                    </>
+                )}
+            </svg>
+            
+            <div className="absolute inset-0 px-3 py-4 pointer-events-none">
+                {data.map((d, i) => (
+                    <div 
+                        key={i} 
+                        className="absolute w-2 h-2 bg-blue-500 rounded-full border-2 border-white dark:border-zinc-900 shadow-sm transform -translate-x-1/2 -translate-y-1/2 group pointer-events-auto cursor-pointer hover:scale-125 transition-transform"
+                        style={{ left: `${getX(i)}%`, top: `${getY(d.acc)}%` }}
+                    >
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                            {d.acc}%
                         </div>
-                    );
-                })}
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -378,7 +568,7 @@ export const DatabaseView = ({
                             {effectiveActiveTab === 'simulados' ? (
                                 <EvolutionChart simulados={filteredSimuladosForChart} targetAccuracy={config?.targetAccuracy || 80} />
                             ) : (
-                                <HeatmapWidget topics={topics} simulados={simulados || []} />
+                                <GlobalEvolutionChart topics={topics} period={period} />
                             )}
                         </div>
                         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-purple-500/10 to-transparent pointer-events-none"></div>

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal } from 'lucide-react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Smile, Meh, Frown } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from './types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from './utils';
 
@@ -221,7 +221,6 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                 reviews = newSchedule;
             } else {
                 // Merge logic: Keep done reviews, append new schedule for future
-                const doneReviews = reviews.filter(r => r.done);
                 // Simple logic: Replace all *pending* reviews with new calculation.
                 // We map new schedule items to old done items if they exist to keep data integrity where possible
                 
@@ -335,6 +334,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                             type="number" 
                                             value={baseQuestions} 
                                             onChange={(e) => setBaseQuestions(parseInt(e.target.value) || '')} 
+                                            onWheel={(e) => e.currentTarget.blur()}
                                             placeholder="Ex: 20" 
                                             className="w-full p-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                                         />
@@ -430,11 +430,11 @@ export const EditReviewHistoryModal = ({ isOpen, onClose, topic, reviewIdx, onSa
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest pl-1">Acertos</label>
-                        <input name="correct" type="number" defaultValue={review.correct} className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 font-black text-2xl text-center outline-none border border-emerald-100 dark:border-emerald-500/20 appearance-none" required />
+                        <input name="correct" type="number" onWheel={(e) => e.currentTarget.blur()} defaultValue={review.correct} className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 font-black text-2xl text-center outline-none border border-emerald-100 dark:border-emerald-500/20 appearance-none" required />
                     </div>
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Total</label>
-                        <input name="total" type="number" defaultValue={review.total} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-slate-700 dark:text-slate-200 font-black text-2xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
+                        <input name="total" type="number" onWheel={(e) => e.currentTarget.blur()} defaultValue={review.total} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-slate-700 dark:text-slate-200 font-black text-2xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
                     </div>
                 </div>
 
@@ -586,7 +586,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Meta Acerto (%)</label>
-                            <input type="number" value={tempConfig.targetAccuracy} onChange={e => setTempConfig(prev => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
+                            <input type="number" onWheel={(e) => e.currentTarget.blur()} value={tempConfig.targetAccuracy} onChange={e => setTempConfig(prev => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
                         </div>
                     </div>
                 </div>
@@ -645,7 +645,17 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
     );
 };
 
-export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: { isOpen: boolean; onClose: () => void; simulado: Simulado | null; onSave: (s: any) => void; onDelete?: (id: string) => void; topics: Topic[] }) => {
+// --- Simulado Modal ---
+interface SimuladoModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    simulado: Simulado | null;
+    onSave: (s: any) => void;
+    onDelete?: (id: string) => void;
+    topics: Topic[];
+}
+
+export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: SimuladoModalProps) => {
     const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
     const [simTopicSearch, setSimTopicSearch] = useState('');
 
@@ -663,7 +673,7 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
         const fd = new FormData(e.currentTarget);
         
         const newS = {
-            id: simulado?.id, 
+            id: simulado?.id, // Let parent handle ID generation if null
             name: fd.get('institution') as string, 
             year: fd.get('year') as string,
             totalQuestions: parseInt(fd.get('total') as string) || 0,
@@ -680,32 +690,32 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
         <Modal isOpen={isOpen} onClose={onClose} title={simulado ? "Editar Simulado" : "Novo Simulado"}>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-purple-600 uppercase tracking-widest pl-1">Instituição</label>
-                    <input name="institution" defaultValue={simulado?.name} autoFocus type="text" placeholder="Ex: USP, UNIFESP..." className="w-full text-lg font-bold bg-white dark:bg-zinc-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none" required />
+                    <label className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Instituição</label>
+                    <input name="institution" defaultValue={simulado?.name} autoFocus type="text" placeholder="Ex: USP, UNIFESP..." className="w-full text-lg font-bold bg-white dark:bg-[#151515] p-4 rounded-2xl outline-none border border-slate-200 dark:border-white/5 focus:border-purple-500/50 text-slate-900 dark:text-white transition-all" required />
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Data</label>
-                        <input name="date" type="date" defaultValue={simulado ? simulado.dateTaken.split('T')[0] : getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none min-h-[54px]" required />
+                        <input name="date" type="date" defaultValue={simulado ? simulado.dateTaken.split('T')[0] : getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-sm font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none min-h-[54px]" required />
                     </div>
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Ano</label>
-                        <input name="year" type="number" placeholder="2025" defaultValue={simulado?.year || new Date().getFullYear()} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none" required />
+                        <input name="year" type="number" placeholder="2025" defaultValue={simulado?.year || new Date().getFullYear()} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-sm font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white" required />
                     </div>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest pl-1">Acertos</label>
-                        <input name="correct" type="number" defaultValue={simulado?.correctCount} className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 font-black text-2xl text-center outline-none border-2 border-transparent focus:border-emerald-500/20 appearance-none focus:bg-emerald-100 dark:focus:bg-emerald-900/30 transition-colors" required />
+                        <input name="correct" type="number" defaultValue={simulado?.correctCount} className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 font-black text-2xl text-center outline-none border border-emerald-100 dark:border-emerald-500/20 focus:border-emerald-500/50 appearance-none" required />
                     </div>
                     <div className="space-y-2">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Total</label>
-                        <input name="total" type="number" defaultValue={simulado?.totalQuestions || 100} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 font-black text-2xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
+                        <input name="total" type="number" defaultValue={simulado?.totalQuestions || 100} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-slate-700 dark:text-slate-200 font-black text-2xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
                     </div>
                  </div>
 
                  {/* Difficult Topics Selection */}
-                 <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
+                 <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/5 space-y-3">
                      <div className="flex items-center justify-between">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={12}/> Temas com Dificuldade</label>
                         <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">{selectedDifficulties.length} selecionados</span>
@@ -717,7 +727,7 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
                             placeholder="Buscar matéria..." 
                             value={simTopicSearch}
                             onChange={(e) => setSimTopicSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-black/20 rounded-xl text-xs font-bold outline-none appearance-none"
+                            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-black/20 rounded-xl text-xs font-bold outline-none border border-slate-200 dark:border-white/5"
                         />
                      </div>
                      <div className="max-h-32 overflow-y-auto custom-scrollbar space-y-1">
@@ -732,32 +742,42 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
                                         if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id));
                                         else setSelectedDifficulties(p => [...p, t.id]);
                                     }}
-                                    className={`p-2 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'}`}
+                                    className={`p-2 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'}`}
                                  >
                                      <span className="text-xs font-bold truncate pr-2">{t.title}</span>
-                                     {isSelected && <Check size={12}/>}
+                                     {isSelected && <Check size={12} strokeWidth={3}/>}
                                  </div>
                              )
                          })}
                          {topics.filter(t => !t.deleted).length === 0 && <div className="text-center text-[10px] text-slate-400 py-2">Nenhuma matéria cadastrada.</div>}
                      </div>
-                     <p className="text-[9px] text-slate-400 leading-tight">Marque os temas que você errou. Eles receberão uma revisão extra no cronograma.</p>
+                     <p className="text-[9px] text-slate-400 leading-tight italic">Marque os temas que você errou. Eles receberão uma revisão extra no cronograma.</p>
                  </div>
 
-                 <div className="flex gap-4">
+                 <div className="flex gap-3">
                     {onDelete && simulado && (
-                        <button type="button" onClick={() => { if(window.confirm('Tem certeza que deseja excluir?')) { onDelete(simulado.id); onClose(); } }} className="flex-[1] bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold py-4 rounded-2xl shadow-sm active:scale-[0.98] transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2 border border-red-100 dark:border-red-500/20">
-                            <Trash2 size={16}/> <span className="hidden sm:inline">Excluir</span>
+                        <button type="button" onClick={() => { if(window.confirm("Excluir simulado?")) onDelete(simulado.id); }} className="flex-1 py-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-2xl active:scale-95 transition-all uppercase tracking-wide text-xs border border-red-100 dark:border-red-500/20">
+                            Excluir
                         </button>
                     )}
-                    <button type="submit" className={`flex-[2] bg-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all text-sm uppercase tracking-wider ${!simulado ? 'w-full' : ''}`}>Salvar Resultado</button>
+                    <button type="submit" className="flex-[2] bg-purple-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all text-xs uppercase tracking-wider">Salvar Resultado</button>
                  </div>
             </form>
         </Modal>
     );
 };
 
-export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: { isOpen: boolean; onClose: () => void; topic: Topic | null; reviewIdx: number | null; onSubmit: (data: any) => void; targetAccuracy: number }) => {
+// --- Review Modal ---
+interface ReviewModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    topic: Topic | null;
+    reviewIdx: number | null;
+    onSubmit: (data: { correct: number; total: number; difficulty: string }) => void;
+    targetAccuracy: number;
+}
+
+export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: ReviewModalProps) => {
     const [formState, setFormState] = useState({ correct: 0, total: 20, difficulty: 'medium' });
 
     useEffect(() => {
@@ -781,6 +801,7 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado">
             <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
+                {/* Header Info */}
                 <div className="text-center pb-2">
                     <h4 className="font-black text-xl text-slate-800 dark:text-white leading-tight mb-1">{topic.title}</h4>
                     <div className="flex items-center justify-center gap-2">
@@ -791,35 +812,39 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                     </div>
                 </div>
 
+                {/* Inputs */}
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 flex flex-col items-center">
                         <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Acertos</label>
                         <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => setFormState(s => ({...s, correct: Math.max(0, s.correct - 1)}))} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors"><Minus size={14}/></button>
+                            <button type="button" onClick={() => setFormState(s => ({...s, correct: Math.max(0, s.correct - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors"><Minus size={14}/></button>
                             <input 
                                 type="number" 
+                                onWheel={(e) => e.currentTarget.blur()}
                                 value={formState.correct} 
                                 onChange={(e) => setFormState(s => ({...s, correct: parseInt(e.target.value) || 0}))} 
-                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none" 
+                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-emerald-600 p-0" 
                             />
                             <button type="button" onClick={() => setFormState(s => ({...s, correct: s.correct + 1}))} className="w-8 h-8 rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
                         </div>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
+                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total</label>
                         <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => setFormState(s => ({...s, total: Math.max(1, s.total - 1)}))} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors"><Minus size={14}/></button>
+                            <button type="button" onClick={() => setFormState(s => ({...s, total: Math.max(1, s.total - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors"><Minus size={14}/></button>
                             <input 
                                 type="number" 
+                                onWheel={(e) => e.currentTarget.blur()}
                                 value={formState.total} 
                                 onChange={(e) => setFormState(s => ({...s, total: parseInt(e.target.value) || 1}))} 
-                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none" 
+                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0" 
                             />
                             <button type="button" onClick={() => setFormState(s => ({...s, total: s.total + 1}))} className="w-8 h-8 rounded-full bg-slate-800 dark:bg-white text-white dark:text-black shadow-lg flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
                         </div>
                     </div>
                 </div>
 
+                {/* Result Preview */}
                 <div className="flex items-center justify-between px-2">
                     <span className="text-xs font-bold text-slate-400">Aproveitamento</span>
                     <span className={`text-3xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
@@ -827,19 +852,20 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                     </span>
                 </div>
 
+                {/* Difficulty */}
                 <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block px-1">Dificuldade Sentida</label>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-emerald-500' },
+                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ring-amber-500' },
+                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-red-500' }
                         ].map(lvl => (
                             <button 
                                 key={lvl.id}
                                 type="button"
                                 onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))}
-                                className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${formState.difficulty === lvl.id ? 'border-current shadow-sm scale-[1.02]' : 'border-transparent bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'} ${formState.difficulty === lvl.id ? lvl.color : ''}`}
+                                className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${formState.difficulty === lvl.id ? `border-transparent shadow-sm scale-[1.02] ${lvl.color} ring-2` : 'border-transparent bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'}`}
                             >
                                 <span className="text-lg leading-none">{lvl.emoji}</span>
                                 <span className="text-[9px] font-bold uppercase tracking-wide">{lvl.label}</span>
@@ -856,45 +882,53 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
     );
 };
 
+// --- Optimization Info Modal ---
 export const OptimizationInfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Como Funciona a Otimização?">
+        <Modal isOpen={isOpen} onClose={onClose} title="Como funciona a Otimização?">
             <div className="p-6 space-y-6">
-                <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-                    <p>O algoritmo de otimização reajusta seu cronograma para garantir que você não perca revisões importantes.</p>
-                    
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0 font-bold">1</div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 dark:text-white">Identificação de Atrasos</h4>
-                            <p className="text-xs mt-1 opacity-80">O sistema varre todo o banco de dados procurando revisões que deveriam ter sido feitas ontem ou antes (atraso maior que 1 dia).</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 shrink-0 font-bold">2</div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 dark:text-white">Priorização Inteligente</h4>
-                            <p className="text-xs mt-1 opacity-80">As revisões são ordenadas. Matérias mais antigas e de alta importância ganham prioridade para serem agendadas para <strong>Hoje</strong>.</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0 font-bold">3</div>
-                        <div>
-                            <h4 className="font-bold text-slate-800 dark:text-white">Remanejamento Futuro</h4>
-                            <p className="text-xs mt-1 opacity-80">Se uma revisão R1 atrasada é movida para hoje, as revisões futuras (R2, R3) desse tópico também são empurradas para frente, mantendo o intervalo de espaçamento correto.</p>
-                        </div>
-                    </div>
-                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    A otimização é um processo que reorganiza suas revisões atrasadas e futuras para garantir que você tenha uma carga de estudos equilibrada.
+                </p>
                 
-                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl text-xs font-medium text-slate-500 border border-slate-100 dark:border-white/5 flex gap-2">
-                    <Info className="shrink-0" size={16}/>
-                    <p>Use esta função quando acumular muitas matérias. O sistema tentará limpar seu backlog trazendo o essencial para hoje.</p>
+                <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">1</div>
+                        <div>
+                            <h4 className="font-bold text-xs text-slate-800 dark:text-white">Redistribuição de Atrasos</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Tópicos atrasados são trazidos para o dia de hoje, mas limitados a uma carga máxima diária para não te sobrecarregar.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0">2</div>
+                        <div>
+                            <h4 className="font-bold text-xs text-slate-800 dark:text-white">Priorização Inteligente</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Tópicos de alta prioridade e revisões do tipo R1 (recente) têm preferência na fila de agendamento.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">3</div>
+                        <div>
+                            <h4 className="font-bold text-xs text-slate-800 dark:text-white">Limite Diário</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                O sistema tenta manter um teto de ~150 questões por dia, movendo o excedente para os dias seguintes.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <button onClick={onClose} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl uppercase tracking-wide">Entendi</button>
+                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5 text-xs text-slate-500 dark:text-slate-400 italic">
+                    Nota: Otimizar não apaga seu histórico, apenas ajusta as datas futuras das revisões pendentes.
+                </div>
+
+                <button onClick={onClose} className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl font-bold text-xs">
+                    Entendi
+                </button>
             </div>
         </Modal>
     );

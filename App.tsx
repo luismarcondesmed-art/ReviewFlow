@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, Filter
+    ArrowLeft, Download, Filter, Sidebar
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -13,19 +13,17 @@ import {
     triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate
 } from './utils';
 import { useSync, useVibration } from './hooks';
-import { LevelSystem, TopicCard, CompactLevelSystem } from './components';
+import { CompactLevelSystem } from './components';
 import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
 
-// --- Lazy Loaded Views for Performance ---
 const HubView = lazy(() => import('./view-hub').then(module => ({ default: module.HubView })));
 const CalendarView = lazy(() => import('./view-calendar').then(module => ({ default: module.CalendarView })));
 const DatabaseView = lazy(() => import('./view-database').then(module => ({ default: module.DatabaseView })));
 const CronogramaView = lazy(() => import('./view-cronograma').then(module => ({ default: module.CronogramaView })));
 
-// --- Loading Skeleton ---
 const LoadingSpinner = () => (
     <div className="flex h-full w-full items-center justify-center p-10">
-        <Activity size={32} className="animate-spin text-blue-500 opacity-50"/>
+        <Activity size={24} className="animate-spin text-zinc-400 opacity-50"/>
     </div>
 );
 
@@ -36,9 +34,8 @@ export function App() {
     // UI State
     const [view, setView] = useState<'list' | 'cronograma' | 'calendar' | 'database'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
-    const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
     
-    // View Control States (Lifted Up for Mobile Header Control)
+    // View Control States
     const [hubTab, setHubTab] = useState<'topics' | 'simulados'>('topics');
     const [calendarMode, setCalendarMode] = useState<'calendar' | 'list'>('calendar');
     const [dbTab, setDbTab] = useState<'topics' | 'simulados'>('topics');
@@ -57,44 +54,44 @@ export function App() {
     
     // New Feature State
     const [isCreatingTopic, setIsCreatingTopic] = useState(false);
-    
-    // Mobile Navigation
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+    const [desktopAddMenuOpen, setDesktopAddMenuOpen] = useState(false);
 
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editTopic, setEditTopic] = useState<Topic | null>(null);
     const [reviewData, setReviewData] = useState<{tId: string, rIdx: number} | null>(null);
     const [historyEditData, setHistoryEditData] = useState<{tId: string, rIdx: number} | null>(null);
-    
     const [simuladoModalOpen, setSimuladoModalOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
     const [optimizationInfoOpen, setOptimizationInfoOpen] = useState(false);
     const [tutorialOpen, setTutorialOpen] = useState(false);
-    
     const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
 
     useEffect(() => {
         const root = window.document.documentElement;
-        const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = themeMode === 'dark' || (themeMode === 'system' && isSystemDark);
         if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
         localStorage.setItem('theme', themeMode);
+        
+        const metaColor = isDark ? '#000000' : '#f2f4f7';
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.setAttribute('name', 'theme-color');
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', metaColor);
     }, [themeMode]);
 
-    // Focus search when activated
     useEffect(() => {
-        if (isSearchActive && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
+        if (isSearchActive && searchInputRef.current) searchInputRef.current.focus();
     }, [isSearchActive]);
 
-    // PWA Install Prompt Listener
     useEffect(() => {
-        const handler = (e: any) => {
-            e.preventDefault();
-            setInstallPrompt(e);
-        };
+        const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e); };
         window.addEventListener('beforeinstallprompt', handler);
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
@@ -103,382 +100,179 @@ export function App() {
         if (!installPrompt) return;
         installPrompt.prompt();
         const { outcome } = await installPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setInstallPrompt(null);
-        }
+        if (outcome === 'accepted') setInstallPrompt(null);
     };
 
     const activeTopics = useMemo(() => topics.filter(t => !t.deleted), [topics]);
     const activeSimulados = useMemo(() => simulados.filter(s => !s.deleted), [simulados]);
-
     const stats = useMemo(() => {
         const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0);
         return { totalAnswered: totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0) };
     }, [activeTopics, activeSimulados]);
 
-    // --- Actions ---
-    const handleDeleteTopic = (id: string) => {
-        const deletionTimestamp = Date.now() + 1000;
-        setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: deletionTimestamp } : t));
-        setEditTopic(null);
-        vibration.success();
+    // --- Action Handlers ---
+    const handleDeleteTopic = (id: string) => { setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: Date.now() } : t)); setEditTopic(null); vibration.success(); };
+    const handleDeleteSimulado = (id: string) => { setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, updatedAt: Date.now() } : s)); setSimuladoModalOpen(false); setEditingSimulado(null); vibration.success(); };
+    const handleAddTopic = (t: Topic) => { const newTopicId = generateId(); const reviews = generateSmartSchedule(t.studyDate, config.examDate, t.importance, topics, newTopicId, t.customSettings); setTopics(prev => [{ ...t, id: newTopicId, reviews, deleted: false, updatedAt: Date.now() }, ...prev]); setAddModalOpen(false); vibration.success(); };
+    const handleUpdateTopic = (updated: Topic) => { 
+        const old = topics.find(t => t.id === updated.id); let reviews = updated.reviews;
+        // Check if schedule needs regeneration (date change or custom settings change)
+        const dateChanged = old && old.studyDate !== updated.studyDate;
+        const customChanged = old && JSON.stringify(old.customSettings) !== JSON.stringify(updated.customSettings);
+        
+        if (dateChanged || customChanged) { 
+            // Regenerate
+            const newSchedule = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, updated.customSettings);
+            // Merge logic to keep done reviews could be here, but for now we regenerate future
+            // Simple approach: Keep done, replace pending with new schedule logic matched by type? 
+            // For simplicity in this snippet, we fully regenerate if custom settings change, but careful with done items.
+            // Better approach for safe updates:
+            if(confirm("Recalcular agendamento? Histórico de revisões feitas será mantido, mas datas futuras mudarão.")) {
+                 const doneReviews = old?.reviews.filter(r => r.done) || [];
+                 // Filter new schedule to remove types already done? Or just append?
+                 // Let's use the utility logic if available or just full regen for now
+                 // Assuming user wants full reset of future
+                 reviews = [...doneReviews, ...newSchedule.filter(r => !doneReviews.some(dr => dr.type === r.type))];
+                 reviews.sort((a,b) => a.date.localeCompare(b.date));
+            } else {
+                updated.studyDate = old.studyDate; // Revert if cancelled
+                updated.customSettings = old.customSettings;
+            }
+        } else if (old && old.importance !== updated.importance) {
+             reviews = reviews.map(r => r.done ? r : { ...r, targetQ: calculateNextLoad(updated.importance, null, r.type, null) });
+        }
+        
+        setTopics(prev => prev.map(t => t.id === updated.id ? { ...updated, reviews, updatedAt: Date.now() } : t)); 
+        vibration.success(); 
     };
-
-    const handleDeleteSimulado = (id: string) => {
-        const deletionTimestamp = Date.now() + 1000;
-        setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, updatedAt: deletionTimestamp } : s));
-        setSimuladoModalOpen(false);
-        setEditingSimulado(null);
-        vibration.success();
+    const processReviewSubmission = (tId: string, rIdx: number, data: any) => {
+        setTopics(prev => prev.map(t => { if (t.id !== tId) return t; const nr = [...t.reviews]; nr[rIdx] = { ...nr[rIdx], done: true, ...data, completedAt: new Date().toISOString() }; 
+        if (rIdx + 1 < nr.length) nr[rIdx+1].targetQ = calculateNextLoad(t.importance, data.difficulty, nr[rIdx+1].type, data.correct/data.total);
+        return { ...t, reviews: nr, updatedAt: Date.now() }; })); vibration.complete(); triggerConfetti();
     };
-
-    const handleAddTopic = (t: Topic) => {
-        const newTopicId = generateId();
-        const reviews = generateSmartSchedule(t.studyDate, config.examDate, t.importance, topics, newTopicId);
-        const newTopic: Topic = { ...t, id: newTopicId, reviews: reviews, deleted: false, updatedAt: Date.now() };
-        setTopics(prev => [newTopic, ...prev]);
-        setAddModalOpen(false);
-        vibration.success();
-    };
-
+    const handleReviewModalSubmit = (d: any) => { if (reviewData) { processReviewSubmission(reviewData.tId, reviewData.rIdx, d); setReviewData(null); }};
+    const handleQuickReview = (tId: string, rIdx: number, d: any) => processReviewSubmission(tId, rIdx, d);
+    const handleHistoryEdit = (d: any) => { if(historyEditData) { setTopics(prev => prev.map(t => { if(t.id !== historyEditData.tId) return t; const nr = [...t.reviews]; if(nr[historyEditData.rIdx]) nr[historyEditData.rIdx] = { ...nr[historyEditData.rIdx], ...d }; return { ...t, reviews: nr, updatedAt: Date.now() }; })); setHistoryEditData(null); vibration.success(); }};
+    const handleSaveSimulado = (s: Simulado) => { setSimulados(prev => { const ex = prev.find(p => p.id === s.id); return ex ? prev.map(p => p.id === s.id ? s : p) : [...prev, { ...s, id: s.id || generateId() }]; }); setSimuladoModalOpen(false); setEditingSimulado(null); vibration.success(); };
+    const runOptimization = () => { const r = optimizeSchedule(topics); if(r.changes.length === 0) alert("Nada a otimizar."); else setOptimizationResult(r); setSettingsOpen(false); };
+    const applyOptimization = () => { if(optimizationResult) { setTopics(optimizationResult.topics); setOptimizationResult(null); vibration.success(); }};
+    const handleExport = () => { const b = new Blob([JSON.stringify({ version: 1, date: new Date().toISOString(), topics, simulados, config }, null, 2)], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = `backup-${getTodayStr()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+    const handleImport = (e: any) => { const f = e.target.files?.[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target?.result as string); if(d.topics) setTopics(d.topics); if(d.simulados) setSimulados(d.simulados); if(d.config) setConfig(d.config); alert('Importado!'); setSettingsOpen(false); } catch(err){ alert('Erro'); }}; r.readAsText(f); };
     const handleAutoCreateFromSchedule = useCallback((item: any) => {
         let area: AreaType = 'clinica';
         const ga = (item.grandeArea || '').toLowerCase();
-        if (ga.includes('cirurgia')) area = 'cirurgia';
-        else if (ga.includes('pediatria')) area = 'pediatria';
-        else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go';
-        else if (ga.includes('preventiva')) area = 'preventiva';
-
-        const isHighPriority = item.importancia && item.importancia.toLowerCase().includes('azul');
-        const importance: ImportanceType = isHighPriority ? 'high' : 'medium';
-
-        const draftTopic: Topic = {
-            id: '', 
-            title: item.aula,
-            area: area,
-            subarea: item.disciplina,
-            importance: importance,
-            studyDate: getTodayStr(),
-            reviews: [], 
-            deleted: false,
-            updatedAt: 0
-        };
-
-        handleAddTopic(draftTopic);
-        triggerConfetti();
+        if (ga.includes('cirurgia')) area = 'cirurgia'; else if (ga.includes('pediatria')) area = 'pediatria'; else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go'; else if (ga.includes('preventiva')) area = 'preventiva';
+        handleAddTopic({ id: '', title: item.aula, area, subarea: item.disciplina, importance: item.importancia?.toLowerCase().includes('azul') ? 'high' : 'medium', studyDate: getTodayStr(), reviews: [], deleted: false, updatedAt: 0 }); triggerConfetti();
     }, [config.examDate, topics]);
 
-    const handleUpdateTopic = (updated: Topic) => {
-        const old = topics.find(t => t.id === updated.id);
-        let reviews = updated.reviews;
-        if (old && old.studyDate !== updated.studyDate) {
-             if (confirm("Recalcular cronograma devido à mudança de data?")) {
-                 reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id);
-             } else { updated.studyDate = old.studyDate; }
-        } else if (old && old.importance !== updated.importance) {
-            reviews = reviews.map(r => r.done ? r : { ...r, targetQ: calculateNextLoad(updated.importance, null, r.type, null) });
-        }
-        const finalTopic = { ...updated, reviews, updatedAt: Date.now() };
-        setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
-        vibration.success();
-    };
+    if (!loaded) return <LoadingSpinner />;
 
-    const processReviewSubmission = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
-        const { correct, total, difficulty } = data;
-        setTopics(prev => prev.map(t => {
-            if (t.id !== topicId) return t;
-            const newReviews = [...t.reviews];
-            newReviews[reviewIdx] = { ...newReviews[reviewIdx], done: true, correct, total, difficulty: difficulty as any, completedAt: new Date().toISOString() };
-            if (reviewIdx + 1 < newReviews.length) {
-                const acc = total > 0 ? correct/total : 0;
-                newReviews[reviewIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewIdx+1].type, acc);
-            }
-            return { ...t, reviews: newReviews, updatedAt: Date.now() };
-        }));
-        vibration.complete();
-        triggerConfetti();
-    };
+    const currentViewTitle = { list: 'Dashboard', cronograma: 'Cronograma', database: 'Banco', calendar: 'Agenda' }[view];
 
-    const handleReviewModalSubmit = (data: { correct: number; total: number; difficulty: string }) => {
-        if (!reviewData) return;
-        processReviewSubmission(reviewData.tId, reviewData.rIdx, data);
-        setReviewData(null);
-    };
+    const MobileControlHub = () => (
+        <div className="flex-1 flex justify-center">
+            {view === 'list' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setHubTab('topics')} className={hubTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setHubTab('simulados')} className={hubTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button></div>}
+            {view === 'calendar' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setCalendarMode('calendar')} className={calendarMode === 'calendar' ? 'text-black dark:text-white' : ''}>MÊS</button><button onClick={() => setCalendarMode('list')} className={calendarMode === 'list' ? 'text-black dark:text-white' : ''}>LISTA</button></div>}
+            {view === 'database' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setDbTab('topics')} className={dbTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setDbTab('simulados')} className={dbTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button></div>}
+            {view === 'cronograma' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setConfig(p => ({...p, activeSchedule: 'MEDCOF'}))} className={config.activeSchedule === 'MEDCOF' ? 'text-black dark:text-white' : ''}>MEDCOF</button><button onClick={() => setConfig(p => ({...p, activeSchedule: 'ESTRATEGIA'}))} className={config.activeSchedule === 'ESTRATEGIA' ? 'text-black dark:text-white' : ''}>ESTRATÉGIA</button></div>}
+        </div>
+    );
 
-    const handleQuickReview = (topicId: string, reviewIdx: number, data: { correct: number; total: number; difficulty: string }) => {
-        processReviewSubmission(topicId, reviewIdx, data);
-    };
-
-    const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
-        if (!historyEditData) return;
-        setTopics(prev => prev.map(t => {
-            if (t.id !== historyEditData.tId) return t;
-            const newReviews = [...t.reviews];
-            if (newReviews[historyEditData.rIdx]) {
-                newReviews[historyEditData.rIdx] = { ...newReviews[historyEditData.rIdx], date: data.date, correct: data.correct, total: data.total };
-            }
-            return { ...t, reviews: newReviews, updatedAt: Date.now() };
-        }));
-        setHistoryEditData(null);
-        vibration.success();
-    };
-
-    const handleSaveSimulado = (newS: Simulado) => {
-        const sWithId = { ...newS, id: newS.id || generateId() };
-        setSimulados(prev => {
-            const exists = prev.some(s => s.id === sWithId.id);
-            if (exists) {
-                return prev.map(s => s.id === sWithId.id ? sWithId : s);
-            }
-            return [...prev, sWithId];
-        });
-        setSimuladoModalOpen(false);
-        setEditingSimulado(null);
-        vibration.success();
-    };
-
-    const runOptimization = () => {
-        const result = optimizeSchedule(topics);
-        if (result.changes.length === 0) { alert("Nenhuma otimização necessária."); return; }
-        setOptimizationResult(result);
-        setSettingsOpen(false);
-    };
-    
-    const applyOptimization = () => {
-        if (optimizationResult) {
-            setTopics(optimizationResult.topics);
-            setOptimizationResult(null);
-            vibration.success();
-        }
-    };
-
-    const handleExport = () => {
-        const data = { version: 1, date: new Date().toISOString(), topics, simulados, config };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `reviewflow-backup-${getTodayStr()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); vibration.success();
-    };
-
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            try {
-                const data = JSON.parse(ev.target?.result as string);
-                if (data.topics) setTopics(data.topics);
-                if (data.simulados) setSimulados(data.simulados);
-                if (data.config) setConfig(data.config);
-                alert('Importado!'); setSettingsOpen(false); vibration.success();
-            } catch (err) { alert('Erro.'); vibration.error(); }
-        };
-        reader.readAsText(file);
-    };
-
-    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f2f4f7] dark:bg-black"><Activity size={40} className="animate-spin text-blue-600"/></div>;
-
-    const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
-
-    const NAV_ITEMS = [
-        { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
-        { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
-        { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
-        { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
-    ];
-
-    const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
-
-    // --- Components for the Mobile Header ---
-    const MobileControlHub = () => {
-        // iOS Segmented Control Style
-        const btnBase = "flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-[8px] transition-all duration-200 leading-none flex items-center justify-center";
-        const btnActive = "bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] scale-[1.02]";
-        const btnInactive = "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200";
-        const containerClass = "flex bg-slate-200/60 dark:bg-white/10 p-1 rounded-[10px] w-full max-w-[220px] transition-colors";
-
-        return (
-            <div className="flex-1 flex items-center justify-center animate-fade-in">
-                {view === 'list' && (
-                    <div className={containerClass}>
-                        <button onClick={() => { vibration.tick(); setHubTab('topics'); }} className={`${btnBase} ${hubTab === 'topics' ? btnActive : btnInactive}`}>Matérias</button>
-                        <button onClick={() => { vibration.tick(); setHubTab('simulados'); }} className={`${btnBase} ${hubTab === 'simulados' ? btnActive : btnInactive}`}>Simulados</button>
-                    </div>
-                )}
-                {view === 'calendar' && (
-                    <div className={containerClass}>
-                        <button onClick={() => { vibration.tick(); setCalendarMode('calendar'); }} className={`${btnBase} ${calendarMode === 'calendar' ? btnActive : btnInactive}`}>Mês</button>
-                        <button onClick={() => { vibration.tick(); setCalendarMode('list'); }} className={`${btnBase} ${calendarMode === 'list' ? btnActive : btnInactive}`}>Lista</button>
-                    </div>
-                )}
-                {view === 'database' && (
-                    <div className={containerClass}>
-                        <button onClick={() => { vibration.tick(); setDbTab('topics'); }} className={`${btnBase} ${dbTab === 'topics' ? btnActive : btnInactive}`}>Matérias</button>
-                        <button onClick={() => { vibration.tick(); setDbTab('simulados'); }} className={`${btnBase} ${dbTab === 'simulados' ? btnActive : btnInactive}`}>Simulados</button>
-                    </div>
-                )}
-                {view === 'cronograma' && (
-                    <div className={`${containerClass} max-w-[240px]`}>
-                        <button onClick={() => { vibration.tick(); setConfig(p => ({...p, activeSchedule: 'MEDCOF'})); }} className={`${btnBase} ${config.activeSchedule === 'MEDCOF' ? btnActive : btnInactive}`}>MedCof</button>
-                        <button onClick={() => { vibration.tick(); setConfig(p => ({...p, activeSchedule: 'ESTRATEGIA'})); }} className={`${btnBase} ${config.activeSchedule === 'ESTRATEGIA' ? btnActive : btnInactive}`}>Estratégia</button>
-                    </div>
-                )}
-            </div>
-        );
-    };
 
     return (
         <div className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30">
             
-            {/* Desktop Navigation (Sidebar) */}
-            <aside className="hidden lg:flex flex-col w-72 h-screen fixed left-0 top-0 glass-panel border-r border-white/20 dark:border-white/5 p-6 z-50">
-                {/* ... Sidebar Content ... */}
+            {/* --- REINVENTED DESKTOP SIDEBAR (Floating Modern Style) --- */}
+            <aside className="hidden lg:flex flex-col w-72 fixed left-4 top-4 bottom-4 rounded-[32px] bg-white/80 dark:bg-[#121214]/80 backdrop-blur-2xl border border-white/40 dark:border-white/5 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] dark:shadow-black/50 p-5 z-50 overflow-hidden">
+                {/* Brand */}
                 <div className="flex items-center gap-4 mb-8 px-2 mt-2">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                         <Activity size={20} strokeWidth={2.5}/>
                     </div>
                     <div>
-                        <h1 className="text-lg font-black tracking-tight leading-none text-slate-800 dark:text-white">ReviewFlow</h1>
+                        <h1 className="text-xl font-black tracking-tight leading-none text-slate-800 dark:text-white">ReviewFlow</h1>
+                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mt-1">Medical AI</p>
                     </div>
                 </div>
 
-                <nav className="space-y-1.5 mt-2 mb-auto">
-                    {NAV_ITEMS.map((item) => (
+                {/* Primary Action Button (Desktop) */}
+                <div className="relative mb-6 z-20">
+                    <button 
+                        onClick={() => setDesktopAddMenuOpen(!desktopAddMenuOpen)} 
+                        className="w-full h-12 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center gap-3 font-bold text-sm shadow-xl active:scale-[0.98] transition-all hover:shadow-2xl group"
+                    >
+                        <Plus size={18} strokeWidth={3} className={`transition-transform duration-300 ${desktopAddMenuOpen ? 'rotate-45' : ''}`}/> 
+                        <span className="tracking-wide">Novo Item</span>
+                    </button>
+                    
+                    {/* Floating Dropdown */}
+                    <div className={`absolute top-full left-0 w-full mt-2 bg-white dark:bg-[#1c1c1e] border border-black/5 dark:border-white/10 rounded-2xl p-1.5 shadow-2xl transition-all duration-300 origin-top ${desktopAddMenuOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
+                        <button onClick={() => { setIsCreatingTopic(true); setDesktopAddMenuOpen(false); if(view !== 'list') setView('list'); setHubTab('topics'); }} className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200 text-xs font-bold">
+                            <BookOpen size={16} className="text-blue-500"/> Matéria
+                        </button>
+                        <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopAddMenuOpen(false); }} className="flex items-center gap-3 w-full p-3 hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200 text-xs font-bold">
+                            <ClipboardList size={16} className="text-purple-500"/> Simulado
+                        </button>
+                    </div>
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="flex-1 space-y-1">
+                    {[
+                        { id: 'list', label: 'Dashboard', icon: LayoutGrid },
+                        { id: 'cronograma', label: 'Cronograma', icon: MapIcon },
+                        { id: 'database', label: 'Banco de Dados', icon: Database },
+                        { id: 'calendar', label: 'Agenda', icon: Calendar },
+                    ].map(item => (
                         <button 
                             key={item.id} 
                             onClick={() => setView(item.id as any)} 
-                            className={`w-full group flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-200 relative overflow-hidden ${
-                                view === item.id 
-                                ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white font-bold' 
-                                : 'text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 font-medium'
-                            }`}
+                            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all relative overflow-hidden group ${view === item.id ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'}`}
                         >
-                            <item.icon size={18} className={`${view === item.id ? 'text-blue-600 dark:text-blue-400 stroke-[2.5px]' : 'stroke-[2px]'} transition-colors`}/>
-                            <span className="text-sm">{item.label}</span>
+                            <item.icon size={20} strokeWidth={view === item.id ? 2.5 : 2} className="relative z-10"/>
+                            <span className="relative z-10">{item.label}</span>
+                            {view === item.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-500 rounded-r-full"></div>}
                         </button>
                     ))}
                 </nav>
 
-                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5">
+                {/* Footer Stats & Settings */}
+                <div className="mt-auto pt-6 border-t border-slate-100 dark:border-white/5">
                     <CompactLevelSystem totalQuestions={stats.totalAnswered} />
-                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 transition-all w-full">
-                        <Settings size={18} /> Ajustes
+                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all w-full mt-2">
+                        <Settings size={16} /> Configurações
                     </button>
                 </div>
             </aside>
 
-            {/* Mobile Top Navigation (Clean) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-[#f2f4f7]/90 dark:bg-black/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-white/5 safe-top transition-colors duration-300">
-                <nav className="flex items-center justify-between px-4 py-2 overflow-x-auto no-scrollbar">
-                    {NAV_ITEMS.map((item) => {
-                        const isActive = view === item.id;
-                        return (
-                            <button 
-                                key={item.id} 
-                                onClick={() => { 
-                                    vibration.tick(); 
-                                    setView(item.id as any);
-                                }} 
-                                className={`flex flex-col items-center justify-center min-w-[60px] py-1 gap-1 rounded-xl transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
-                            >
-                                <item.icon 
-                                    size={20} 
-                                    strokeWidth={isActive ? 2.5 : 2} 
-                                    className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}
-                                />
-                                <span className={`text-[9px] font-bold whitespace-nowrap transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
-
-            {/* Main Content */}
-            <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0">
+            {/* --- MAIN CONTENT AREA --- */}
+            <main className="flex-1 flex flex-col min-h-screen relative pb-32 lg:pb-0 lg:ml-80 lg:mr-4 transition-all duration-300">
                 
-                {/* --- MOBILE CONTROL HUB (Replaces standard header on Mobile) --- */}
-                <div className="lg:hidden sticky top-0 z-[60] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 py-2 safe-top border-b border-slate-200/50 dark:border-white/5 shadow-sm transition-all duration-300">
-                    <div className="flex items-center gap-3">
-                        {isSearchActive ? (
-                            <div className="flex-1 flex items-center bg-white dark:bg-zinc-800 rounded-xl px-3 py-2 animate-fade-in border border-slate-200 dark:border-white/10 shadow-sm">
-                                <Search size={16} className="text-slate-400 mr-2"/>
-                                <input 
-                                    ref={searchInputRef}
-                                    type="text"
-                                    className="bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white w-full placeholder-slate-400"
-                                    placeholder="Buscar..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    onBlur={() => !searchTerm && setIsSearchActive(false)}
-                                />
-                                <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="bg-slate-100 dark:bg-white/10 p-1 rounded-full text-slate-500"><X size={12}/></button>
+                {/* Mobile Header (Minimal) */}
+                <div className="lg:hidden sticky top-0 z-[60] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 py-3 safe-top border-b border-slate-200/50 dark:border-white/5 flex items-center justify-between">
+                    {isSearchActive ? (
+                        <div className="flex-1 flex items-center bg-white dark:bg-zinc-800 rounded-full px-3 py-1.5 animate-fade-in border border-slate-200 dark:border-white/10">
+                            <input ref={searchInputRef} className="bg-transparent border-none outline-none text-sm font-medium w-full text-black dark:text-white placeholder-slate-400" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onBlur={() => !searchTerm && setIsSearchActive(false)}/>
+                            <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }}><X size={14} className="text-slate-400"/></button>
+                        </div>
+                    ) : (
+                        <>
+                            <h1 className="text-lg font-black tracking-tight flex items-center gap-2">
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400">
+                                    {{ list: 'Dashboard', cronograma: 'Cronograma', database: 'Banco', calendar: 'Agenda' }[view]}
+                                </span>
+                            </h1>
+                            <div className="flex gap-3 items-center">
+                                <MobileControlHub />
+                                <button onClick={() => setIsSearchActive(true)} className="p-2 bg-white dark:bg-white/10 rounded-full shadow-sm text-slate-600 dark:text-white"><Search size={18}/></button>
                             </div>
-                        ) : (
-                            <MobileControlHub />
-                        )}
-                        
-                        {!isSearchActive && (
-                            <button onClick={() => setIsSearchActive(true)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/5 shadow-sm hover:text-blue-500 transition-colors">
-                                <Search size={18}/>
-                            </button>
-                        )}
-                    </div>
+                        </>
+                    )}
                 </div>
 
-                {/* --- DESKTOP HEADER (Unchanged) --- */}
-                <header className="hidden lg:block sticky top-0 z-[60] px-4 pt-safe pointer-events-none">
-                    <div className="mx-auto max-w-[600px] w-full pt-4 pb-2 flex justify-center">
-                        <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/20 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/40 dark:border-white/10 bg-[#f2f4f7]/50 dark:bg-black/50">
-                            
-                            <div className="flex-1 flex items-center">
-                                {isSearchActive ? (
-                                    <div className="flex items-center w-full animate-fade-in">
-                                        <Search className="text-blue-500 mr-2 shrink-0" size={16} />
-                                        <input 
-                                            ref={searchInputRef}
-                                            type="text" 
-                                            placeholder={`Buscar em ${currentViewTitle}...`}
-                                            className="w-full bg-transparent outline-none text-sm font-semibold text-slate-800 dark:text-white placeholder-slate-400 min-w-0"
-                                            value={searchTerm}
-                                            onChange={e => setSearchTerm(e.target.value)}
-                                            onBlur={() => !searchTerm && setIsSearchActive(false)}
-                                        />
-                                        <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="p-1 rounded-full bg-slate-100 dark:bg-white/10 ml-2">
-                                            <X size={14} className="text-slate-500"/>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button onClick={() => setIsSearchActive(true)} className="flex items-center gap-2 text-left w-full group">
-                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2">{currentViewTitle}</h2>
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                {/* Desktop Add Button */}
-                                <div className="relative hidden lg:block">
-                                    <button 
-                                        onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                        className="w-8 h-8 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
-                                    >
-                                        <Plus size={16} strokeWidth={3}/>
-                                    </button>
-                                    {desktopNewMenuOpen && (
-                                        <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-1.5 pointer-events-auto">
-                                            <button onClick={() => { setIsCreatingTopic(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
-                                                <BookOpen size={16} className="text-blue-500"/> Nova Matéria
-                                            </button>
-                                            <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
-                                                <ClipboardList size={16} className="text-purple-500"/> Novo Simulado
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <div className="flex-1 p-4 lg:p-8 pt-4 lg:pt-2 max-w-[1200px] mx-auto w-full">
+                {/* Content Container */}
+                <div className="flex-1 p-4 lg:py-8 w-full max-w-[1600px] mx-auto">
                     <Suspense fallback={<LoadingSpinner />}>
                         {view === 'list' && (
                             <HubView 
@@ -488,10 +282,8 @@ export function App() {
                                 activeTab={hubTab} 
                                 setActiveTab={setHubTab} 
                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
-                                onEditTopic={(id) => {
-                                    const t = topics.find(topic => topic.id === id);
-                                    if(t) setEditTopic(t);
-                                }}
+                                onEditTopic={(id) => { const t = topics.find(topic => topic.id === id); if(t) setEditTopic(t); }}
+                                onUpdateTopic={handleUpdateTopic}
                                 onDeleteTopic={handleDeleteTopic}
                                 searchTerm={searchTerm}
                                 sortOrder={sortOrder}
@@ -508,182 +300,61 @@ export function App() {
                                 onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
                             />
                         )}
-                        {view === 'calendar' && (
-                            <CalendarView 
-                                topics={activeTopics} 
-                                simulados={activeSimulados} 
-                                onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
-                                config={config}
-                                viewMode={calendarMode}
-                                setViewMode={setCalendarMode}
-                            />
-                        )}
-                        
-                        {view === 'database' && (
-                            <DatabaseView 
-                                topics={activeTopics} 
-                                onEdit={(t) => setEditTopic(t)} 
-                                onUpdateTopic={handleUpdateTopic}
-                                onAddTopic={handleAddTopic}
-                                onDelete={handleDeleteTopic}
-                                simulados={activeSimulados}
-                                onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
-                                onUpdateSimulado={handleSaveSimulado}
-                                onAddSimulado={handleSaveSimulado}
-                                onDeleteSimulado={handleDeleteSimulado}
-                                config={config}
-                                searchTerm={searchTerm}
-                                activeTab={dbTab}
-                                setActiveTab={setDbTab}
-                            />
-                        )}
-                        
-                        {view === 'cronograma' && (
-                            <CronogramaView 
-                                scheduleProgress={scheduleProgress} 
-                                setScheduleProgress={setScheduleProgress} 
-                                config={config} 
-                                searchTerm={searchTerm} 
-                                onScheduleChange={(schedule) => {
-                                    setConfig(prev => ({ ...prev, activeSchedule: schedule }));
-                                    vibration.tick();
-                                }}
-                                onAutoCreateTopic={handleAutoCreateFromSchedule}
-                            />
-                        )}
+                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} viewMode={calendarMode} setViewMode={setCalendarMode} />}
+                        {view === 'database' && <DatabaseView topics={activeTopics} onEdit={(t) => setEditTopic(t)} onUpdateTopic={handleUpdateTopic} onAddTopic={handleAddTopic} onDelete={handleDeleteTopic} simulados={activeSimulados} onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} onUpdateSimulado={handleSaveSimulado} onAddSimulado={handleSaveSimulado} onDeleteSimulado={handleDeleteSimulado} config={config} searchTerm={searchTerm} activeTab={dbTab} setActiveTab={setDbTab} />}
+                        {view === 'cronograma' && <CronogramaView scheduleProgress={scheduleProgress} setScheduleProgress={setScheduleProgress} config={config} searchTerm={searchTerm} onScheduleChange={(schedule) => { setConfig(prev => ({ ...prev, activeSchedule: schedule })); vibration.tick(); }} onAutoCreateTopic={handleAutoCreateFromSchedule} />}
                     </Suspense>
                 </div>
             </main>
 
-            {/* --- Mobile Action Button (Bottom Right) --- */}
-            <div className="lg:hidden fixed bottom-6 right-4 z-[90]">
-                {/* ... existing mobile FAB code ... */}
-                <div className="relative pointer-events-auto">
-                    {isActionMenuOpen && (
-                        <>
-                            <div className="fixed inset-0 z-[95]" onClick={() => setIsActionMenuOpen(false)}></div>
-                            <div className="absolute bottom-full right-0 mb-3 w-48 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-white/20 dark:border-white/10 p-2 flex flex-col gap-1 z-[100] animate-scale-in origin-bottom-right">
-                                {installPrompt && (
-                                    <button 
-                                        onClick={() => { handleInstallApp(); setIsActionMenuOpen(false); }}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
-                                    >
-                                        <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Download size={16}/></div>
-                                        Instalar App
-                                    </button>
-                                )}
-                                <button 
-                                    onClick={() => { setIsCreatingTopic(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
-                                >
-                                    <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg"><BookOpen size={16}/></div>
-                                    Nova Matéria
-                                </button>
-                                <button 
-                                    onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
-                                >
-                                    <div className="p-1.5 bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg"><ClipboardList size={16}/></div>
-                                    Novo Simulado
-                                </button>
-                                <button 
-                                    onClick={() => { setSettingsOpen(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
-                                >
-                                    <div className="p-1.5 bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400 rounded-lg"><Settings size={16}/></div>
-                                    Ajustes
-                                </button>
-                            </div>
-                        </>
-                    )}
-
-                    <button 
-                        onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} 
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.15)] border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent' : 'bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border-white/20 dark:border-white/10 text-slate-800 dark:text-white'}`}
-                    >
-                        {isActionMenuOpen ? <X size={22} /> : <MoreHorizontal size={22} />}
+            {/* Mobile Bottom Floating Nav (Glass) */}
+            <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)] p-1.5 flex gap-2 items-center max-w-[90%] overflow-x-auto no-scrollbar ring-1 ring-black/5">
+                {[
+                    { id: 'list', icon: LayoutGrid },
+                    { id: 'cronograma', icon: MapIcon },
+                    { id: 'database', icon: Database },
+                    { id: 'calendar', icon: Calendar },
+                ].map(item => (
+                    <button key={item.id} onClick={() => { vibration.tick(); setView(item.id as any); }} className={`p-3.5 rounded-full transition-all duration-300 ${view === item.id ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg scale-105' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
+                        <item.icon size={22} strokeWidth={2.5}/>
                     </button>
-                </div>
+                ))}
             </div>
 
-            {/* Modals */}
-            <EditTopicModal 
-                isOpen={addModalOpen} 
-                onClose={() => setAddModalOpen(false)} 
-                topic={null} 
-                onSave={handleAddTopic}
-            />
+            {/* Mobile Action FAB */}
+            <div className="lg:hidden fixed bottom-24 right-4 z-[80]">
+                {isActionMenuOpen && (
+                    <>
+                        <div className="fixed inset-0 z-[85] bg-black/10 backdrop-blur-[2px]" onClick={() => setIsActionMenuOpen(false)}></div>
+                        <div className="absolute bottom-full right-0 mb-4 w-48 bg-white dark:bg-[#1c1c1e] rounded-3xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] border border-white/20 dark:border-white/10 p-2 flex flex-col gap-1 z-[90] animate-scale-in origin-bottom-right">
+                            <button onClick={() => { setIsCreatingTopic(true); setIsActionMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/10 transition-colors text-xs font-bold text-slate-800 dark:text-white">
+                                <div className="p-2 bg-blue-100 dark:bg-blue-500/20 text-blue-600 rounded-xl"><BookOpen size={18}/></div> Nova Matéria
+                            </button>
+                            <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setIsActionMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/10 transition-colors text-xs font-bold text-slate-800 dark:text-white">
+                                <div className="p-2 bg-purple-100 dark:bg-purple-500/20 text-purple-600 rounded-xl"><ClipboardList size={18}/></div> Novo Simulado
+                            </button>
+                            <div className="h-px bg-slate-100 dark:bg-white/5 my-1"></div>
+                            <button onClick={() => { setSettingsOpen(true); setIsActionMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/10 transition-colors text-xs font-bold text-slate-500">
+                                <Settings size={18}/> Ajustes
+                            </button>
+                        </div>
+                    </>
+                )}
+                <button onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-800 dark:bg-zinc-800 rotate-45' : 'bg-black dark:bg-white hover:scale-105'}`}>
+                    <Plus size={28} className={isActionMenuOpen ? 'text-white' : 'text-white dark:text-black'} strokeWidth={2.5}/>
+                </button>
+            </div>
 
-            <EditTopicModal 
-                isOpen={!!editTopic} 
-                onClose={() => setEditTopic(null)} 
-                topic={editTopic} 
-                onSave={handleUpdateTopic} 
-                onDelete={handleDeleteTopic}
-                onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} 
-            />
-
-            <SimuladoModal 
-                isOpen={simuladoModalOpen} 
-                onClose={() => setSimuladoModalOpen(false)} 
-                simulado={editingSimulado} 
-                onSave={handleSaveSimulado} 
-                onDelete={handleDeleteSimulado}
-                topics={topics} 
-            />
-
-            <SettingsModal 
-                isOpen={settingsOpen} 
-                onClose={() => setSettingsOpen(false)} 
-                config={config} 
-                onSaveConfig={(c) => { setConfig(c); vibration.success(); }}
-                syncKey={syncKey}
-                onSaveKey={setSyncKey}
-                onExport={handleExport}
-                onImport={handleImport}
-                themeMode={themeMode}
-                setThemeMode={setThemeMode}
-                runOptimization={runOptimization}
-                onShowOptimizationInfo={() => setOptimizationInfoOpen(true)}
-                status={status}
-                installPrompt={installPrompt}
-                onInstallApp={handleInstallApp}
-                onOpenTutorial={() => { setSettingsOpen(false); setTutorialOpen(true); }}
-            />
-
-            <ReviewModal 
-                isOpen={!!reviewData} 
-                onClose={() => setReviewData(null)} 
-                topic={currentReviewTopic} 
-                reviewIdx={reviewData?.rIdx ?? null} 
-                onSubmit={handleReviewModalSubmit}
-                targetAccuracy={config.targetAccuracy}
-            />
-
-            <EditReviewHistoryModal
-                isOpen={!!historyEditData}
-                onClose={() => setHistoryEditData(null)}
-                topic={historyEditTopic}
-                reviewIdx={historyEditData?.rIdx ?? null}
-                onSave={handleHistoryEdit}
-            />
-
-            <OptimizationResultModal 
-                isOpen={!!optimizationResult} 
-                onClose={() => setOptimizationResult(null)} 
-                onConfirm={applyOptimization}
-                changes={optimizationResult?.changes || []} 
-            />
-
-            <OptimizationInfoModal
-                isOpen={optimizationInfoOpen}
-                onClose={() => setOptimizationInfoOpen(false)}
-            />
-
-            <TutorialModal 
-                isOpen={tutorialOpen}
-                onClose={() => setTutorialOpen(false)}
-            />
+            {/* Modals Injection */}
+            <EditTopicModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} topic={null} onSave={handleAddTopic} />
+            <EditTopicModal isOpen={!!editTopic} onClose={() => setEditTopic(null)} topic={editTopic} onSave={handleUpdateTopic} onDelete={handleDeleteTopic} onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} />
+            <SimuladoModal isOpen={simuladoModalOpen} onClose={() => setSimuladoModalOpen(false)} simulado={editingSimulado} onSave={handleSaveSimulado} onDelete={handleDeleteSimulado} topics={topics} />
+            <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} config={config} onSaveConfig={(c) => { setConfig(c); vibration.success(); }} syncKey={syncKey} onSaveKey={setSyncKey} onExport={handleExport} onImport={handleImport} themeMode={themeMode} setThemeMode={setThemeMode} runOptimization={runOptimization} onShowOptimizationInfo={() => setOptimizationInfoOpen(true)} status={status} installPrompt={installPrompt} onInstallApp={handleInstallApp} onOpenTutorial={() => { setSettingsOpen(false); setTutorialOpen(true); }} />
+            <ReviewModal isOpen={!!reviewData} onClose={() => setReviewData(null)} topic={reviewData ? topics.find(t => t.id === reviewData.tId) || null : null} reviewIdx={reviewData?.rIdx ?? null} onSubmit={handleReviewModalSubmit} targetAccuracy={config.targetAccuracy} />
+            <EditReviewHistoryModal isOpen={!!historyEditData} onClose={() => setHistoryEditData(null)} topic={historyEditTopic} reviewIdx={historyEditData?.rIdx ?? null} onSave={handleHistoryEdit} />
+            <OptimizationResultModal isOpen={!!optimizationResult} onClose={() => setOptimizationResult(null)} onConfirm={applyOptimization} changes={optimizationResult?.changes || []} />
+            <OptimizationInfoModal isOpen={optimizationInfoOpen} onClose={() => setOptimizationInfoOpen(false)} />
+            <TutorialModal isOpen={tutorialOpen} onClose={() => setTutorialOpen(false)} />
         </div>
     );
 }

@@ -1,135 +1,135 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
     Check, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Map as MapIcon, 
-    Info, X, Zap, Layers, Stethoscope, Scissors, Baby, Flower2, Shield, Circle
+    Info, X, Zap, Layers, Stethoscope, Scissors, Baby, Flower2, Shield, Circle,
+    Search, CheckCircle2, SlidersHorizontal, HelpCircle, SortAsc, ArrowDownUp,
+    BookOpen, GraduationCap, Grid, AlignJustify
 } from 'lucide-react';
 import { UserConfig, ScheduleProgress } from './types';
-import { getAreaTheme } from './utils';
-import { MEDCOF_SCHEDULE } from './medcofSchedule';
-import { ESTRATEGIA_SCHEDULE } from './estrategiaSchedule';
+import { MEDCOF_SCHEDULE as MEDCOF_DATA } from './medcofSchedule';
+import { ESTRATEGIA_SCHEDULE as ESTRATEGIA_DATA } from './estrategiaSchedule';
 
-// Helper to abbreviate name
+// --- Constants & Helpers ---
+
 const formatProfessorName = (name: string | undefined) => {
     if (!name) return "";
     const parts = name.split(' ').filter(Boolean);
     if (parts.length <= 1) return name;
-    return `${parts[0]} ${parts[1][0]}.`;
+    return `${parts[0]} ${parts.slice(1).map(p => p[0] + '.').join(' ')}`;
 };
 
-// Priority Colors Helper
-const getPriorityData = (priority: string | undefined) => {
-    const p = (priority || '').toLowerCase();
-    if (p.includes('azul')) return { weight: 5, bg: 'bg-blue-500', text: 'text-blue-500', border: 'border-blue-200 dark:border-blue-500/30', bgSoft: 'bg-blue-50 dark:bg-blue-500/10', label: 'Muito Alta' };
-    if (p.includes('verde')) return { weight: 4, bg: 'bg-emerald-500', text: 'text-emerald-500', border: 'border-emerald-200 dark:border-emerald-500/30', bgSoft: 'bg-emerald-50 dark:bg-emerald-500/10', label: 'Alta' };
-    if (p.includes('amarelo')) return { weight: 3, bg: 'bg-amber-500', text: 'text-amber-500', border: 'border-amber-200 dark:border-amber-500/30', bgSoft: 'bg-amber-50 dark:bg-amber-500/10', label: 'Média' };
-    if (p.includes('vermelho')) return { weight: 2, bg: 'bg-red-500', text: 'text-red-500', border: 'border-red-200 dark:border-red-500/30', bgSoft: 'bg-red-50 dark:bg-red-500/10', label: 'Baixa' };
-    if (p.includes('roxo')) return { weight: 1, bg: 'bg-purple-500', text: 'text-purple-500', border: 'border-purple-200 dark:border-purple-500/30', bgSoft: 'bg-purple-50 dark:bg-purple-900/20', label: 'Mínima' };
-    return { weight: 0, bg: 'bg-slate-300', text: 'text-slate-400', border: 'border-slate-200', bgSoft: 'bg-slate-100 dark:bg-white/5', label: 'N/A' };
-};
-
-// Map Area Helper & Icon
 const mapAreaInfo = (area: string) => {
-    if (area.includes("Clínica")) return { id: 'clinica', icon: Stethoscope, label: 'Clínica Médica' };
-    if (area.includes("Cirurgia")) return { id: 'cirurgia', icon: Scissors, label: 'Cirurgia' };
-    if (area.includes("Pediatria")) return { id: 'pediatria', icon: Baby, label: 'Pediatria' };
-    if (area.includes("Ginecologia") || area.includes("Obstetrícia")) return { id: 'go', icon: Flower2, label: 'Ginecologia & Obstetrícia' };
-    if (area.includes("Preventiva")) return { id: 'preventiva', icon: Shield, label: 'Preventiva' };
-    return { id: 'default', icon: Circle, label: area };
+    const a = area ? area.toLowerCase() : "";
+    if (a.includes("clínica") || a.includes("clinica")) return { id: 'clinica', icon: Stethoscope, label: 'Clínica Médica', color: 'blue' };
+    if (a.includes("cirurgia")) return { id: 'cirurgia', icon: Scissors, label: 'Cirurgia', color: 'red' };
+    if (a.includes("pediatria")) return { id: 'pediatria', icon: Baby, label: 'Pediatria', color: 'amber' };
+    if (a.includes("ginecologia") || a.includes("obstetrícia") || a.includes("g.o") || a.includes("g.o.")) return { id: 'go', icon: Flower2, label: 'G.O.', color: 'purple' };
+    if (a.includes("preventiva")) return { id: 'preventiva', icon: Shield, label: 'Preventiva', color: 'emerald' };
+    return { id: 'default', icon: Circle, label: area || 'Geral', color: 'slate' };
 };
 
-// Stable ID generator
+const getBorderColor = (areaId: string) => {
+    switch(areaId) {
+        case 'cirurgia': return 'border-t-red-500';
+        case 'clinica': return 'border-t-blue-500';
+        case 'pediatria': return 'border-t-amber-500';
+        case 'go': return 'border-t-purple-500';
+        case 'preventiva': return 'border-t-emerald-500';
+        default: return 'border-t-slate-500';
+    }
+};
+
+const getBadgeColor = (areaId: string) => {
+    switch(areaId) {
+        case 'cirurgia': return 'bg-red-500/10 text-red-500';
+        case 'clinica': return 'bg-blue-500/10 text-blue-500';
+        case 'pediatria': return 'bg-amber-500/10 text-amber-500';
+        case 'go': return 'bg-purple-500/10 text-purple-500';
+        case 'preventiva': return 'bg-emerald-500/10 text-emerald-500';
+        default: return 'bg-slate-500/10 text-slate-500';
+    }
+};
+
+const getImportanceColor = (imp: string | undefined) => {
+    const i = (imp || '').toLowerCase();
+    if (i.includes('azul') || i.includes('high')) return { text: 'text-blue-500', dot: 'bg-blue-500', label: 'Muito Alta' };
+    if (i.includes('verde') || i.includes('medium')) return { text: 'text-emerald-500', dot: 'bg-emerald-500', label: 'Alta' };
+    if (i.includes('amarelo') || i.includes('low')) return { text: 'text-amber-500', dot: 'bg-amber-500', label: 'Média' };
+    if (i.includes('vermelho')) return { text: 'text-red-500', dot: 'bg-red-500', label: 'Baixa' };
+    if (i.includes('roxo')) return { text: 'text-purple-500', dot: 'bg-purple-500', label: 'Mínima' };
+    return { text: 'text-slate-400', dot: 'bg-slate-500', label: 'Normal' };
+};
+
+const getImportanceOrder = (imp: string | undefined) => {
+    const i = (imp || '').toLowerCase();
+    if (i.includes('azul') || i.includes('high')) return 1;
+    if (i.includes('verde') || i.includes('medium')) return 2;
+    if (i.includes('amarelo') || i.includes('low')) return 3;
+    if (i.includes('vermelho')) return 4;
+    if (i.includes('roxo')) return 5;
+    return 6;
+};
+
 const generateStableId = (item: any) => {
-    // Uses Block, Discipline and Lesson Name. Omits professor to allow data corrections without data loss.
     return `${item.bloco}-${item.disciplina}-${item.aula}`.replace(/\s+/g, '-').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
-// Memoized Card Component
-const ScheduleCard = React.memo(({ item, isChecked, viewMode, onToggle }: { item: any, isChecked: boolean, viewMode: 'list' | 'grid', onToggle: (id: string, item: any) => void }) => {
-    const pData = getPriorityData(item.importancia);
+// --- Components ---
+
+const ScheduleCard = React.memo(({ item, isChecked, onToggle }: { item: any, isChecked: boolean, onToggle: (id: string, item: any) => void }) => {
     const areaInfo = mapAreaInfo(item.grandeArea);
-    const theme = getAreaTheme(areaInfo.id as any);
+    const borderColor = getBorderColor(areaInfo.id);
+    const badgeColor = getBadgeColor(areaInfo.id);
+    const importance = getImportanceColor(item.importancia);
 
-    if (viewMode === 'grid') {
-        return (
-            <div 
-                onClick={() => onToggle(item.id, item)} 
-                className={`relative group rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between
-                    ${isChecked 
-                        ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60 grayscale-[0.5]' 
-                        : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-blue-200 dark:hover:border-blue-500/30'
-                    }
-                `}
-            >
-                {/* Status Indicator Stripe */}
-                <div className={`absolute top-0 left-0 w-full h-1 ${isChecked ? 'bg-emerald-500' : theme.bg.replace('100','500').replace('/10','')}`}></div>
-
-                <div className="p-4 flex flex-col gap-3 h-full">
-                    {/* Header: Discipline & Checkbox */}
-                    <div className="flex justify-between items-start">
-                        <span className={`text-[9px] font-bold px-2 py-1 rounded-lg uppercase tracking-wide ${theme.bg} ${theme.text} truncate max-w-[75%]`}>
-                            {item.disciplina}
-                        </span>
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 ${isChecked ? 'bg-emerald-500 border-emerald-500 scale-110' : 'border-slate-200 dark:border-white/20 group-hover:border-blue-500 bg-white dark:bg-black/20'}`}>
-                            {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
-                        </div>
-                    </div>
-                    
-                    {/* Main Content */}
-                    <div>
-                        <h4 className={`font-bold text-sm leading-snug transition-colors ${isChecked ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                            {item.aula}
-                        </h4>
-                    </div>
-                    
-                    {/* Footer: Professor & Priority */}
-                    <div className="mt-auto pt-3 flex items-center justify-between border-t border-slate-50 dark:border-white/5">
-                        <span className="text-[10px] font-semibold text-slate-400 truncate max-w-[50%] flex items-center gap-1">
-                            {formatProfessorName(item.professor)}
-                        </span>
-                        {item.importancia && (
-                            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full ${pData.bgSoft} border ${pData.border} dark:border-0`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${pData.bg}`}></div>
-                                <span className={`text-[9px] font-bold uppercase ${pData.text}`}>{item.importancia.split(' ')[0]}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // List Mode
     return (
         <div 
-            onClick={() => onToggle(item.id, item)} 
-            className={`group flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${isChecked ? 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 hover:border-blue-500/30 shadow-sm'}`}
+            onClick={() => onToggle(item.id, item)}
+            className={`
+                relative flex flex-col justify-between p-4 rounded-xl bg-white dark:bg-[#18181b] shadow-sm border border-slate-200 dark:border-white/5 
+                border-t-4 ${borderColor} cursor-pointer group transition-all duration-200 hover:shadow-md hover:-translate-y-0.5
+                ${isChecked ? 'opacity-60' : 'opacity-100'}
+            `}
         >
-            <div className={`w-1 h-8 rounded-full ${theme.bg.replace('100', '500').replace('/10', '')}`}></div>
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
-                {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className={`text-sm font-bold truncate ${isChecked ? 'line-through text-slate-400' : 'text-slate-800 dark:text-white'}`}>{item.aula}</div>
-                <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-bold text-slate-500">{item.disciplina}</span>
-                    <span className="text-[10px] text-slate-300">•</span>
-                    <span className="text-[10px] text-slate-400 truncate">{formatProfessorName(item.professor)}</span>
+            <div className="flex justify-between items-start mb-3">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${badgeColor}`}>
+                    {item.disciplina}
+                </span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
+                    {isChecked && <Check size={14} className="text-white" strokeWidth={3}/>}
                 </div>
             </div>
-            {item.importancia && (
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${pData.bgSoft} ${pData.text}`}>{item.importancia}</span>
-            )}
+
+            <h4 className={`text-sm font-bold leading-tight mb-4 line-clamp-3 ${isChecked ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-white'}`}>
+                {item.aula}
+            </h4>
+
+            <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-white/5">
+                <span className="text-[10px] font-semibold text-slate-400 truncate max-w-[60%]">
+                    {formatProfessorName(item.professor)}
+                </span>
+                {item.importancia && (
+                    <div className="flex items-center gap-1.5" title={`Prioridade ${importance.label}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${importance.dot}`}></div>
+                        <span className={`text-[10px] font-bold uppercase ${importance.text}`}>
+                            {importance.label}
+                        </span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 });
+
+// --- Main Component ---
 
 export const CronogramaView = ({ 
     scheduleProgress, 
     setScheduleProgress, 
     config, 
     searchTerm, 
-    onScheduleChange,
+    onScheduleChange, 
     onAutoCreateTopic 
 }: { 
     scheduleProgress: ScheduleProgress, 
@@ -139,21 +139,28 @@ export const CronogramaView = ({
     onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA') => void,
     onAutoCreateTopic?: (item: any) => void
 }) => {
-    const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
-    const [groupByArea, setGroupByArea] = useState(true);
-    const [filterArea, setFilterArea] = useState('all');
-    const [showLegend, setShowLegend] = useState(false);
+    // States
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
     const [autoReview, setAutoReview] = useState(false);
     
-    const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
-    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-
+    // Filters & View Options
+    const [filterArea, setFilterArea] = useState('all');
+    const [groupBy, setGroupBy] = useState<'bloco' | 'area'>('bloco');
+    const [sortOrder, setSortOrder] = useState<'default' | 'progress'>('default');
+    
     const activeScheduleCode = config.activeSchedule || 'MEDCOF';
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Close dropdown on click outside
     useEffect(() => {
-        const handleClickOutside = () => setActiveDropdown(null);
-        window.addEventListener('click', handleClickOutside);
-        return () => window.removeEventListener('click', handleClickOutside);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const toggleDropdown = (e: React.MouseEvent, name: string) => {
@@ -161,198 +168,284 @@ export const CronogramaView = ({
         setActiveDropdown(activeDropdown === name ? null : name);
     };
 
+    // Raw Data Memo
     const currentScheduleData = useMemo(() => {
-        const raw = activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
-        // Inject stable IDs dynamically if they are not in the raw file yet
-        return raw.map(item => ({
-            ...item,
-            id: generateStableId(item) 
-        }));
+        const raw = activeScheduleCode === 'MEDCOF' ? MEDCOF_DATA : ESTRATEGIA_DATA;
+        return raw.map(item => ({ ...item, id: generateStableId(item) }));
     }, [activeScheduleCode]);
 
+    // --- Main Grouping Logic ---
     const groupedSchedule = useMemo(() => {
-        let filtered = currentScheduleData.filter(item => {
-            if (filterArea !== 'all' && mapAreaInfo(item.grandeArea).id !== filterArea) return false;
-            if (searchTerm) {
-                const s = searchTerm.toLowerCase();
-                return item.aula.toLowerCase().includes(s) || 
-                       (item.professor && item.professor.toLowerCase().includes(s)) ||
-                       item.disciplina.toLowerCase().includes(s);
-            }
-            return true;
-        });
+        let items = currentScheduleData;
 
-        // Group by Block
-        const groupedByBlock: Record<string, typeof currentScheduleData> = {};
-        filtered.forEach(item => {
-            if (!groupedByBlock[item.bloco]) groupedByBlock[item.bloco] = [];
-            groupedByBlock[item.bloco].push(item);
-        });
+        // 1. Filter
+        if (filterArea !== 'all') {
+            items = items.filter(item => mapAreaInfo(item.grandeArea).id === filterArea);
+        }
+        if (searchTerm) {
+            const s = searchTerm.toLowerCase();
+            items = items.filter(item => 
+                item.aula.toLowerCase().includes(s) || 
+                (item.professor && item.professor.toLowerCase().includes(s)) ||
+                item.disciplina.toLowerCase().includes(s)
+            );
+        }
 
-        return Object.keys(groupedByBlock).sort((a,b) => parseInt(a) - parseInt(b)).map(blockKey => {
-            const items = groupedByBlock[blockKey];
+        const groups: any[] = [];
+
+        if (groupBy === 'bloco') {
+            // Group by Block
+            const blockMap: Record<string, { total: number, completed: number, areas: Record<string, any[]> }> = {};
             
-            // If grouping by area is active, we structure it further
-            let areas: { key: string, label: string, icon: any, items: any[] }[] = [];
-            
-            if (groupByArea) {
-                const areaMap: Record<string, any[]> = {};
-                items.forEach(item => {
-                    const areaKey = item.grandeArea;
-                    if (!areaMap[areaKey]) areaMap[areaKey] = [];
-                    areaMap[areaKey].push(item);
-                });
+            items.forEach(item => {
+                if (!blockMap[item.bloco]) blockMap[item.bloco] = { total: 0, completed: 0, areas: {} };
                 
-                areas = Object.keys(areaMap).map(areaKey => {
-                    const info = mapAreaInfo(areaKey);
-                    return {
-                        key: areaKey,
-                        label: info.label,
-                        icon: info.icon,
-                        items: areaMap[areaKey]
-                    };
-                }).sort((a,b) => a.label.localeCompare(b.label));
-            }
+                const b = blockMap[item.bloco];
+                b.total++;
+                if (scheduleProgress[item.id]) b.completed++;
 
-            return {
-                block: blockKey,
-                items: items, // All items for progress calc
-                groupedAreas: areas // For display if enabled
-            };
-        });
-    }, [searchTerm, filterArea, currentScheduleData, groupByArea]);
+                const areaKey = item.grandeArea || 'Outros';
+                if (!b.areas[areaKey]) b.areas[areaKey] = [];
+                b.areas[areaKey].push(item);
+            });
 
-    // Initial collapse logic
+            Object.entries(blockMap).forEach(([blockKey, data]) => {
+                groups.push({
+                    id: blockKey,
+                    label: isNaN(Number(blockKey)) ? blockKey : (activeScheduleCode === 'ESTRATEGIA' ? `Semana ${blockKey}` : `Bloco ${blockKey}`),
+                    sortKey: parseInt(blockKey) || 999,
+                    total: data.total,
+                    completed: data.completed,
+                    progress: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+                    subGroups: Object.entries(data.areas).map(([aName, aItems]) => ({
+                        name: aName,
+                        info: mapAreaInfo(aName),
+                        // Sort Items by Priority Color (Azul -> Verde -> Amarelo -> Vermelho -> Roxo)
+                        items: aItems.sort((a, b) => getImportanceOrder(a.importancia) - getImportanceOrder(b.importancia)),
+                        completed: aItems.filter(i => scheduleProgress[i.id]).length
+                    })).sort((a,b) => a.name.localeCompare(b.name))
+                });
+            });
+
+            // Default Sort for blocks
+            groups.sort((a,b) => a.sortKey - b.sortKey);
+
+        } else {
+            // Group by Area
+            const areaMap: Record<string, { total: number, completed: number, items: any[] }> = {};
+            
+            items.forEach(item => {
+                const areaKey = item.grandeArea || 'Outros';
+                if (!areaMap[areaKey]) areaMap[areaKey] = { total: 0, completed: 0, items: [] };
+                
+                const a = areaMap[areaKey];
+                a.total++;
+                if (scheduleProgress[item.id]) a.completed++;
+                a.items.push(item);
+            });
+
+            Object.entries(areaMap).forEach(([areaName, data]) => {
+                groups.push({
+                    id: areaName,
+                    label: areaName,
+                    sortKey: 0, // Alphabetic sort
+                    total: data.total,
+                    completed: data.completed,
+                    progress: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+                    subGroups: [{
+                        name: 'Aulas',
+                        info: mapAreaInfo(areaName),
+                        items: data.items.sort((a, b) => {
+                            // Sort by Block first, then by Priority
+                            const blockDiff = parseInt(a.bloco) - parseInt(b.bloco);
+                            if (blockDiff !== 0) return blockDiff;
+                            return getImportanceOrder(a.importancia) - getImportanceOrder(b.importancia);
+                        }),
+                        completed: data.completed
+                    }]
+                });
+            });
+
+            // Default Sort for areas
+            groups.sort((a,b) => a.label.localeCompare(b.label));
+        }
+
+        // Apply Sorting Override
+        if (sortOrder === 'progress') {
+            groups.sort((a,b) => a.progress - b.progress); // Least completed first
+        }
+
+        return groups;
+
+    }, [searchTerm, filterArea, groupBy, sortOrder, currentScheduleData, scheduleProgress, activeScheduleCode]);
+
+    // Initial Collapse logic (Auto-collapse completed)
     useEffect(() => {
         if (groupedSchedule.length === 0) return;
-        const firstActiveBlock = groupedSchedule.find(g => g.items.some(i => !scheduleProgress[i.id]));
-        if (firstActiveBlock) {
-            const newSet = new Set<string>();
+        setCollapsedBlocks(prev => {
+            const next = new Set(prev);
             groupedSchedule.forEach(g => {
-                if (g.block !== firstActiveBlock.block) newSet.add(g.block);
+                if (g.progress === 100 && !next.has(g.id)) next.add(g.id);
             });
-            setCollapsedBlocks(newSet);
-        }
-    }, [activeScheduleCode]);
+            return next;
+        });
+    }, [activeScheduleCode, groupBy]);
 
     const toggleCheck = useCallback((id: string, item: any) => {
         setScheduleProgress((prev) => {
             const isChecking = !prev[id];
             return { ...prev, [id]: isChecking };
         });
-        
         if (!scheduleProgress[id] && autoReview && onAutoCreateTopic) {
             onAutoCreateTopic(item);
         }
     }, [scheduleProgress, autoReview, onAutoCreateTopic]);
     
-    const toggleBlock = (block: string) => setCollapsedBlocks(p => { const s = new Set(p); if(s.has(block)) s.delete(block); else s.add(block); return s; });
-    
-    const renderItems = (items: any[]) => (
-        <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3' : 'flex flex-col gap-2'}`}>
-            {items.map((item) => (
-                <ScheduleCard 
-                    key={item.id} 
-                    item={item} 
-                    isChecked={!!scheduleProgress[item.id]} 
-                    viewMode={viewMode} 
-                    onToggle={toggleCheck} 
-                />
-            ))}
-        </div>
-    );
+    const toggleGroup = (id: string) => {
+        setCollapsedBlocks(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            {/* Toolbar - Redesigned to remove schedule switch (now in header) */}
-            <div className="flex flex-col gap-4 mb-6 sticky top-0 z-30 pt-2 pb-2 bg-[#f2f4f7] dark:bg-black/95 transition-colors">
-                <div className="flex items-center gap-2 bg-white dark:bg-[#18181b] p-1.5 rounded-xl border border-black/5 dark:border-white/10 shadow-sm overflow-x-auto no-scrollbar w-full sm:w-auto">
-                    <div className="relative">
-                        <button onClick={(e) => toggleDropdown(e, 'filter')} className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${filterArea !== 'all' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>
-                            <Filter size={14}/> <span>{filterArea === 'all' ? 'Todos' : filterArea}</span>
+            {/* Header */}
+            <div className="flex flex-col mb-4 pt-4 sticky top-0 z-30 bg-[#f2f4f7] dark:bg-black/95 transition-colors">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                        <List size={24} className="text-blue-500"/> Cronograma
+                    </h3>
+                    
+                    <div className="flex bg-white dark:bg-[#18181b] p-1 rounded-lg border border-black/5 dark:border-white/10 shadow-sm">
+                        <button onClick={() => onScheduleChange('MEDCOF')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>MEDCOF</button>
+                        <button onClick={() => onScheduleChange('ESTRATEGIA')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>ESTRATÉGIA</button>
+                    </div>
+                </div>
+
+                {/* --- NEW TOOLBAR LAYOUT: Filter | Group | Info | Auto ---- Right: Grid/List or Sort --- */}
+                <div className="bg-[#18181b] p-1.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-lg shadow-black/20" ref={dropdownRef}>
+                    <div className="flex items-center gap-2">
+                        {/* 1. Filter Button */}
+                        <div className="relative">
+                            <button 
+                                onClick={(e) => toggleDropdown(e, 'filter')} 
+                                className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${filterArea !== 'all' || activeDropdown === 'filter' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Filter size={14}/> 
+                                <span>{filterArea === 'all' ? 'Todos' : filterArea}</span>
+                            </button>
+                            {activeDropdown === 'filter' && (
+                                <div className="absolute top-full left-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-left">
+                                    <button onClick={() => { setFilterArea('all'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Todos</button>
+                                    <button onClick={() => { setFilterArea('clinica'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Clínica</button>
+                                    <button onClick={() => { setFilterArea('cirurgia'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Cirurgia</button>
+                                    <button onClick={() => { setFilterArea('pediatria'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Pediatria</button>
+                                    <button onClick={() => { setFilterArea('go'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">G.O.</button>
+                                    <button onClick={() => { setFilterArea('preventiva'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Preventiva</button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+
+                        {/* 2. Group Button */}
+                        <div className="relative">
+                            <button 
+                                onClick={(e) => toggleDropdown(e, 'group')} 
+                                className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${activeDropdown === 'group' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Layers size={14}/> <span>{groupBy === 'bloco' ? 'Agrupar' : 'Por Área'}</span>
+                            </button>
+                            {activeDropdown === 'group' && (
+                                <div className="absolute top-full left-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-left">
+                                    <button onClick={() => { setGroupBy('bloco'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Bloco</button>
+                                    <button onClick={() => { setGroupBy('area'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Área</button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+
+                        {/* 3. Info Dropdown */}
+                        <div className="relative">
+                            <button 
+                                onClick={(e) => toggleDropdown(e, 'info')}
+                                className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${activeDropdown === 'info' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                            >
+                                <Info size={16}/>
+                            </button>
+                            {activeDropdown === 'info' && (
+                                <div className="absolute top-full left-0 sm:left-auto mt-2 w-72 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-xl p-4 z-50 animate-scale-in origin-top-left sm:origin-top-right">
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                                            <Zap size={16} fill="currentColor"/>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-bold text-xs mb-1">Modo Automático</h4>
+                                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                                Quando ativo, marcar "Feito" cria automaticamente um card de revisão no Dashboard com prioridade inteligente.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="border-t border-white/5 pt-3">
+                                        <h5 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">Legenda de Prioridade</h5>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-blue-400"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Muito Alta</div>
+                                                <span className="text-[9px] text-slate-500">Alta Incidência</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Alta</div>
+                                                <span className="text-[9px] text-slate-500">Incidência Média</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-amber-400"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Média</div>
+                                                <span className="text-[9px] text-slate-500">Incidência Baixa</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-red-400"><div className="w-2 h-2 rounded-full bg-red-500"></div> Baixa</div>
+                                                <span className="text-[9px] text-slate-500">Raro</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-purple-400"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Mínima</div>
+                                                <span className="text-[9px] text-slate-500">Conceitual</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 4. Auto Toggle */}
+                        <button 
+                            onClick={() => setAutoReview(!autoReview)}
+                            className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${autoReview ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.5)]' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                        >
+                            <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
                         </button>
-                        {activeDropdown === 'filter' && (
-                            <div className="absolute top-full left-0 mt-2 w-40 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in">
-                                <button onClick={() => setFilterArea('all')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Todos</button>
-                                <button onClick={() => setFilterArea('clinica')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Clínica</button>
-                                <button onClick={() => setFilterArea('cirurgia')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Cirurgia</button>
-                                <button onClick={() => setFilterArea('pediatria')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Pediatria</button>
-                                <button onClick={() => setFilterArea('go')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">G.O.</button>
-                                <button onClick={() => setFilterArea('preventiva')} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5">Preventiva</button>
+                    </div>
+
+                    {/* Right Side: Sort/View */}
+                    <div className="relative">
+                        <button 
+                            onClick={(e) => toggleDropdown(e, 'sort')} 
+                            className="h-9 px-3 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all flex items-center justify-center"
+                        >
+                            <LayoutGrid size={18}/>
+                        </button>
+                        {activeDropdown === 'sort' && (
+                            <div className="absolute top-full right-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-right">
+                                <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ordenação</div>
+                                <button onClick={() => { setSortOrder('default'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg mb-1 ${sortOrder === 'default' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Padrão</button>
+                                <button onClick={() => { setSortOrder('progress'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg ${sortOrder === 'progress' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Progresso</button>
                             </div>
                         )}
                     </div>
-                    
-                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-                    
-                    {/* Group By Area Toggle */}
-                    <button 
-                        onClick={() => setGroupByArea(!groupByArea)} 
-                        className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${groupByArea ? 'bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`} 
-                        title="Agrupar por Área"
-                    >
-                        <Layers size={16}/>
-                        <span className="text-[10px] font-bold uppercase hidden sm:inline">Agrupar</span>
-                    </button>
-
-                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-
-                    <button 
-                        onClick={() => setShowLegend(!showLegend)} 
-                        className={`p-1.5 rounded-lg transition-all ${showLegend ? 'bg-slate-100 dark:bg-white/10 text-blue-500' : 'text-slate-400 hover:text-slate-600'}`} 
-                        title="Ajuda"
-                    >
-                        <Info size={16}/>
-                    </button>
-                    <button 
-                        onClick={() => setAutoReview(!autoReview)} 
-                        className={`p-1.5 rounded-lg transition-all flex items-center gap-2 ${autoReview ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600'}`} 
-                        title="Criar revisão automaticamente"
-                    >
-                        <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
-                        {autoReview && <span className="text-[10px] font-bold uppercase mr-1">Auto</span>}
-                    </button>
-                    
-                    <div className="w-px h-4 bg-slate-200 dark:bg-white/10 ml-auto"></div>
-                    
-                    <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={16}/></button>
-                    <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}><List size={16}/></button>
                 </div>
-
-                {/* Legend Panel */}
-                {showLegend && (
-                    <div className="flex flex-col gap-3 p-4 bg-white dark:bg-[#18181b] border border-black/5 dark:border-white/10 rounded-xl animate-scale-in shadow-sm relative">
-                        <button onClick={() => setShowLegend(false)} className="absolute top-2 right-2 p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14}/></button>
-                        
-                        <div className="flex items-start gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
-                            <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400 mt-0.5">
-                                <Zap size={16} fill="currentColor"/>
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-white">Modo Automático</h4>
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">
-                                    Quando <span className="font-bold text-purple-500">Auto</span> está ativo, marcar uma aula cria automaticamente um card de revisão no Dashboard com a prioridade correta (Azul = Alta).
-                                </p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Prioridades:</span>
-                            <div className="flex flex-wrap gap-2">
-                                {['Azul: Muito Alta', 'Verde: Alta', 'Amarelo: Média', 'Vermelho: Baixa', 'Roxo: Mínima'].map(label => {
-                                    const color = label.split(':')[0].toLowerCase();
-                                    const bg = color === 'azul' ? 'bg-blue-500' : color === 'verde' ? 'bg-emerald-500' : color === 'amarelo' ? 'bg-amber-500' : color === 'vermelho' ? 'bg-red-500' : 'bg-purple-500';
-                                    return (
-                                        <div key={label} className="flex items-center gap-1.5 bg-slate-50 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-100 dark:border-white/5">
-                                            <div className={`w-2 h-2 rounded-full ${bg}`}></div>
-                                            <span className="text-[9px] font-bold text-slate-600 dark:text-slate-300 uppercase">{label.split(':')[1]}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-20 space-y-6">
@@ -360,73 +453,69 @@ export const CronogramaView = ({
                     <div className="flex flex-col items-center justify-center h-64 text-slate-400"><MapIcon size={48} className="mb-4 opacity-20"/><p className="text-sm font-bold">Nenhuma aula encontrada.</p></div>
                 ) : (
                     groupedSchedule.map((group) => {
-                        const isCollapsed = collapsedBlocks.has(group.block);
-                        const completedCount = group.items.filter(i => scheduleProgress[i.id]).length;
-                        const totalCount = group.items.length;
-                        const progress = Math.round((completedCount / totalCount) * 100);
-                        const isCompleted = progress === 100;
-                        const blockLabel = isNaN(Number(group.block)) ? group.block : (activeScheduleCode === 'ESTRATEGIA' ? 'Semana' : 'Bloco');
+                        const isCollapsed = collapsedBlocks.has(group.id);
+                        const isCompleted = group.progress === 100;
 
                         return (
-                            <div key={group.block} className={`relative transition-all duration-500 ${isCompleted ? 'opacity-60' : ''}`}>
-                                {/* Sticky Block Header */}
+                            <div key={group.id} className={`rounded-[20px] overflow-hidden transition-all duration-300 ${isCompleted && isCollapsed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                                {/* Group Header */}
                                 <div 
-                                    className="sticky top-0 z-20 mb-3 cursor-pointer group/header"
-                                    onClick={() => toggleBlock(group.block)}
+                                    className="bg-[#1e1e24] dark:bg-zinc-900 p-4 cursor-pointer hover:brightness-110 transition-all relative overflow-hidden"
+                                    onClick={() => toggleGroup(group.id)}
                                 >
-                                    <div className="absolute inset-0 bg-[#f2f4f7]/90 dark:bg-black/90 backdrop-blur-xl -mx-4"></div>
-                                    <div className="relative flex items-center justify-between p-2 rounded-xl bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-sm hover:border-blue-300 dark:hover:border-blue-500/30 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-black shadow-sm transition-colors ${isCompleted ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white'}`}>
-                                                {isCompleted ? <Check size={20} strokeWidth={3}/> : group.block}
+                                    <div className="relative z-10 flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0">
+                                                {groupBy === 'bloco' ? group.id : <Layers size={20}/>}
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-base text-slate-800 dark:text-white leading-none mb-1">{blockLabel} {group.block}</h4>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-24 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                                        <div className={`h-full transition-all duration-700 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-600'}`} style={{width: `${progress}%`}}></div>
+                                                <h4 className="text-white font-bold text-lg leading-none">{group.label}</h4>
+                                                <div className="flex items-center gap-3 mt-1.5">
+                                                    <div className="w-24 sm:w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-blue-500 transition-all duration-500" style={{width: `${group.progress}%`}}></div>
                                                     </div>
-                                                    <span className={`text-[10px] font-bold ${isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>{progress}%</span>
+                                                    <span className="text-[10px] font-bold text-slate-400">{group.progress}%</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
-                                            {isCollapsed ? <ChevronDown size={18} className="text-slate-400"/> : <ChevronUp size={18} className="text-slate-400"/>}
-                                        </button>
+                                        <div className="text-slate-400">
+                                            {isCollapsed ? <ChevronDown size={24}/> : <ChevronUp size={24}/>}
+                                        </div>
                                     </div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
                                 </div>
 
+                                {/* Content Body */}
                                 {!isCollapsed && (
-                                    <div className="animate-slide-up space-y-6 pl-1">
-                                        {groupByArea && group.groupedAreas ? (
-                                            // Grouped by Area View
-                                            group.groupedAreas.map((areaGroup) => {
-                                                const AreaIcon = areaGroup.icon;
-                                                const areaTheme = getAreaTheme(mapAreaInfo(areaGroup.key).id as any);
-                                                const areaCompleted = areaGroup.items.filter(i => scheduleProgress[i.id]).length;
-                                                const areaTotal = areaGroup.items.length;
-                                                const areaProgress = Math.round((areaCompleted / areaTotal) * 100);
-
-                                                return (
-                                                    <div key={areaGroup.key} className="flex flex-col gap-3">
-                                                        {/* Area Sub-Header */}
-                                                        <div className="flex items-center gap-2 pb-1 border-b border-slate-200/50 dark:border-white/5">
-                                                            <div className={`p-1.5 rounded-lg ${areaTheme.bg} ${areaTheme.text}`}>
-                                                                <AreaIcon size={14} />
-                                                            </div>
-                                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide flex-1">{areaGroup.label}</span>
-                                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full">
-                                                                {areaCompleted}/{areaTotal}
-                                                            </span>
-                                                        </div>
-                                                        {renderItems(areaGroup.items)}
+                                    <div className="bg-[#f8f9fc] dark:bg-black/20 p-2 sm:p-4 space-y-6 border-x border-b border-slate-200 dark:border-white/5 rounded-b-[20px]">
+                                        {group.subGroups.map((sub: any) => (
+                                            <div key={sub.name}>
+                                                {/* Subgroup Header */}
+                                                <div className="flex items-center justify-between px-2 mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <sub.info.icon size={16} className={`text-${sub.info.color}-500`}/>
+                                                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">
+                                                            {sub.name}
+                                                        </span>
                                                     </div>
-                                                )
-                                            })
-                                        ) : (
-                                            // Flat View
-                                            renderItems(group.items)
-                                        )}
+                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-2 py-0.5 rounded-full">
+                                                        {sub.completed}/{sub.items.length}
+                                                    </span>
+                                                </div>
+
+                                                {/* Cards Grid */}
+                                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                                    {sub.items.map((item: any) => (
+                                                        <ScheduleCard 
+                                                            key={item.id}
+                                                            item={item}
+                                                            isChecked={!!scheduleProgress[item.id]}
+                                                            onToggle={toggleCheck}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
