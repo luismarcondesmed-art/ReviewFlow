@@ -1,8 +1,13 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal } from 'lucide-react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Unlink } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from './types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from './utils';
+import { MEDCOF_SCHEDULE } from './medcofSchedule';
+import { ESTRATEGIA_SCHEDULE } from './estrategiaSchedule';
+
+// Helper to search all schedules
+const ALL_SCHEDULES = [...MEDCOF_SCHEDULE, ...ESTRATEGIA_SCHEDULE];
 
 // --- Generic Modal ---
 export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode; headerContent?: React.ReactNode }) => {
@@ -28,7 +33,7 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isO
     );
 };
 
-// --- Tutorial Modal ---
+// ... (TutorialModal remains unchanged) ...
 export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const [step, setStep] = useState(0);
 
@@ -153,27 +158,54 @@ export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
 };
 
 export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEditReview }: { isOpen: boolean; onClose: () => void; topic: Topic | null; onSave: (t: Topic) => void; onDelete?: (id: string) => void; onEditReview?: (idx: number) => void }) => {
-    const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'history' | 'lessons'>('details');
     
     // Custom settings state
     const [intervalsStr, setIntervalsStr] = useState('');
     const [baseQuestions, setBaseQuestions] = useState<number | ''>('');
     const [showAdvanced, setShowAdvanced] = useState(false);
 
+    // Linked Lessons State
+    const [linkedScheduleIds, setLinkedScheduleIds] = useState<string[]>([]);
+    const [lessonSearch, setLessonSearch] = useState('');
+
     useEffect(() => {
         if (isOpen) {
             setActiveTab('details');
-            if (topic && topic.customSettings) {
-                setIntervalsStr(topic.customSettings.intervals.join(', '));
-                setBaseQuestions(topic.customSettings.baseQuestions);
-                setShowAdvanced(true);
+            if (topic) {
+                if (topic.customSettings) {
+                    setIntervalsStr(topic.customSettings.intervals.join(', '));
+                    setBaseQuestions(topic.customSettings.baseQuestions);
+                    setShowAdvanced(true);
+                } else {
+                    setIntervalsStr('');
+                    setBaseQuestions('');
+                    setShowAdvanced(false);
+                }
+                setLinkedScheduleIds(topic.linkedScheduleIds || []);
             } else {
-                setIntervalsStr(''); // Default empty implies automatic
+                setIntervalsStr(''); 
                 setBaseQuestions('');
                 setShowAdvanced(false);
+                setLinkedScheduleIds([]);
             }
+            setLessonSearch('');
         }
     }, [isOpen, topic]);
+
+    // Computed Linked Lessons
+    const linkedLessons = useMemo(() => {
+        return ALL_SCHEDULES.filter(s => linkedScheduleIds.includes(s.id));
+    }, [linkedScheduleIds]);
+
+    const searchedLessons = useMemo(() => {
+        if (!lessonSearch) return [];
+        return ALL_SCHEDULES.filter(s => 
+            !linkedScheduleIds.includes(s.id) &&
+            (s.aula.toLowerCase().includes(lessonSearch.toLowerCase()) || 
+             s.disciplina.toLowerCase().includes(lessonSearch.toLowerCase()))
+        ).slice(0, 10);
+    }, [lessonSearch, linkedScheduleIds]);
 
     if (!isOpen) return null;
 
@@ -200,19 +232,16 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
 
         let reviews = safeTopic.reviews || [];
         
-        // If it's new OR custom settings changed OR date changed, we regenerate future reviews
         const needsRegeneration = isNew || 
             (JSON.stringify(safeTopic.customSettings) !== JSON.stringify(customSettings)) ||
             (safeTopic.studyDate !== studyDate);
 
         if (needsRegeneration) {
-            // If regenerating, we must preserve COMPLETED reviews if this is an edit
-            // Use utils helper to generate new schedule
             const newSchedule = generateSmartSchedule(
                 studyDate, 
-                undefined, // Exam date not needed for custom or simply handled inside
+                undefined,
                 importance, 
-                [], // existingTopics not needed for this check usually, or pass it if collision detection desired
+                [], 
                 safeTopic.id,
                 customSettings
             );
@@ -220,23 +249,14 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             if (isNew) {
                 reviews = newSchedule;
             } else {
-                // Merge logic: Keep done reviews, append new schedule for future
-                const doneReviews = reviews.filter(r => r.done);
-                // Simple logic: Replace all *pending* reviews with new calculation.
-                // We map new schedule items to old done items if they exist to keep data integrity where possible
-                
                 reviews = newSchedule.map((newR, i) => {
-                    // Try to map to existing done review at same index?
-                    // Or same type?
                     const existing = safeTopic.reviews.find(r => r.type === newR.type);
                     if (existing && existing.done) {
-                        return { ...existing, label: newR.label }; // Keep existing data, update label if needed
+                        return { ...existing, label: newR.label }; 
                     }
                     return newR;
                 });
             }
-        } else if (safeTopic.importance !== importance && !customSettings) {
-             // Just update targetQ for pending (handled by parent usually, but good to have safety)
         }
 
         const updated = {
@@ -247,6 +267,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             studyDate,
             reviews,
             customSettings,
+            linkedScheduleIds, // Save the linked IDs
             updatedAt: Date.now()
         };
         onSave(updated);
@@ -258,17 +279,14 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             <div className="flex flex-col h-full">
                 {!isNew && (
                     <div className="flex p-2 bg-slate-50 dark:bg-white/5 border-b border-black/5 dark:border-white/5">
-                        <button 
-                            onClick={() => setActiveTab('details')}
-                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'details' ? 'bg-white dark:bg-white/5 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
-                        >
+                        <button onClick={() => setActiveTab('details')} className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'details' ? 'bg-white dark:bg-white/5 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>
                             <LayoutList size={14}/> Detalhes
                         </button>
-                        <button 
-                            onClick={() => setActiveTab('history')}
-                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-white dark:bg-white/5 shadow-sm text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
-                        >
+                        <button onClick={() => setActiveTab('history')} className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-white dark:bg-white/5 shadow-sm text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>
                             <History size={14}/> Histórico
+                        </button>
+                        <button onClick={() => setActiveTab('lessons')} className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'lessons' ? 'bg-white dark:bg-white/5 shadow-sm text-amber-600 dark:text-amber-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}>
+                            <LinkIcon size={14}/> Aulas
                         </button>
                     </div>
                 )}
@@ -352,6 +370,76 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             <button type="submit" className={`flex-[2] py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-wide text-xs ${isNew ? 'w-full' : ''}`}>Salvar</button>
                         </div>
                     </form>
+                ) : activeTab === 'lessons' ? (
+                    <div className="p-6 flex flex-col h-full min-h-[400px]">
+                        <div className="mb-4 space-y-3">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Vincular Aulas do Cronograma</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/>
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar aula no cronograma..." 
+                                    value={lessonSearch}
+                                    onChange={(e) => setLessonSearch(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 text-sm font-bold outline-none"
+                                />
+                            </div>
+                            {lessonSearch && (
+                                <div className="max-h-40 overflow-y-auto custom-scrollbar border border-slate-200 dark:border-white/5 rounded-xl bg-white dark:bg-zinc-900">
+                                    {searchedLessons.length > 0 ? searchedLessons.map(l => (
+                                        <button 
+                                            key={l.id} 
+                                            type="button"
+                                            onClick={() => {
+                                                setLinkedScheduleIds(prev => [...prev, l.id]);
+                                                setLessonSearch('');
+                                            }}
+                                            className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-white/5 text-xs font-bold border-b border-slate-100 dark:border-white/5 last:border-0"
+                                        >
+                                            <div className="text-slate-800 dark:text-white">{l.aula}</div>
+                                            <div className="text-[10px] text-slate-400">{l.disciplina} • Bloco {l.bloco}</div>
+                                        </button>
+                                    )) : (
+                                        <div className="p-3 text-center text-xs text-slate-400">Nenhuma aula encontrada.</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Aulas Vinculadas ({linkedScheduleIds.length})</div>
+                            {linkedLessons.length > 0 ? linkedLessons.map(l => (
+                                <div key={l.id} className="flex items-center justify-between p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                    <div>
+                                        <div className="text-xs font-bold text-slate-800 dark:text-white line-clamp-1">{l.aula}</div>
+                                        <div className="text-[10px] text-slate-400">{l.grandeArea} • {l.disciplina}</div>
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setLinkedScheduleIds(prev => prev.filter(id => id !== l.id))}
+                                        className="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    >
+                                        <Unlink size={14}/>
+                                    </button>
+                                </div>
+                            )) : (
+                                <div className="text-center py-8 text-xs text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-xl">
+                                    Nenhuma aula vinculada.
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="pt-4 mt-auto">
+                             <form onSubmit={handleSubmit}>
+                                {/* Hidden inputs to carry over existing data */}
+                                <input type="hidden" name="title" value={safeTopic.title} />
+                                <input type="hidden" name="area" value={safeTopic.area} />
+                                <input type="hidden" name="importance" value={safeTopic.importance} />
+                                <input type="hidden" name="date" value={safeTopic.studyDate} />
+                                <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all uppercase tracking-wide text-xs">Salvar Alterações</button>
+                             </form>
+                        </div>
+                    </div>
                 ) : (
                     <div className="p-4 space-y-3">
                         <div className="text-xs text-slate-400 font-bold uppercase tracking-wide text-center mb-2">Cronograma de Revisões</div>
@@ -398,7 +486,9 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
     );
 };
 
+// ... (Rest of existing modals) ...
 export const EditReviewHistoryModal = ({ isOpen, onClose, topic, reviewIdx, onSave }: { isOpen: boolean; onClose: () => void; topic: Topic | null; reviewIdx: number | null; onSave: (data: { date: string, correct: number, total: number }) => void }) => {
+    // ... same implementation ...
     if (!isOpen || !topic || reviewIdx === null) return null;
     
     const review = topic.reviews[reviewIdx];
@@ -446,204 +536,9 @@ export const EditReviewHistoryModal = ({ isOpen, onClose, topic, reviewIdx, onSa
     )
 }
 
-export const OptimizationResultModal = ({ isOpen, onClose, onConfirm, changes }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; changes: OptimizationChange[] }) => {
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Resultado da Otimização">
-            <div className="flex flex-col h-[70vh]">
-                <div className="p-6 pb-2">
-                    <p className="text-sm text-slate-500 font-medium mb-4">
-                        O algoritmo reorganizou sua agenda para equilibrar a carga diária.
-                        {changes.length === 0 ? " Nenhuma alteração foi necessária." : ` Foram propostas ${changes.length} alterações.`}
-                    </p>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto custom-scrollbar px-6">
-                    {changes.length > 0 && (
-                        <div className="space-y-2">
-                            {changes.map((change, i) => (
-                                <div key={i} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5 flex items-center justify-between">
-                                    <div className="overflow-hidden">
-                                        <div className="font-bold text-xs text-slate-800 dark:text-white truncate">{change.title}</div>
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{change.label}</div>
-                                    </div>
-                                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                                        <div className="text-[10px] font-bold text-red-400 line-through decoration-red-400">{formatDate(change.from)}</div>
-                                        <ArrowRight size={12} className="text-slate-400"/>
-                                        <div className="text-[10px] font-bold text-emerald-500">{formatDate(change.to)}</div>
-                                    </div>
-                                    {change.reason && (
-                                        <div className="text-[9px] text-slate-500 italic border-t border-slate-100 dark:border-white/5 pt-1 mt-1">
-                                            {change.reason}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-6 pt-4 border-t border-slate-100 dark:border-white/5 mt-auto bg-[#f2f4f7] dark:bg-[#0d0d0d] z-10 flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-2xl active:scale-95 transition-all uppercase tracking-wide text-xs">Cancelar</button>
-                    <button onClick={onConfirm} className="flex-[2] py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-2xl active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Confirmar & Sincronizar</button>
-                </div>
-            </div>
-        </Modal>
-    );
-};
-
-// --- Settings Modal ---
-interface SettingsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    config: UserConfig;
-    onSaveConfig: (c: UserConfig) => void;
-    syncKey: string;
-    onSaveKey: (k: string) => void;
-    onExport: () => void;
-    onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    themeMode: 'light' | 'dark' | 'system';
-    setThemeMode: (m: 'light' | 'dark' | 'system') => void;
-    runOptimization: () => void;
-    onShowOptimizationInfo: () => void;
-    status: 'online' | 'offline' | 'syncing' | 'error';
-    installPrompt: any;
-    onInstallApp: () => void;
-    onOpenTutorial: () => void;
-}
-
-export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, onSaveKey, onExport, onImport, themeMode, setThemeMode, runOptimization, onShowOptimizationInfo, status, installPrompt, onInstallApp, onOpenTutorial }: SettingsModalProps) => {
-    const [tempKey, setTempKey] = useState(syncKey);
-    const [tempConfig, setTempConfig] = useState(config);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => { setTempKey(syncKey); }, [syncKey]);
-    useEffect(() => { setTempConfig(config); }, [config]);
-
-    const handleSave = () => {
-        onSaveConfig(tempConfig);
-        onClose();
-    };
-
-    // Header content with status
-    const statusContent = (
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
-            {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
-            {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-400"></div>}
-            {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>}
-            {status === 'error' && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
-            <span className="text-[10px] font-bold text-slate-500 uppercase">{status}</span>
-        </div>
-    );
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Ajustes" headerContent={statusContent}>
-            <div className="p-6 space-y-6">
-                
-                {/* Help Banner */}
-                <button onClick={onOpenTutorial} className="w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform group">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-xl"><HelpCircle size={20}/></div>
-                        <div className="text-left">
-                            <div className="text-xs font-bold opacity-80 uppercase">Novo aqui?</div>
-                            <div className="font-black text-sm">Como usar o App</div>
-                        </div>
-                    </div>
-                    <ChevronRight size={20} className="opacity-60 group-hover:translate-x-1 transition-transform"/>
-                </button>
-
-                {installPrompt && (
-                    <button onClick={onInstallApp} className="w-full p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-transform animate-scale-in">
-                        <div className="p-2 bg-white/20 rounded-xl"><Smartphone size={20}/></div>
-                        <div className="text-left">
-                            <div className="text-xs font-bold opacity-80 uppercase">Disponível</div>
-                            <div className="font-black text-sm">Instalar Aplicativo</div>
-                        </div>
-                    </button>
-                )}
-
-                {/* Course Selection */}
-                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
-                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><BookOpen size={18} className="text-purple-500"/> Cronograma Ativo</h4>
-                    <div className="relative">
-                        <select 
-                            value={tempConfig.activeSchedule || 'MEDCOF'} 
-                            onChange={(e) => setTempConfig(prev => ({ ...prev, activeSchedule: e.target.value as any }))}
-                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none"
-                        >
-                            <option value="MEDCOF">MedCof Extensivo</option>
-                            <option value="ESTRATEGIA">Estratégia MED 2025</option>
-                        </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" size={14}/>
-                    </div>
-                </div>
-
-                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
-                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Target size={18} className="text-blue-500"/> Metas de Estudo</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Data da Prova</label>
-                            <input type="date" value={tempConfig.examDate} onChange={e => setTempConfig(prev => ({ ...prev, examDate: e.target.value }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none min-h-[44px]" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Meta Acerto (%)</label>
-                            <input type="number" value={tempConfig.targetAccuracy} onChange={e => setTempConfig(prev => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
-                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Key size={18} className="text-amber-500"/> Sincronização</h4>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Chave Firebase (Sync Key)</label>
-                        <input 
-                            type="text" 
-                            value={tempKey} 
-                            onChange={e => setTempKey(e.target.value)} 
-                            placeholder="Cole sua chave aqui..."
-                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" 
-                        />
-                    </div>
-                    <button onClick={() => { onSaveKey(tempKey); }} className="w-full p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 active:scale-95 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 font-bold text-xs uppercase">
-                        <Cloud size={16}/> Salvar & Sincronizar
-                    </button>
-                </div>
-
-                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
-                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Save size={18} className="text-emerald-500"/> Backup & Dados</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button onClick={onExport} className="p-3 bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-white/5 rounded-xl flex flex-col items-center gap-2 active:scale-95 transition-all text-slate-600 dark:text-slate-300">
-                            <Download size={20}/>
-                            <span className="text-[10px] font-bold uppercase">Exportar</span>
-                        </button>
-                        <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-white/5 rounded-xl flex flex-col items-center gap-2 active:scale-95 transition-all text-slate-600 dark:text-slate-300">
-                            <Upload size={20}/>
-                            <span className="text-[10px] font-bold uppercase">Importar</span>
-                        </button>
-                        <input type="file" ref={fileInputRef} onChange={onImport} className="hidden" accept=".json" />
-                    </div>
-                </div>
-
-                <div className="flex gap-4">
-                    <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="flex-1 p-4 bg-white dark:bg-white/5 rounded-2xl flex flex-col items-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-100 dark:border-white/5">
-                        {themeMode === 'light' ? <Sun size={20} className="text-amber-500"/> : <Moon size={20} className="text-blue-400"/>}
-                        <span className="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Tema</span>
-                    </button>
-                    <div className="flex-1 flex gap-2">
-                        <button onClick={onShowOptimizationInfo} className="w-12 flex items-center justify-center p-4 bg-white dark:bg-white/5 rounded-2xl active:scale-95 text-slate-400 hover:text-blue-500 transition-colors border border-slate-100 dark:border-white/5">
-                            <Info size={20}/>
-                        </button>
-                        <button onClick={runOptimization} className="flex-1 p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex flex-col items-center gap-2 active:scale-95 shadow-lg shadow-purple-500/20">
-                            <Zap size={20} className="text-white"/>
-                            <span className="text-[10px] font-bold uppercase text-white">Otimizar</span>
-                        </button>
-                    </div>
-                </div>
-
-                <button onClick={handleSave} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide">Salvar Tudo</button>
-            </div>
-        </Modal>
-    );
-};
+// ... (SimuladoModal, ReviewModal, etc. keep existing logic but ensure Modal wrapper is new one) ...
+// For brevity, assuming other modals use the Updated Modal Component or are unchanged in logic but wrapped.
+// I will include SimuladoModal and ReviewModal to be safe with the new Modal import/structure.
 
 export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: { isOpen: boolean; onClose: () => void; simulado: Simulado | null; onSave: (s: any) => void; onDelete?: (id: string) => void; topics: Topic[] }) => {
     const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
@@ -856,7 +751,54 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
     );
 };
 
+export const OptimizationResultModal = ({ isOpen, onClose, onConfirm, changes }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; changes: OptimizationChange[] }) => {
+    // ... same as before ...
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Resultado da Otimização">
+            <div className="flex flex-col h-[70vh]">
+                <div className="p-6 pb-2">
+                    <p className="text-sm text-slate-500 font-medium mb-4">
+                        O algoritmo reorganizou sua agenda para equilibrar a carga diária.
+                        {changes.length === 0 ? " Nenhuma alteração foi necessária." : ` Foram propostas ${changes.length} alterações.`}
+                    </p>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-6">
+                    {changes.length > 0 && (
+                        <div className="space-y-2">
+                            {changes.map((change, i) => (
+                                <div key={i} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5 flex items-center justify-between">
+                                    <div className="overflow-hidden">
+                                        <div className="font-bold text-xs text-slate-800 dark:text-white truncate">{change.title}</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{change.label}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                                        <div className="text-[10px] font-bold text-red-400 line-through decoration-red-400">{formatDate(change.from)}</div>
+                                        <ArrowRight size={12} className="text-slate-400"/>
+                                        <div className="text-[10px] font-bold text-emerald-500">{formatDate(change.to)}</div>
+                                    </div>
+                                    {change.reason && (
+                                        <div className="text-[9px] text-slate-500 italic border-t border-slate-100 dark:border-white/5 pt-1 mt-1">
+                                            {change.reason}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 pt-4 border-t border-slate-100 dark:border-white/5 mt-auto bg-[#f2f4f7] dark:bg-[#0d0d0d] z-10 flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-2xl active:scale-95 transition-all uppercase tracking-wide text-xs">Cancelar</button>
+                    <button onClick={onConfirm} className="flex-[2] py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-2xl active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Confirmar & Sincronizar</button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 export const OptimizationInfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+    // ... same as before ...
     if (!isOpen) return null;
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Como Funciona a Otimização?">
@@ -895,6 +837,143 @@ export const OptimizationInfoModal = ({ isOpen, onClose }: { isOpen: boolean; on
                 </div>
 
                 <button onClick={onClose} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl uppercase tracking-wide">Entendi</button>
+            </div>
+        </Modal>
+    );
+};
+
+export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, onSaveKey, onExport, onImport, themeMode, setThemeMode, runOptimization, onShowOptimizationInfo, status, installPrompt, onInstallApp, onOpenTutorial }: any) => {
+    const [tempKey, setTempKey] = useState(syncKey);
+    const [tempConfig, setTempConfig] = useState(config);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => { setTempKey(syncKey); }, [syncKey]);
+    useEffect(() => { setTempConfig(config); }, [config]);
+
+    const handleSave = () => {
+        onSaveConfig(tempConfig);
+        onClose();
+    };
+
+    // Header content with status
+    const statusContent = (
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
+            {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
+            {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-400"></div>}
+            {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>}
+            {status === 'error' && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
+            <span className="text-[10px] font-bold text-slate-500 uppercase">{status}</span>
+        </div>
+    );
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Ajustes" headerContent={statusContent}>
+            <div className="p-6 space-y-6">
+                
+                {/* Help Banner */}
+                <button onClick={onOpenTutorial} className="w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform group">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/20 rounded-xl"><HelpCircle size={20}/></div>
+                        <div className="text-left">
+                            <div className="text-xs font-bold opacity-80 uppercase">Novo aqui?</div>
+                            <div className="font-black text-sm">Como usar o App</div>
+                        </div>
+                    </div>
+                    <ChevronRight size={20} className="opacity-60 group-hover:translate-x-1 transition-transform"/>
+                </button>
+
+                {installPrompt && (
+                    <button onClick={onInstallApp} className="w-full p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-transform animate-scale-in">
+                        <div className="p-2 bg-white/20 rounded-xl"><Smartphone size={20}/></div>
+                        <div className="text-left">
+                            <div className="text-xs font-bold opacity-80 uppercase">Disponível</div>
+                            <div className="font-black text-sm">Instalar Aplicativo</div>
+                        </div>
+                    </button>
+                )}
+
+                {/* Course Selection */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><BookOpen size={18} className="text-purple-500"/> Cronograma Ativo</h4>
+                    <div className="relative">
+                        <select 
+                            value={tempConfig.activeSchedule || 'MEDCOF'} 
+                            onChange={(e) => setTempConfig((prev: any) => ({ ...prev, activeSchedule: e.target.value as any }))}
+                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none"
+                        >
+                            <option value="MEDCOF">MedCof Extensivo</option>
+                            <option value="ESTRATEGIA">Estratégia MED 2025</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" size={14}/>
+                    </div>
+                </div>
+
+                {/* ... other settings blocks ... */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Target size={18} className="text-blue-500"/> Metas de Estudo</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Data da Prova</label>
+                            <input type="date" value={tempConfig.examDate} onChange={e => setTempConfig((prev:any) => ({ ...prev, examDate: e.target.value }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none min-h-[44px]" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Meta Acerto (%)</label>
+                            <input type="number" value={tempConfig.targetAccuracy} onChange={e => setTempConfig((prev:any) => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sync Block */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Key size={18} className="text-amber-500"/> Sincronização</h4>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Chave Firebase (Sync Key)</label>
+                        <input 
+                            type="text" 
+                            value={tempKey} 
+                            onChange={e => setTempKey(e.target.value)} 
+                            placeholder="Cole sua chave aqui..."
+                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" 
+                        />
+                    </div>
+                    <button onClick={() => { onSaveKey(tempKey); }} className="w-full p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 active:scale-95 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 font-bold text-xs uppercase">
+                        <Cloud size={16}/> Salvar & Sincronizar
+                    </button>
+                </div>
+
+                {/* Backup Block */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Save size={18} className="text-emerald-500"/> Backup & Dados</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button onClick={onExport} className="p-3 bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-white/5 rounded-xl flex flex-col items-center gap-2 active:scale-95 transition-all text-slate-600 dark:text-slate-300">
+                            <Download size={20}/>
+                            <span className="text-[10px] font-bold uppercase">Exportar</span>
+                        </button>
+                        <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-slate-50 dark:bg-[#151515] border border-slate-200 dark:border-white/5 rounded-xl flex flex-col items-center gap-2 active:scale-95 transition-all text-slate-600 dark:text-slate-300">
+                            <Upload size={20}/>
+                            <span className="text-[10px] font-bold uppercase">Importar</span>
+                        </button>
+                        <input type="file" ref={fileInputRef} onChange={onImport} className="hidden" accept=".json" />
+                    </div>
+                </div>
+
+                <div className="flex gap-4">
+                    <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="flex-1 p-4 bg-white dark:bg-white/5 rounded-2xl flex flex-col items-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-100 dark:border-white/5">
+                        {themeMode === 'light' ? <Sun size={20} className="text-amber-500"/> : <Moon size={20} className="text-blue-400"/>}
+                        <span className="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Tema</span>
+                    </button>
+                    <div className="flex-1 flex gap-2">
+                        <button onClick={onShowOptimizationInfo} className="w-12 flex items-center justify-center p-4 bg-white dark:bg-white/5 rounded-2xl active:scale-95 text-slate-400 hover:text-blue-500 transition-colors border border-slate-100 dark:border-white/5">
+                            <Info size={20}/>
+                        </button>
+                        <button onClick={runOptimization} className="flex-1 p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex flex-col items-center gap-2 active:scale-95 shadow-lg shadow-purple-500/20">
+                            <Zap size={20} className="text-white"/>
+                            <span className="text-[10px] font-bold uppercase text-white">Otimizar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button onClick={handleSave} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide">Salvar Tudo</button>
             </div>
         </Modal>
     );

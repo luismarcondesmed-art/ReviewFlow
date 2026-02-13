@@ -160,7 +160,7 @@ export function App() {
         vibration.success();
     };
 
-    // LOGIC UPDATE: Group topics by Grand Area + Block
+    // LOGIC UPDATE: Group topics by Grand Area + Block AND Link Schedule IDs
     const handleAutoCreateFromSchedule = useCallback((item: any) => {
         // Map Area
         let area: any = 'clinica';
@@ -179,14 +179,26 @@ export function App() {
         const unifiedTitle = `${blockLabel} ${item.bloco} • ${item.grandeArea}`;
 
         // Check if this consolidated topic already exists
-        const exists = topics.some(t => t.title === unifiedTitle && !t.deleted);
+        const existingTopic = topics.find(t => t.title === unifiedTitle && !t.deleted);
 
-        if (exists) {
-            // Already exists, we don't duplicate. 
-            // In a more advanced version, we could append the lesson name to a checklist inside the topic.
-            return; 
+        if (existingTopic) {
+            // Check if this specific lesson ID is already linked
+            const currentLinks = existingTopic.linkedScheduleIds || [];
+            if (!currentLinks.includes(item.id)) {
+                // Link it and update
+                const updatedTopic = { 
+                    ...existingTopic, 
+                    linkedScheduleIds: [...currentLinks, item.id],
+                    updatedAt: Date.now()
+                };
+                setTopics(prev => prev.map(t => t.id === existingTopic.id ? updatedTopic : t));
+                triggerConfetti();
+            }
+            // If already linked, do nothing (or maybe visually highlight)
+            return;
         }
 
+        // New Topic
         const draftTopic: Topic = {
             id: '', // Will be generated in handleAddTopic
             title: unifiedTitle,
@@ -196,7 +208,8 @@ export function App() {
             studyDate: getTodayStr(),
             reviews: [], // Will be generated
             deleted: false,
-            updatedAt: 0
+            updatedAt: 0,
+            linkedScheduleIds: [item.id]
         };
 
         handleAddTopic(draftTopic);
