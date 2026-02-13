@@ -112,19 +112,48 @@ export const CronogramaView = ({
         });
 
         if (groupBy === 'bloco') {
+            // Group by Block
             const groups: Record<string, ScheduleItem[]> = {};
             filtered.forEach(item => {
                 const key = item.bloco;
                 if (!groups[key]) groups[key] = [];
                 groups[key].push(item);
             });
-            return Object.keys(groups).sort((a,b) => parseInt(a) - parseInt(b)).map(key => ({
-                id: key,
-                title: `${activeScheduleCode === 'ESTRATEGIA' ? 'Semana' : 'Bloco'} ${key}`,
-                items: groups[key]
-            }));
+
+            return Object.keys(groups).sort((a,b) => parseInt(a) - parseInt(b)).map(key => {
+                const blockItems = groups[key];
+                
+                // Group by Grand Area inside Block
+                const areaGroups: Record<string, ScheduleItem[]> = {};
+                blockItems.forEach(item => {
+                    const area = item.grandeArea;
+                    if(!areaGroups[area]) areaGroups[area] = [];
+                    areaGroups[area].push(item);
+                });
+
+                // Create subgroups sorted by Priority within Area
+                const subgroups = Object.keys(areaGroups).sort().map(areaName => {
+                    // Sort items by priority (Blue > Green > Yellow > Red)
+                    const sortedItems = areaGroups[areaName].sort((a, b) => {
+                        const pA = getPriorityData(a.importancia).weight;
+                        const pB = getPriorityData(b.importancia).weight;
+                        return pB - pA; // Descending
+                    });
+
+                    return {
+                        title: areaName,
+                        items: sortedItems
+                    };
+                });
+
+                return {
+                    id: key,
+                    title: `${activeScheduleCode === 'ESTRATEGIA' ? 'Semana' : 'Bloco'} ${key}`,
+                    subgroups: subgroups // Using subgroups now even for 'bloco' view
+                };
+            });
         } else {
-            // Group by Area
+            // Group by Area (Classic)
             const groups: Record<string, any> = {};
             filtered.forEach(item => {
                 const areaKey = item.grandeArea;
@@ -140,7 +169,7 @@ export const CronogramaView = ({
                 title: area,
                 subgroups: Object.keys(groups[area].subareas).sort().map(sub => ({
                     title: sub,
-                    items: groups[area].subareas[sub]
+                    items: groups[area].subareas[sub] // Note: Could also sort these by priority if desired
                 }))
             }));
         }
@@ -167,73 +196,75 @@ export const CronogramaView = ({
     const collapseAll = () => setCollapsedGroups(new Set(structuredSchedule.map(g => g.id)));
 
     return (
-        <div className="h-full flex flex-col gap-6 animate-scale-in pb-20">
+        <div className="h-full flex flex-col gap-4 animate-scale-in pb-20">
             
-            {/* Header / Config Bar */}
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500 rounded-xl text-white shadow-lg shadow-blue-500/20">
-                            <MapIcon size={20}/>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black text-slate-800 dark:text-white leading-none">Cronograma</h3>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{activeScheduleCode} 2025</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#18181b] p-1 rounded-xl border border-black/5 dark:border-white/10">
-                        <button 
-                            onClick={() => { onScheduleChange(activeScheduleCode === 'MEDCOF' ? 'ESTRATEGIA' : 'MEDCOF'); setCollapsedGroups(new Set()); }}
-                            className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"
-                        >
-                            <Layers size={14}/> Mudar Curso
-                        </button>
-                    </div>
+            {/* --- NEW Compact Header (Horizontal Scroll) --- */}
+            <div className="flex flex-col gap-3">
+                {/* Title HIDDEN on mobile (sm:flex) as per request */}
+                <div className="flex items-center justify-between px-1">
+                    <h3 className="hidden sm:flex text-3xl font-black text-slate-800 dark:text-white tracking-tight items-center gap-3">
+                        <MapIcon size={28} className="text-blue-500"/> Cronograma
+                    </h3>
                 </div>
 
-                {/* Filters Row */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-1 bg-white dark:bg-[#18181b] p-1 rounded-xl border border-black/5 dark:border-white/10">
-                        <button 
-                            onClick={() => setGroupBy('bloco')}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${groupBy === 'bloco' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <Calendar size={14}/> Cronológico
-                        </button>
-                        <button 
-                            onClick={() => setGroupBy('area')}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${groupBy === 'area' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <Filter size={14}/> Áreas
-                        </button>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mask-linear-fade">
+                    {/* Course Switcher - Compact on Mobile */}
+                    <button 
+                        onClick={() => { onScheduleChange(activeScheduleCode === 'MEDCOF' ? 'ESTRATEGIA' : 'MEDCOF'); setCollapsedGroups(new Set()); }}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-black uppercase tracking-wide whitespace-nowrap shadow-md flex-shrink-0"
+                    >
+                        <Layers size={14}/> 
+                        <span className="hidden sm:inline">{activeScheduleCode} 2025</span>
+                        <span className="sm:hidden">{activeScheduleCode === 'MEDCOF' ? 'MED' : 'EST'}</span>
+                    </button>
+
+                    <div className="w-px h-6 bg-slate-200 dark:bg-white/10 flex-shrink-0 mx-1"></div>
+
+                    {/* Grouping Toggle - Icon Only on Mobile */}
+                    <button 
+                        onClick={() => setGroupBy(groupBy === 'bloco' ? 'area' : 'bloco')}
+                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-[#18181b] border border-black/5 dark:border-white/10 rounded-xl text-[10px] font-bold uppercase whitespace-nowrap flex-shrink-0 text-slate-600 dark:text-slate-300"
+                    >
+                        {groupBy === 'bloco' ? <Calendar size={14}/> : <Filter size={14}/>}
+                        <span className="hidden sm:inline">{groupBy === 'bloco' ? 'Cronológico' : 'Por Área'}</span>
+                    </button>
+
+                    {/* Status Filter - Icons Only on Mobile */}
+                    <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl flex-shrink-0">
+                        {(['all', 'pending', 'done'] as const).map(f => (
+                            <button 
+                                key={f}
+                                onClick={() => setStatusFilter(f)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 ${statusFilter === f ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-400'}`}
+                                title={f === 'all' ? 'Tudo' : f === 'pending' ? 'Pendente' : 'Feito'}
+                            >
+                                {/* Mobile Icons */}
+                                <span className="sm:hidden flex">
+                                    {f === 'all' && <List size={14}/>}
+                                    {f === 'pending' && <Circle size={14}/>}
+                                    {f === 'done' && <CheckCircle2 size={14}/>}
+                                </span>
+                                {/* Desktop Text */}
+                                <span className="hidden sm:inline">
+                                    {f === 'all' ? 'Tudo' : f === 'pending' ? 'Falta' : 'Feito'}
+                                </span>
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex items-center gap-1">
-                        <div className="flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl border border-transparent dark:border-white/5">
-                            {(['all', 'pending', 'done'] as const).map(f => (
-                                <button 
-                                    key={f}
-                                    onClick={() => setStatusFilter(f)}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${statusFilter === f ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-400'}`}
-                                >
-                                    {f === 'all' ? 'Tudo' : f === 'pending' ? 'Faltam' : 'Feito'}
-                                </button>
-                            ))}
-                        </div>
-                        <button 
-                            onClick={() => setAutoReview(!autoReview)}
-                            className={`p-2 rounded-xl border transition-all ${autoReview ? 'bg-purple-500 border-transparent text-white shadow-lg shadow-purple-500/20' : 'bg-white dark:bg-[#18181b] border-black/5 dark:border-white/10 text-slate-400'}`}
-                            title="Auto-Review: Cria card no Dashboard ao marcar aula"
-                        >
-                            <Zap size={18} fill={autoReview ? "currentColor" : "none"}/>
-                        </button>
-                    </div>
+                    {/* Auto-Review Toggle */}
+                    <button 
+                        onClick={() => setAutoReview(!autoReview)}
+                        className={`p-2 rounded-xl border flex-shrink-0 transition-all ${autoReview ? 'bg-purple-500 border-transparent text-white shadow-md' : 'bg-white dark:bg-[#18181b] border-black/5 dark:border-white/10 text-slate-400'}`}
+                        title="Auto-Review: Cria card no Dashboard ao marcar aula"
+                    >
+                        <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
+                    </button>
                 </div>
             </div>
 
             {/* List Content */}
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-4">
                 {structuredSchedule.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white/50 dark:bg-white/[0.02] border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[32px]">
                         <Search size={48} strokeWidth={1} className="mb-4 opacity-20"/>
@@ -247,10 +278,10 @@ export const CronogramaView = ({
                         // Calculate stats for the group
                         const allItems = group.subgroups 
                             ? group.subgroups.flatMap((s: any) => s.items) 
-                            : group.items;
+                            : group.items || [];
                         const doneCount = allItems.filter((i: any) => !!scheduleProgress[i.id]).length;
                         const totalCount = allItems.length;
-                        const progress = Math.round((doneCount / totalCount) * 100);
+                        const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
                         const areaId = groupBy === 'area' ? mapAreaId(group.id) : null;
                         const theme = areaId ? getAreaTheme(areaId) : null;
 
@@ -271,6 +302,7 @@ export const CronogramaView = ({
                                             {progress === 100 ? <CheckCircle2 size={20} className="text-emerald-500"/> : group.id.toString().substring(0, 2).toUpperCase()}
                                         </div>
                                         <div className="flex-1">
+                                            {/* Hide Duplicate Title Logic: If grouping by Area, title is just Area Name */}
                                             <h4 className={`text-sm font-black uppercase tracking-tight ${theme ? theme.text : 'text-slate-800 dark:text-white'}`}>
                                                 {group.title}
                                             </h4>
@@ -290,23 +322,28 @@ export const CronogramaView = ({
                                 {!isCollapsed && (
                                     <div className="mt-3 grid grid-cols-1 gap-2 pl-2 animate-slide-up">
                                         {group.subgroups ? (
-                                            // Nested Grouping for Estrategia / Area Mode
-                                            group.subgroups.map((sub: any) => (
-                                                <div key={sub.title} className="mb-4 last:mb-0">
-                                                    <div className="flex items-center gap-2 mb-2 px-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-white/20"></div>
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{sub.title}</span>
-                                                        <div className="h-px flex-1 bg-slate-100 dark:bg-white/5"></div>
+                                            // Nested Grouping (Grand Area headers inside Block OR Subareas inside Area)
+                                            group.subgroups.map((sub: any) => {
+                                                const subAreaId = mapAreaId(sub.title);
+                                                const subTheme = getAreaTheme(subAreaId);
+                                                
+                                                return (
+                                                    <div key={sub.title} className="mb-4 last:mb-0">
+                                                        <div className="flex items-center gap-2 mb-2 px-2">
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${subTheme.bg.replace('bg-', 'bg-').replace('100', '500')}`}></div>
+                                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{sub.title}</span>
+                                                            <div className="h-px flex-1 bg-slate-100 dark:bg-white/5"></div>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            {sub.items.map((item: any) => (
+                                                                <ScheduleCard key={item.id} item={item} isChecked={!!scheduleProgress[item.id]} onToggle={toggleCheck} />
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                        {sub.items.map((item: any) => (
-                                                            <ScheduleCard key={item.id} item={item} isChecked={!!scheduleProgress[item.id]} onToggle={toggleCheck} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))
+                                                );
+                                            })
                                         ) : (
-                                            // Simple List for Bloco mode
+                                            // Fallback Simple List (Shouldn't be hit with new logic, but kept for safety)
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                 {group.items.map((item: any) => (
                                                     <ScheduleCard key={item.id} item={item} isChecked={!!scheduleProgress[item.id]} onToggle={toggleCheck} />
