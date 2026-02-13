@@ -1,8 +1,10 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Smile, Meh, Frown } from 'lucide-react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Smile, Meh, Frown, Link as LinkIcon, Unlink } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from './types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from './utils';
+import { MEDCOF_SCHEDULE } from './medcofSchedule';
+import { ESTRATEGIA_SCHEDULE } from './estrategiaSchedule';
 
 // --- Generic Modal ---
 export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode; headerContent?: React.ReactNode }) => {
@@ -28,7 +30,6 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isO
     );
 };
 
-// --- Tutorial Modal ---
 export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const [step, setStep] = useState(0);
 
@@ -152,7 +153,7 @@ export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     );
 };
 
-export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEditReview }: { isOpen: boolean; onClose: () => void; topic: Topic | null; onSave: (t: Topic) => void; onDelete?: (id: string) => void; onEditReview?: (idx: number) => void }) => {
+export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEditReview, config }: { isOpen: boolean; onClose: () => void; topic: Topic | null; onSave: (t: Topic) => void; onDelete?: (id: string) => void; onEditReview?: (idx: number) => void; config?: UserConfig }) => {
     const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
     
     // Custom settings state
@@ -160,18 +161,36 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
     const [baseQuestions, setBaseQuestions] = useState<number | ''>('');
     const [showAdvanced, setShowAdvanced] = useState(false);
 
+    // Schedule Linking
+    const [linkedIds, setLinkedIds] = useState<string[]>([]);
+    const [scheduleSearch, setScheduleSearch] = useState('');
+    const [showScheduler, setShowScheduler] = useState(false);
+
+    const activeScheduleCode = config?.activeSchedule || 'MEDCOF';
+    const scheduleData = activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
+
     useEffect(() => {
         if (isOpen) {
             setActiveTab('details');
-            if (topic && topic.customSettings) {
-                setIntervalsStr(topic.customSettings.intervals.join(', '));
-                setBaseQuestions(topic.customSettings.baseQuestions);
-                setShowAdvanced(true);
+            if (topic) {
+                if (topic.customSettings) {
+                    setIntervalsStr(topic.customSettings.intervals.join(', '));
+                    setBaseQuestions(topic.customSettings.baseQuestions);
+                    setShowAdvanced(true);
+                } else {
+                    setIntervalsStr(''); 
+                    setBaseQuestions('');
+                    setShowAdvanced(false);
+                }
+                setLinkedIds(topic.linkedScheduleIds || []);
             } else {
-                setIntervalsStr(''); // Default empty implies automatic
+                setIntervalsStr('');
                 setBaseQuestions('');
                 setShowAdvanced(false);
+                setLinkedIds([]);
             }
+            setShowScheduler(false);
+            setScheduleSearch('');
         }
     }, [isOpen, topic]);
 
@@ -179,6 +198,16 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
 
     const safeTopic = topic || {} as Topic;
     const isNew = !safeTopic.id;
+
+    // Filter schedule items for search
+    const filteredSchedule = useMemo(() => {
+        if (!scheduleSearch) return [];
+        const s = scheduleSearch.toLowerCase();
+        return scheduleData.filter(item => 
+            item.aula.toLowerCase().includes(s) || 
+            item.disciplina.toLowerCase().includes(s)
+        ).slice(0, 20);
+    }, [scheduleSearch, scheduleData]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -190,29 +219,27 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
         const studyDate = fd.get('date') as string;
 
         let customSettings = undefined;
-        if (showAdvanced && intervalsStr.trim()) {
+        if (showAdvanced && (intervalsStr.trim() || baseQuestions)) {
             const intervals = intervalsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
             const baseQ = typeof baseQuestions === 'number' ? baseQuestions : IMPORTANCE_LEVELS.find(i => i.id === importance)?.baseQ || 20;
-            if (intervals.length > 0) {
-                customSettings = { intervals, baseQuestions: baseQ };
+            if (intervals.length > 0 || baseQuestions) {
+                if (intervals.length > 0) customSettings = { intervals, baseQuestions: baseQ };
+                else customSettings = { intervals: [1,7,30], baseQuestions: baseQ }; // Fallback
             }
         }
 
         let reviews = safeTopic.reviews || [];
         
-        // If it's new OR custom settings changed OR date changed, we regenerate future reviews
         const needsRegeneration = isNew || 
             (JSON.stringify(safeTopic.customSettings) !== JSON.stringify(customSettings)) ||
             (safeTopic.studyDate !== studyDate);
 
         if (needsRegeneration) {
-            // If regenerating, we must preserve COMPLETED reviews if this is an edit
-            // Use utils helper to generate new schedule
             const newSchedule = generateSmartSchedule(
                 studyDate, 
-                undefined, // Exam date not needed for custom or simply handled inside
+                undefined, 
                 importance, 
-                [], // existingTopics not needed for this check usually, or pass it if collision detection desired
+                [], 
                 safeTopic.id,
                 customSettings
             );
@@ -220,22 +247,14 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             if (isNew) {
                 reviews = newSchedule;
             } else {
-                // Merge logic: Keep done reviews, append new schedule for future
-                // Simple logic: Replace all *pending* reviews with new calculation.
-                // We map new schedule items to old done items if they exist to keep data integrity where possible
-                
                 reviews = newSchedule.map((newR, i) => {
-                    // Try to map to existing done review at same index?
-                    // Or same type?
                     const existing = safeTopic.reviews.find(r => r.type === newR.type);
                     if (existing && existing.done) {
-                        return { ...existing, label: newR.label }; // Keep existing data, update label if needed
+                        return { ...existing, label: newR.label };
                     }
                     return newR;
                 });
             }
-        } else if (safeTopic.importance !== importance && !customSettings) {
-             // Just update targetQ for pending (handled by parent usually, but good to have safety)
         }
 
         const updated = {
@@ -246,6 +265,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             studyDate,
             reviews,
             customSettings,
+            linkedScheduleIds: linkedIds,
             updatedAt: Date.now()
         };
         onSave(updated);
@@ -305,20 +325,80 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             </div>
                         </div>
 
+                        {/* Optional Schedule Linking */}
+                        <div className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/5">
+                            <button 
+                                type="button" 
+                                onClick={() => setShowScheduler(!showScheduler)} 
+                                className="flex items-center justify-between w-full text-xs font-bold text-slate-600 dark:text-slate-300"
+                            >
+                                <span className="flex items-center gap-2"><LinkIcon size={14}/> Vincular Aulas (Opcional)</span>
+                                {linkedIds.length > 0 && <span className="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[9px]">{linkedIds.length}</span>}
+                            </button>
+                            
+                            {showScheduler && (
+                                <div className="mt-4 space-y-3 animate-scale-in">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar aula no cronograma..." 
+                                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-[#151515] rounded-xl text-xs outline-none border border-slate-200 dark:border-white/5"
+                                            value={scheduleSearch}
+                                            onChange={e => setScheduleSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    {scheduleSearch && (
+                                        <div className="max-h-32 overflow-y-auto custom-scrollbar space-y-1">
+                                            {filteredSchedule.map(item => {
+                                                const isLinked = linkedIds.includes(item.id);
+                                                return (
+                                                    <div 
+                                                        key={item.id} 
+                                                        onClick={() => {
+                                                            if (isLinked) setLinkedIds(prev => prev.filter(id => id !== item.id));
+                                                            else setLinkedIds(prev => [...prev, item.id]);
+                                                        }}
+                                                        className={`p-2 rounded-lg text-[10px] font-medium cursor-pointer flex justify-between items-center ${isLinked ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400'}`}
+                                                    >
+                                                        <span>{item.aula}</span>
+                                                        {isLinked && <Check size={12}/>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {linkedIds.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                            {linkedIds.map(id => {
+                                                const found = scheduleData.find(s => s.id === id);
+                                                return found ? (
+                                                    <div key={id} className="px-2 py-1 bg-white dark:bg-white/10 rounded-lg text-[9px] text-slate-500 border border-slate-200 dark:border-white/5 flex items-center gap-1">
+                                                        {found.aula}
+                                                        <button onClick={() => setLinkedIds(p => p.filter(i => i !== id))}><X size={10}/></button>
+                                                    </div>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {/* Custom Settings Toggle */}
                         <div className="pt-2">
                             <button 
                                 type="button" 
                                 onClick={() => setShowAdvanced(!showAdvanced)} 
-                                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors"
+                                className={`flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors`}
                             >
-                                <SlidersHorizontal size={14}/> {showAdvanced ? 'Ocultar Personalização' : 'Configuração Personalizada'}
+                                <SlidersHorizontal size={14}/> {showAdvanced ? 'Ocultar Personalização' : 'Configuração Avançada'}
                             </button>
 
                             {showAdvanced && (
                                 <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 space-y-4 animate-scale-in">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Intervalos (dias)</label>
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Intervalos (dias)</label>
                                         <input 
                                             type="text" 
                                             value={intervalsStr} 
@@ -329,7 +409,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                         <p className="text-[9px] text-slate-400">Dias a partir do início: Ex: "1" é amanhã, "7" é uma semana do início.</p>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Meta de Questões</label>
+                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Meta de Questões</label>
                                         <input 
                                             type="number" 
                                             value={baseQuestions} 
@@ -394,6 +474,119 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                     </div>
                 )}
             </div>
+        </Modal>
+    );
+};
+
+// --- Review Modal ---
+interface ReviewModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    topic: Topic | null;
+    reviewIdx: number | null;
+    onSubmit: (data: { correct: number; total: number; difficulty: string }) => void;
+    targetAccuracy: number;
+}
+
+export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: ReviewModalProps) => {
+    const [formState, setFormState] = useState({ correct: 0, total: 20, difficulty: 'medium' });
+
+    useEffect(() => {
+        if (isOpen && topic && reviewIdx !== null) {
+            const target = topic.reviews[reviewIdx]?.targetQ || 20;
+            setFormState({ correct: 0, total: target, difficulty: 'medium' });
+        }
+    }, [isOpen, topic, reviewIdx]);
+
+    if (!isOpen || !topic || reviewIdx === null) return null;
+
+    const currentReview = topic.reviews[reviewIdx];
+    const scorePercentage = formState.total > 0 ? Math.round((formState.correct / formState.total) * 100) : 0;
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSubmit(formState);
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado">
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
+                {/* Header Info */}
+                <div className="text-center pb-2">
+                    <h4 className="font-black text-xl text-slate-800 dark:text-white leading-tight mb-1">{topic.title}</h4>
+                    <div className="flex items-center justify-center gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getAreaTheme(topic.area).bg} ${getAreaTheme(topic.area).text}`}>
+                            {topic.area}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium">{currentReview?.label}</span>
+                    </div>
+                </div>
+
+                {/* Inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex flex-col items-center">
+                        <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Acertos</label>
+                        <div className="flex items-center gap-3">
+                            <button type="button" onClick={() => setFormState(s => ({...s, correct: Math.max(0, s.correct - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors border border-slate-200 dark:border-white/5"><Minus size={14}/></button>
+                            <input 
+                                type="number" 
+                                value={formState.correct} 
+                                onChange={(e) => setFormState(s => ({...s, correct: parseInt(e.target.value) || 0}))} 
+                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none" 
+                            />
+                            <button type="button" onClick={() => setFormState(s => ({...s, correct: s.correct + 1}))} className="w-8 h-8 rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
+                        </div>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex flex-col items-center">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total</label>
+                        <div className="flex items-center gap-3">
+                            <button type="button" onClick={() => setFormState(s => ({...s, total: Math.max(1, s.total - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors border border-slate-200 dark:border-white/5"><Minus size={14}/></button>
+                            <input 
+                                type="number" 
+                                value={formState.total} 
+                                onChange={(e) => setFormState(s => ({...s, total: parseInt(e.target.value) || 1}))} 
+                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none" 
+                            />
+                            <button type="button" onClick={() => setFormState(s => ({...s, total: s.total + 1}))} className="w-8 h-8 rounded-full bg-slate-800 dark:bg-white text-white dark:text-black shadow-lg flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Result Preview */}
+                <div className="flex items-center justify-between px-2">
+                    <span className="text-xs font-bold text-slate-400">Aproveitamento</span>
+                    <span className={`text-3xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
+                        {scorePercentage}%
+                    </span>
+                </div>
+
+                {/* Difficulty */}
+                <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block px-1">Dificuldade Sentida</label>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[
+                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+                        ].map(lvl => (
+                            <button 
+                                key={lvl.id}
+                                type="button"
+                                onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))}
+                                className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${formState.difficulty === lvl.id ? 'border-current shadow-sm scale-[1.02]' : 'border-transparent bg-white dark:bg-white/5 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'} ${formState.difficulty === lvl.id ? lvl.color : ''}`}
+                            >
+                                <span className="text-lg leading-none">{lvl.emoji}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wide">{lvl.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide">
+                    Concluir Revisão
+                </button>
+            </form>
         </Modal>
     );
 };
@@ -491,27 +684,7 @@ export const OptimizationResultModal = ({ isOpen, onClose, onConfirm, changes }:
     );
 };
 
-// --- Settings Modal ---
-interface SettingsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    config: UserConfig;
-    onSaveConfig: (c: UserConfig) => void;
-    syncKey: string;
-    onSaveKey: (k: string) => void;
-    onExport: () => void;
-    onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    themeMode: 'light' | 'dark' | 'system';
-    setThemeMode: (m: 'light' | 'dark' | 'system') => void;
-    runOptimization: () => void;
-    onShowOptimizationInfo: () => void;
-    status: 'online' | 'offline' | 'syncing' | 'error';
-    installPrompt: any;
-    onInstallApp: () => void;
-    onOpenTutorial: () => void;
-}
-
-export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, onSaveKey, onExport, onImport, themeMode, setThemeMode, runOptimization, onShowOptimizationInfo, status, installPrompt, onInstallApp, onOpenTutorial }: SettingsModalProps) => {
+export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, onSaveKey, onExport, onImport, themeMode, setThemeMode, runOptimization, onShowOptimizationInfo, status, installPrompt, onInstallApp, onOpenTutorial }: any) => {
     const [tempKey, setTempKey] = useState(syncKey);
     const [tempConfig, setTempConfig] = useState(config);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -524,7 +697,6 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
         onClose();
     };
 
-    // Header content with status
     const statusContent = (
         <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
             {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
@@ -538,8 +710,6 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Ajustes" headerContent={statusContent}>
             <div className="p-6 space-y-6">
-                
-                {/* Help Banner */}
                 <button onClick={onOpenTutorial} className="w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl flex items-center justify-between gap-3 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform group">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-xl"><HelpCircle size={20}/></div>
@@ -561,13 +731,12 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                     </button>
                 )}
 
-                {/* Course Selection */}
                 <div className="p-5 bg-white dark:bg-white/5 rounded-3xl space-y-4 border border-slate-100 dark:border-white/5">
                     <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><BookOpen size={18} className="text-purple-500"/> Cronograma Ativo</h4>
                     <div className="relative">
                         <select 
                             value={tempConfig.activeSchedule || 'MEDCOF'} 
-                            onChange={(e) => setTempConfig(prev => ({ ...prev, activeSchedule: e.target.value as any }))}
+                            onChange={(e) => setTempConfig((prev: any) => ({ ...prev, activeSchedule: e.target.value as any }))}
                             className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none"
                         >
                             <option value="MEDCOF">MedCof Extensivo</option>
@@ -582,11 +751,11 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Data da Prova</label>
-                            <input type="date" value={tempConfig.examDate} onChange={e => setTempConfig(prev => ({ ...prev, examDate: e.target.value }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none min-h-[44px]" />
+                            <input type="date" value={tempConfig.examDate} onChange={e => setTempConfig((prev: any) => ({ ...prev, examDate: e.target.value }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none min-h-[44px]" />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Meta Acerto (%)</label>
-                            <input type="number" onWheel={(e) => e.currentTarget.blur()} value={tempConfig.targetAccuracy} onChange={e => setTempConfig(prev => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
+                            <input type="number" onWheel={(e) => e.currentTarget.blur()} value={tempConfig.targetAccuracy} onChange={e => setTempConfig((prev: any) => ({ ...prev, targetAccuracy: Number(e.target.value) }))} className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#151515] text-xs font-bold outline-none border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white appearance-none" />
                         </div>
                     </div>
                 </div>
@@ -645,17 +814,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
     );
 };
 
-// --- Simulado Modal ---
-interface SimuladoModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    simulado: Simulado | null;
-    onSave: (s: any) => void;
-    onDelete?: (id: string) => void;
-    topics: Topic[];
-}
-
-export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: SimuladoModalProps) => {
+export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: { isOpen: boolean; onClose: () => void; simulado: Simulado | null; onSave: (s: any) => void; onDelete?: (id: string) => void; topics: Topic[] }) => {
     const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
     const [simTopicSearch, setSimTopicSearch] = useState('');
 
@@ -673,7 +832,7 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
         const fd = new FormData(e.currentTarget);
         
         const newS = {
-            id: simulado?.id, // Let parent handle ID generation if null
+            id: simulado?.id,
             name: fd.get('institution') as string, 
             year: fd.get('year') as string,
             totalQuestions: parseInt(fd.get('total') as string) || 0,
@@ -767,122 +926,6 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
     );
 };
 
-// --- Review Modal ---
-interface ReviewModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    topic: Topic | null;
-    reviewIdx: number | null;
-    onSubmit: (data: { correct: number; total: number; difficulty: string }) => void;
-    targetAccuracy: number;
-}
-
-export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: ReviewModalProps) => {
-    const [formState, setFormState] = useState({ correct: 0, total: 20, difficulty: 'medium' });
-
-    useEffect(() => {
-        if (isOpen && topic && reviewIdx !== null) {
-            const target = topic.reviews[reviewIdx]?.targetQ || 20;
-            setFormState({ correct: 0, total: target, difficulty: 'medium' });
-        }
-    }, [isOpen, topic, reviewIdx]);
-
-    if (!isOpen || !topic || reviewIdx === null) return null;
-
-    const currentReview = topic.reviews[reviewIdx];
-    const scorePercentage = formState.total > 0 ? Math.round((formState.correct / formState.total) * 100) : 0;
-
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSubmit(formState);
-        onClose();
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado">
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
-                {/* Header Info */}
-                <div className="text-center pb-2">
-                    <h4 className="font-black text-xl text-slate-800 dark:text-white leading-tight mb-1">{topic.title}</h4>
-                    <div className="flex items-center justify-center gap-2">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getAreaTheme(topic.area).bg} ${getAreaTheme(topic.area).text}`}>
-                            {topic.area}
-                        </span>
-                        <span className="text-xs text-slate-400 font-medium">{currentReview?.label}</span>
-                    </div>
-                </div>
-
-                {/* Inputs */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 flex flex-col items-center">
-                        <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Acertos</label>
-                        <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => setFormState(s => ({...s, correct: Math.max(0, s.correct - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-emerald-600 transition-colors"><Minus size={14}/></button>
-                            <input 
-                                type="number" 
-                                onWheel={(e) => e.currentTarget.blur()}
-                                value={formState.correct} 
-                                onChange={(e) => setFormState(s => ({...s, correct: parseInt(e.target.value) || 0}))} 
-                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-emerald-600 p-0" 
-                            />
-                            <button type="button" onClick={() => setFormState(s => ({...s, correct: s.correct + 1}))} className="w-8 h-8 rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
-                        </div>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col items-center">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total</label>
-                        <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => setFormState(s => ({...s, total: Math.max(1, s.total - 1)}))} className="w-8 h-8 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-slate-500 hover:text-blue-600 transition-colors"><Minus size={14}/></button>
-                            <input 
-                                type="number" 
-                                onWheel={(e) => e.currentTarget.blur()}
-                                value={formState.total} 
-                                onChange={(e) => setFormState(s => ({...s, total: parseInt(e.target.value) || 1}))} 
-                                className="w-12 text-center text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0" 
-                            />
-                            <button type="button" onClick={() => setFormState(s => ({...s, total: s.total + 1}))} className="w-8 h-8 rounded-full bg-slate-800 dark:bg-white text-white dark:text-black shadow-lg flex items-center justify-center active:scale-90 transition-transform"><Plus size={14}/></button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Result Preview */}
-                <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-400">Aproveitamento</span>
-                    <span className={`text-3xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
-                        {scorePercentage}%
-                    </span>
-                </div>
-
-                {/* Difficulty */}
-                <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block px-1">Dificuldade Sentida</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        {[
-                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-emerald-500' },
-                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 ring-amber-500' },
-                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-red-500' }
-                        ].map(lvl => (
-                            <button 
-                                key={lvl.id}
-                                type="button"
-                                onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))}
-                                className={`py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${formState.difficulty === lvl.id ? `border-transparent shadow-sm scale-[1.02] ${lvl.color} ring-2` : 'border-transparent bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'}`}
-                            >
-                                <span className="text-lg leading-none">{lvl.emoji}</span>
-                                <span className="text-[9px] font-bold uppercase tracking-wide">{lvl.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <button className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide">
-                    Concluir Revisão
-                </button>
-            </form>
-        </Modal>
-    );
-};
-
-// --- Optimization Info Modal ---
 export const OptimizationInfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     if (!isOpen) return null;
     return (

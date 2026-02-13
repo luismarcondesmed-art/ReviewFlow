@@ -7,17 +7,19 @@ import { Simulado, Topic, UserConfig, AreaType, ImportanceType } from './types';
 import { getTodayStr, AREAS, formatDate, IMPORTANCE_LEVELS } from './utils';
 import { TopicListItem, SimuladoCard, HeatmapWidget } from './components';
 
+interface InlineTopicFormProps {
+    initialTopic?: Partial<Topic>;
+    onSave: (t: any) => void;
+    onCancel: () => void;
+    onDelete?: () => void;
+}
+
 // Enhanced Inline Creator/Editor with Advanced Settings
-const InlineTopicForm = ({ 
+const InlineTopicForm: React.FC<InlineTopicFormProps> = ({ 
     initialTopic, 
     onSave, 
     onCancel, 
     onDelete 
-}: { 
-    initialTopic?: Partial<Topic>, 
-    onSave: (t: any) => void, 
-    onCancel: () => void,
-    onDelete?: () => void
 }) => {
     const [title, setTitle] = useState(initialTopic?.title || '');
     const [area, setArea] = useState<AreaType>(initialTopic?.area || 'clinica');
@@ -37,10 +39,6 @@ const InlineTopicForm = ({
             const intervals = intervalsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
             const baseQ = typeof baseQuestions === 'number' ? baseQuestions : IMPORTANCE_LEVELS.find(i => i.id === importance)?.baseQ || 20;
             if (intervals.length > 0 || baseQuestions) {
-                // If intervals empty but questions set, standard schedule + custom questions? 
-                // Logic usually requires intervals if custom settings object exists, or we default to standard intervals.
-                // Assuming user provides intervals if they open advanced. 
-                // If intervals empty, undefined.
                 if (intervals.length > 0) customSettings = { intervals, baseQuestions: baseQ };
             }
         }
@@ -58,7 +56,7 @@ const InlineTopicForm = ({
     };
 
     return (
-        <div className="bg-[#1c1c1e] dark:bg-zinc-900 border border-slate-800 dark:border-white/10 rounded-2xl p-5 shadow-2xl animate-scale-in mb-4 relative overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-xl animate-scale-in mb-4 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
             
             <div className="flex justify-between items-center mb-4 pl-2">
@@ -68,11 +66,11 @@ const InlineTopicForm = ({
                 </h4>
                 <div className="flex items-center gap-2">
                     {onDelete && (
-                        <button onClick={onDelete} className="p-1.5 hover:bg-red-500/20 text-slate-500 hover:text-red-500 rounded-lg transition-colors" title="Excluir">
+                        <button onClick={onDelete} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/20 text-slate-400 hover:text-red-500 rounded-lg transition-colors" title="Excluir">
                             <Trash2 size={14}/>
                         </button>
                     )}
-                    <button onClick={onCancel} className="p-1.5 hover:bg-slate-800 rounded-full text-slate-400 transition-colors"><X size={16}/></button>
+                    <button onClick={onCancel} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition-colors"><X size={16}/></button>
                 </div>
             </div>
             
@@ -81,7 +79,7 @@ const InlineTopicForm = ({
                     autoFocus
                     type="text" 
                     placeholder="Título da matéria (ex: Diabetes, HAS...)" 
-                    className="w-full text-lg font-bold bg-transparent border-b border-slate-700 dark:border-white/10 pb-2 outline-none text-white placeholder-slate-500 focus:border-blue-500 transition-colors"
+                    className="w-full text-lg font-bold bg-transparent border-b border-slate-200 dark:border-white/10 pb-2 outline-none text-slate-900 dark:text-white placeholder-slate-400 focus:border-blue-500 transition-colors"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSave()}
@@ -91,17 +89,17 @@ const InlineTopicForm = ({
                     <select 
                         value={area} 
                         onChange={(e) => setArea(e.target.value as AreaType)}
-                        className="bg-slate-800 dark:bg-black/40 rounded-lg px-3 py-2 text-xs font-bold uppercase outline-none cursor-pointer hover:bg-slate-700 transition-colors text-slate-300 border border-transparent focus:border-blue-500/50"
+                        className="bg-slate-100 dark:bg-black/40 rounded-lg px-3 py-2 text-xs font-bold uppercase outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300 border border-transparent focus:border-blue-500/50"
                     >
                         {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </select>
 
-                    <div className="flex bg-slate-800 dark:bg-black/40 rounded-lg p-1 gap-1">
+                    <div className="flex bg-slate-100 dark:bg-black/40 rounded-lg p-1 gap-1">
                         {['low','medium','high'].map((imp) => (
                             <button 
                                 key={imp}
                                 onClick={() => setImportance(imp as any)}
-                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${importance === imp ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${importance === imp ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
                             >
                                 {imp === 'high' ? 'Alta' : imp === 'medium' ? 'Méd' : 'Bai'}
                             </button>
@@ -112,14 +110,14 @@ const InlineTopicForm = ({
                         type="date" 
                         value={date}
                         onChange={e => setDate(e.target.value)}
-                        className="bg-slate-800 dark:bg-black/40 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-300 outline-none border border-transparent focus:border-blue-500/50"
+                        className="bg-slate-100 dark:bg-black/40 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 outline-none border border-transparent focus:border-blue-500/50"
                     />
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800 dark:border-white/5">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
                     <button 
                         onClick={() => setShowAdvanced(!showAdvanced)} 
-                        className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${showAdvanced ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${showAdvanced ? 'text-blue-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                     >
                         <SlidersHorizontal size={12}/> {showAdvanced ? 'Ocultar Avançado' : 'Avançado'}
                     </button>
@@ -130,7 +128,7 @@ const InlineTopicForm = ({
                 </div>
 
                 {showAdvanced && (
-                    <div className="grid grid-cols-2 gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 animate-scale-in">
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 animate-scale-in">
                         <div className="space-y-1">
                             <label className="text-[9px] font-bold text-slate-400 uppercase">Intervalos (dias)</label>
                             <input 
@@ -138,7 +136,7 @@ const InlineTopicForm = ({
                                 value={intervalsStr}
                                 onChange={e => setIntervalsStr(e.target.value)}
                                 placeholder="Ex: 1, 7, 15, 30"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
                             />
                         </div>
                         <div className="space-y-1">
@@ -148,7 +146,7 @@ const InlineTopicForm = ({
                                 value={baseQuestions}
                                 onChange={e => setBaseQuestions(parseInt(e.target.value) || '')}
                                 placeholder="Ex: 20"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-blue-500"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
                             />
                         </div>
                         <div className="col-span-2 text-[9px] text-slate-500 italic">
@@ -212,7 +210,7 @@ export const HubView = ({ topics, simulados, config, onReview, onEditTopic, onDe
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-full gap-8 animate-fade-in pb-24">
+        <div className="flex flex-col lg:flex-row gap-8 animate-fade-in pb-40">
             
             {/* --- LEFT COLUMN: ACTION STREAM (2/3 width) --- */}
             <div className="flex-1 flex flex-col min-w-0">

@@ -10,7 +10,7 @@ import {
 } from './types';
 import { 
     AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, calculateFSRS
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { CompactLevelSystem } from './components';
@@ -38,7 +38,7 @@ export function App() {
     // View Control States
     const [hubTab, setHubTab] = useState<'topics' | 'simulados'>('topics');
     const [calendarMode, setCalendarMode] = useState<'calendar' | 'list'>('calendar');
-    const [dbTab, setDbTab] = useState<'topics' | 'simulados'>('topics');
+    const [dbTab, setDbTab] = useState<'topics' | 'simulados' | 'schedule'>('topics');
     
     // PWA Install State
     const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -121,21 +121,14 @@ export function App() {
         const customChanged = old && JSON.stringify(old.customSettings) !== JSON.stringify(updated.customSettings);
         
         if (dateChanged || customChanged) { 
-            // Regenerate
-            const newSchedule = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, updated.customSettings);
-            // Merge logic to keep done reviews could be here, but for now we regenerate future
-            // Simple approach: Keep done, replace pending with new schedule logic matched by type? 
-            // For simplicity in this snippet, we fully regenerate if custom settings change, but careful with done items.
-            // Better approach for safe updates:
             if(confirm("Recalcular agendamento? Histórico de revisões feitas será mantido, mas datas futuras mudarão.")) {
+                 const newSchedule = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, updated.customSettings);
                  const doneReviews = old?.reviews.filter(r => r.done) || [];
-                 // Filter new schedule to remove types already done? Or just append?
-                 // Let's use the utility logic if available or just full regen for now
-                 // Assuming user wants full reset of future
+                 // Filter new schedule to remove types already done
                  reviews = [...doneReviews, ...newSchedule.filter(r => !doneReviews.some(dr => dr.type === r.type))];
                  reviews.sort((a,b) => a.date.localeCompare(b.date));
             } else {
-                updated.studyDate = old.studyDate; // Revert if cancelled
+                updated.studyDate = old.studyDate; 
                 updated.customSettings = old.customSettings;
             }
         } else if (old && old.importance !== updated.importance) {
@@ -145,11 +138,34 @@ export function App() {
         setTopics(prev => prev.map(t => t.id === updated.id ? { ...updated, reviews, updatedAt: Date.now() } : t)); 
         vibration.success(); 
     };
+
     const processReviewSubmission = (tId: string, rIdx: number, data: any) => {
-        setTopics(prev => prev.map(t => { if (t.id !== tId) return t; const nr = [...t.reviews]; nr[rIdx] = { ...nr[rIdx], done: true, ...data, completedAt: new Date().toISOString() }; 
-        if (rIdx + 1 < nr.length) nr[rIdx+1].targetQ = calculateNextLoad(t.importance, data.difficulty, nr[rIdx+1].type, data.correct/data.total);
-        return { ...t, reviews: nr, updatedAt: Date.now() }; })); vibration.complete(); triggerConfetti();
+        setTopics(prev => prev.map(t => { 
+            if (t.id !== tId) return t; 
+            
+            const nr = [...t.reviews]; 
+            const completedReview = { ...nr[rIdx], done: true, ...data, completedAt: new Date().toISOString() };
+            nr[rIdx] = completedReview;
+            
+            // --- FSRS INTEGRATION ---
+            const lastReviewDate = t.fsrs?.lastReview || t.studyDate;
+            const daysSince = Math.max(1, (new Date().getTime() - new Date(lastReviewDate + 'T12:00:00').getTime()) / 86400000);
+            const accuracy = data.total > 0 ? (data.correct / data.total) : 0;
+            
+            // Calculate new FSRS state
+            const newFSRS = calculateFSRS(t.fsrs, data.difficulty, accuracy, daysSince);
+            
+            // Update next review load based on new Difficulty
+            if (rIdx + 1 < nr.length) {
+                nr[rIdx+1].targetQ = calculateNextLoad(t.importance, data.difficulty, nr[rIdx+1].type, accuracy, newFSRS.difficulty);
+            }
+
+            return { ...t, reviews: nr, fsrs: newFSRS, updatedAt: Date.now() }; 
+        })); 
+        vibration.complete(); 
+        triggerConfetti();
     };
+
     const handleReviewModalSubmit = (d: any) => { if (reviewData) { processReviewSubmission(reviewData.tId, reviewData.rIdx, d); setReviewData(null); }};
     const handleQuickReview = (tId: string, rIdx: number, d: any) => processReviewSubmission(tId, rIdx, d);
     const handleHistoryEdit = (d: any) => { if(historyEditData) { setTopics(prev => prev.map(t => { if(t.id !== historyEditData.tId) return t; const nr = [...t.reviews]; if(nr[historyEditData.rIdx]) nr[historyEditData.rIdx] = { ...nr[historyEditData.rIdx], ...d }; return { ...t, reviews: nr, updatedAt: Date.now() }; })); setHistoryEditData(null); vibration.success(); }};
@@ -162,7 +178,20 @@ export function App() {
         let area: AreaType = 'clinica';
         const ga = (item.grandeArea || '').toLowerCase();
         if (ga.includes('cirurgia')) area = 'cirurgia'; else if (ga.includes('pediatria')) area = 'pediatria'; else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go'; else if (ga.includes('preventiva')) area = 'preventiva';
-        handleAddTopic({ id: '', title: item.aula, area, subarea: item.disciplina, importance: item.importancia?.toLowerCase().includes('azul') ? 'high' : 'medium', studyDate: getTodayStr(), reviews: [], deleted: false, updatedAt: 0 }); triggerConfetti();
+        // When auto-creating, we can link the schedule item ID immediately
+        handleAddTopic({ 
+            id: '', 
+            title: item.aula, 
+            area, 
+            subarea: item.disciplina, 
+            importance: item.importancia?.toLowerCase().includes('azul') ? 'high' : 'medium', 
+            studyDate: getTodayStr(), 
+            reviews: [], 
+            deleted: false, 
+            updatedAt: 0,
+            linkedScheduleIds: [item.id]
+        }); 
+        triggerConfetti();
     }, [config.examDate, topics]);
 
     if (!loaded) return <LoadingSpinner />;
@@ -171,10 +200,9 @@ export function App() {
 
     const MobileControlHub = () => (
         <div className="flex-1 flex justify-center">
-            {view === 'list' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setHubTab('topics')} className={hubTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setHubTab('simulados')} className={hubTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button></div>}
-            {view === 'calendar' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setCalendarMode('calendar')} className={calendarMode === 'calendar' ? 'text-black dark:text-white' : ''}>MÊS</button><button onClick={() => setCalendarMode('list')} className={calendarMode === 'list' ? 'text-black dark:text-white' : ''}>LISTA</button></div>}
-            {view === 'database' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setDbTab('topics')} className={dbTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setDbTab('simulados')} className={dbTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button></div>}
-            {view === 'cronograma' && <div className="flex gap-4 text-xs font-bold text-slate-400"><button onClick={() => setConfig(p => ({...p, activeSchedule: 'MEDCOF'}))} className={config.activeSchedule === 'MEDCOF' ? 'text-black dark:text-white' : ''}>MEDCOF</button><button onClick={() => setConfig(p => ({...p, activeSchedule: 'ESTRATEGIA'}))} className={config.activeSchedule === 'ESTRATEGIA' ? 'text-black dark:text-white' : ''}>ESTRATÉGIA</button></div>}
+            {view === 'list' && <div className="flex gap-4 text-[10px] font-black text-slate-400"><button onClick={() => setHubTab('topics')} className={hubTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setHubTab('simulados')} className={hubTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button></div>}
+            {view === 'calendar' && <div className="flex gap-4 text-[10px] font-black text-slate-400"><button onClick={() => setCalendarMode('calendar')} className={calendarMode === 'calendar' ? 'text-black dark:text-white' : ''}>MÊS</button><button onClick={() => setCalendarMode('list')} className={calendarMode === 'list' ? 'text-black dark:text-white' : ''}>LISTA</button></div>}
+            {view === 'database' && <div className="flex gap-4 text-[10px] font-black text-slate-400"><button onClick={() => setDbTab('topics')} className={dbTab === 'topics' ? 'text-black dark:text-white' : ''}>MATÉRIAS</button><button onClick={() => setDbTab('simulados')} className={dbTab === 'simulados' ? 'text-black dark:text-white' : ''}>SIMULADOS</button><button onClick={() => setDbTab('schedule')} className={dbTab === 'schedule' ? 'text-black dark:text-white' : ''}>AULAS</button></div>}
         </div>
     );
 
@@ -247,10 +275,10 @@ export function App() {
             </aside>
 
             {/* --- MAIN CONTENT AREA --- */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-32 lg:pb-0 lg:ml-80 lg:mr-4 transition-all duration-300">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-36 lg:pb-0 lg:ml-80 lg:mr-4 transition-all duration-300">
                 
                 {/* Mobile Header (Minimal) */}
-                <div className="lg:hidden sticky top-0 z-[60] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 py-3 safe-top border-b border-slate-200/50 dark:border-white/5 flex items-center justify-between">
+                <div className="lg:hidden sticky top-0 z-[60] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl px-4 py-3 safe-top border-b border-slate-200/50 dark:border-white/5 flex items-center justify-between h-14">
                     {isSearchActive ? (
                         <div className="flex-1 flex items-center bg-white dark:bg-zinc-800 rounded-full px-3 py-1.5 animate-fade-in border border-slate-200 dark:border-white/10">
                             <input ref={searchInputRef} className="bg-transparent border-none outline-none text-sm font-medium w-full text-black dark:text-white placeholder-slate-400" placeholder="Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onBlur={() => !searchTerm && setIsSearchActive(false)}/>
@@ -258,14 +286,14 @@ export function App() {
                         </div>
                     ) : (
                         <>
-                            <h1 className="text-lg font-black tracking-tight flex items-center gap-2">
+                            <h1 className="text-sm font-black tracking-tight flex items-center gap-2 uppercase">
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-400">
                                     {{ list: 'Dashboard', cronograma: 'Cronograma', database: 'Banco', calendar: 'Agenda' }[view]}
                                 </span>
                             </h1>
-                            <div className="flex gap-3 items-center">
+                            <div className="flex gap-4 items-center">
                                 <MobileControlHub />
-                                <button onClick={() => setIsSearchActive(true)} className="p-2 bg-white dark:bg-white/10 rounded-full shadow-sm text-slate-600 dark:text-white"><Search size={18}/></button>
+                                <button onClick={() => setIsSearchActive(true)} className="p-2 bg-white dark:bg-white/10 rounded-full shadow-sm text-slate-600 dark:text-white"><Search size={16}/></button>
                             </div>
                         </>
                     )}
@@ -301,14 +329,31 @@ export function App() {
                             />
                         )}
                         {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} viewMode={calendarMode} setViewMode={setCalendarMode} />}
-                        {view === 'database' && <DatabaseView topics={activeTopics} onEdit={(t) => setEditTopic(t)} onUpdateTopic={handleUpdateTopic} onAddTopic={handleAddTopic} onDelete={handleDeleteTopic} simulados={activeSimulados} onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} onUpdateSimulado={handleSaveSimulado} onAddSimulado={handleSaveSimulado} onDeleteSimulado={handleDeleteSimulado} config={config} searchTerm={searchTerm} activeTab={dbTab} setActiveTab={setDbTab} />}
+                        {view === 'database' && <DatabaseView 
+                            topics={activeTopics} 
+                            onEdit={(t) => setEditTopic(t)} 
+                            onUpdateTopic={handleUpdateTopic} 
+                            onAddTopic={handleAddTopic} 
+                            onDelete={handleDeleteTopic} 
+                            simulados={activeSimulados} 
+                            onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} 
+                            onUpdateSimulado={handleSaveSimulado} 
+                            onAddSimulado={handleSaveSimulado} 
+                            onDeleteSimulado={handleDeleteSimulado} 
+                            config={config} 
+                            searchTerm={searchTerm} 
+                            activeTab={dbTab} 
+                            setActiveTab={setDbTab}
+                            scheduleProgress={scheduleProgress}
+                            setScheduleProgress={setScheduleProgress} 
+                        />}
                         {view === 'cronograma' && <CronogramaView scheduleProgress={scheduleProgress} setScheduleProgress={setScheduleProgress} config={config} searchTerm={searchTerm} onScheduleChange={(schedule) => { setConfig(prev => ({ ...prev, activeSchedule: schedule })); vibration.tick(); }} onAutoCreateTopic={handleAutoCreateFromSchedule} />}
                     </Suspense>
                 </div>
             </main>
 
             {/* Mobile Bottom Floating Nav (Glass) */}
-            <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)] p-1.5 flex gap-2 items-center max-w-[90%] overflow-x-auto no-scrollbar ring-1 ring-black/5">
+            <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)] p-1.5 flex gap-2 items-center max-w-[92%] overflow-x-auto no-scrollbar ring-1 ring-black/5 mb-safe">
                 {[
                     { id: 'list', icon: LayoutGrid },
                     { id: 'cronograma', icon: MapIcon },
@@ -321,8 +366,8 @@ export function App() {
                 ))}
             </div>
 
-            {/* Mobile Action FAB */}
-            <div className="lg:hidden fixed bottom-24 right-4 z-[80]">
+            {/* Mobile Action FAB - Adjusted Position */}
+            <div className="lg:hidden fixed bottom-28 right-6 z-[80] mb-safe">
                 {isActionMenuOpen && (
                     <>
                         <div className="fixed inset-0 z-[85] bg-black/10 backdrop-blur-[2px]" onClick={() => setIsActionMenuOpen(false)}></div>
@@ -340,14 +385,14 @@ export function App() {
                         </div>
                     </>
                 )}
-                <button onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-800 dark:bg-zinc-800 rotate-45' : 'bg-black dark:bg-white hover:scale-105'}`}>
-                    <Plus size={28} className={isActionMenuOpen ? 'text-white' : 'text-white dark:text-black'} strokeWidth={2.5}/>
+                <button onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-800 dark:bg-zinc-800 rotate-45' : 'bg-black dark:bg-white hover:scale-105'}`}>
+                    <Plus size={26} className={isActionMenuOpen ? 'text-white' : 'text-white dark:text-black'} strokeWidth={2.5}/>
                 </button>
             </div>
 
             {/* Modals Injection */}
-            <EditTopicModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} topic={null} onSave={handleAddTopic} />
-            <EditTopicModal isOpen={!!editTopic} onClose={() => setEditTopic(null)} topic={editTopic} onSave={handleUpdateTopic} onDelete={handleDeleteTopic} onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} />
+            <EditTopicModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} topic={null} onSave={handleAddTopic} config={config} />
+            <EditTopicModal isOpen={!!editTopic} onClose={() => setEditTopic(null)} topic={editTopic} onSave={handleUpdateTopic} onDelete={handleDeleteTopic} onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} config={config} />
             <SimuladoModal isOpen={simuladoModalOpen} onClose={() => setSimuladoModalOpen(false)} simulado={editingSimulado} onSave={handleSaveSimulado} onDelete={handleDeleteSimulado} topics={topics} />
             <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} config={config} onSaveConfig={(c) => { setConfig(c); vibration.success(); }} syncKey={syncKey} onSaveKey={setSyncKey} onExport={handleExport} onImport={handleImport} themeMode={themeMode} setThemeMode={setThemeMode} runOptimization={runOptimization} onShowOptimizationInfo={() => setOptimizationInfoOpen(true)} status={status} installPrompt={installPrompt} onInstallApp={handleInstallApp} onOpenTutorial={() => { setSettingsOpen(false); setTutorialOpen(true); }} />
             <ReviewModal isOpen={!!reviewData} onClose={() => setReviewData(null)} topic={reviewData ? topics.find(t => t.id === reviewData.tId) || null : null} reviewIdx={reviewData?.rIdx ?? null} onSubmit={handleReviewModalSubmit} targetAccuracy={config.targetAccuracy} />

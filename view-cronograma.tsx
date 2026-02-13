@@ -312,143 +312,142 @@ export const CronogramaView = ({
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            {/* Header */}
-            <div className="flex flex-col mb-4 pt-4 sticky top-0 z-30 bg-[#f2f4f7] dark:bg-black/95 transition-colors">
-                <div className="flex items-center justify-between mb-4">
+            {/* Header - Optimized for Mobile Sticky with Offset */}
+            <div className="flex flex-col mb-4 pt-4 sticky top-14 lg:top-0 z-30 bg-[#f2f4f7] dark:bg-black transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3 sm:gap-0">
                     <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                        <List size={24} className="text-blue-500"/> Cronograma
+                        <List size={24} className="text-blue-500"/> <span className="inline">Cronograma</span>
                     </h3>
                     
-                    <div className="flex bg-white dark:bg-[#18181b] p-1 rounded-lg border border-black/5 dark:border-white/10 shadow-sm">
-                        <button onClick={() => onScheduleChange('MEDCOF')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>MEDCOF</button>
-                        <button onClick={() => onScheduleChange('ESTRATEGIA')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5'}`}>ESTRATÉGIA</button>
+                    {/* Compact Toggle Integrated with Title Row on mobile */}
+                    <div className="flex bg-white dark:bg-[#18181b] p-0.5 rounded-xl border border-black/5 dark:border-white/10 shadow-sm self-start sm:self-auto">
+                        <button 
+                            onClick={() => onScheduleChange('MEDCOF')} 
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500'}`}
+                        >
+                            MEDCOF
+                        </button>
+                        <button 
+                            onClick={() => onScheduleChange('ESTRATEGIA')} 
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500'}`}
+                        >
+                            ESTRATÉGIA
+                        </button>
                     </div>
                 </div>
 
-                {/* --- NEW TOOLBAR LAYOUT: Filter | Group | Info | Auto ---- Right: Grid/List or Sort --- */}
-                <div className="bg-[#18181b] p-1.5 rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-lg shadow-black/20" ref={dropdownRef}>
-                    <div className="flex items-center gap-2">
+                {/* Toolbar: One clean line */}
+                <div className="bg-[#18181b] p-1.5 rounded-2xl flex items-center gap-1 shadow-lg shadow-black/20" ref={dropdownRef}>
+                    <div className="flex items-center gap-1 flex-1 overflow-x-auto no-scrollbar">
                         {/* 1. Filter Button */}
                         <div className="relative">
                             <button 
                                 onClick={(e) => toggleDropdown(e, 'filter')} 
-                                className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${filterArea !== 'all' || activeDropdown === 'filter' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                                className={`h-8 px-2.5 rounded-xl text-[10px] font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${filterArea !== 'all' || activeDropdown === 'filter' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
                             >
-                                <Filter size={14}/> 
+                                <Filter size={12}/> 
                                 <span>{filterArea === 'all' ? 'Todos' : filterArea}</span>
                             </button>
                             {activeDropdown === 'filter' && (
                                 <div className="absolute top-full left-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-left">
-                                    <button onClick={() => { setFilterArea('all'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Todos</button>
-                                    <button onClick={() => { setFilterArea('clinica'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Clínica</button>
-                                    <button onClick={() => { setFilterArea('cirurgia'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Cirurgia</button>
-                                    <button onClick={() => { setFilterArea('pediatria'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Pediatria</button>
-                                    <button onClick={() => { setFilterArea('go'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">G.O.</button>
-                                    <button onClick={() => { setFilterArea('preventiva'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Preventiva</button>
+                                    {['all', 'clinica', 'cirurgia', 'pediatria', 'go', 'preventiva'].map(a => (
+                                        <button key={a} onClick={() => { setFilterArea(a); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white uppercase">
+                                            {a === 'all' ? 'Todos' : a}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                         </div>
 
-                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+                        <div className="w-px h-3 bg-white/10 shrink-0"></div>
 
                         {/* 2. Group Button */}
                         <div className="relative">
                             <button 
                                 onClick={(e) => toggleDropdown(e, 'group')} 
-                                className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${activeDropdown === 'group' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                                className={`h-8 px-2.5 rounded-xl text-[10px] font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${activeDropdown === 'group' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
                             >
-                                <Layers size={14}/> <span>{groupBy === 'bloco' ? 'Agrupar' : 'Por Área'}</span>
+                                <Layers size={12}/> <span>{groupBy === 'bloco' ? 'Por Bloco' : 'Por Área'}</span>
                             </button>
                             {activeDropdown === 'group' && (
                                 <div className="absolute top-full left-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-left">
-                                    <button onClick={() => { setGroupBy('bloco'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Bloco</button>
-                                    <button onClick={() => { setGroupBy('area'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Área</button>
+                                    <button onClick={() => { setGroupBy('bloco'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Bloco</button>
+                                    <button onClick={() => { setGroupBy('area'); setActiveDropdown(null); }} className="w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg text-slate-400 hover:bg-white/5 hover:text-white">Por Área</button>
                                 </div>
                             )}
                         </div>
+                        
+                        <div className="w-px h-3 bg-white/10 shrink-0"></div>
 
-                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+                        {/* 3. Auto Toggle */}
+                        <button 
+                            onClick={() => setAutoReview(!autoReview)}
+                            className={`h-8 px-2.5 rounded-xl flex items-center gap-1.5 transition-all text-[10px] font-bold whitespace-nowrap ${autoReview ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(147,51,234,0.4)]' : 'text-slate-400 hover:bg-white/10'}`}
+                        >
+                            <Zap size={12} fill={autoReview ? "currentColor" : "none"}/>
+                            <span>{autoReview ? 'Auto Ativo' : 'Manual'}</span>
+                        </button>
+                    </div>
 
-                        {/* 3. Info Dropdown */}
+                    {/* Right Tools */}
+                    <div className="flex items-center gap-1 border-l border-white/10 pl-1 shrink-0">
                         <div className="relative">
                             <button 
                                 onClick={(e) => toggleDropdown(e, 'info')}
-                                className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${activeDropdown === 'info' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
+                                className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${activeDropdown === 'info' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10'}`}
                             >
-                                <Info size={16}/>
+                                <Info size={14}/>
                             </button>
                             {activeDropdown === 'info' && (
-                                <div className="absolute top-full left-0 sm:left-auto mt-2 w-72 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-xl p-4 z-50 animate-scale-in origin-top-left sm:origin-top-right">
+                                <div className="absolute top-full right-0 mt-2 w-64 bg-[#1c1c1e] border border-white/10 rounded-2xl shadow-xl p-4 z-50 animate-scale-in origin-top-right">
                                     <div className="flex items-start gap-3 mb-4">
                                         <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
                                             <Zap size={16} fill="currentColor"/>
                                         </div>
                                         <div>
-                                            <h4 className="text-white font-bold text-xs mb-1">Modo Automático</h4>
-                                            <p className="text-[10px] text-slate-400 leading-relaxed">
-                                                Quando ativo, marcar "Feito" cria automaticamente um card de revisão no Dashboard com prioridade inteligente.
+                                            <h4 className="text-white font-bold text-[10px] uppercase tracking-wide mb-1">Modo Automático</h4>
+                                            <p className="text-[9px] text-slate-400 leading-relaxed">
+                                                Marking "Done" creates an AI-priority review card in your Dashboard automatically.
                                             </p>
                                         </div>
                                     </div>
-                                    
-                                    <div className="border-t border-white/5 pt-3">
-                                        <h5 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3">Legenda de Prioridade</h5>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-blue-400"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Muito Alta</div>
-                                                <span className="text-[9px] text-slate-500">Alta Incidência</span>
+                                    <div className="border-t border-white/5 pt-3 space-y-2">
+                                        <div className="flex items-center justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">Priority Legend</div>
+                                        {[
+                                            { c: 'blue', l: 'Very High', d: 'High incidence' },
+                                            { c: 'emerald', l: 'High', d: 'Mid incidence' },
+                                            { c: 'amber', l: 'Medium', d: 'Low incidence' },
+                                            { c: 'red', l: 'Low', d: 'Rarely seen' }
+                                        ].map(p => (
+                                            <div key={p.l} className="flex justify-between items-center text-[9px]">
+                                                <span className={`text-${p.c}-400 font-bold flex items-center gap-1.5`}><div className={`w-1.5 h-1.5 rounded-full bg-${p.c}-500`}></div> {p.l}</span>
+                                                <span className="text-slate-500 italic">{p.d}</span>
                                             </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Alta</div>
-                                                <span className="text-[9px] text-slate-500">Incidência Média</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-amber-400"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Média</div>
-                                                <span className="text-[9px] text-slate-500">Incidência Baixa</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-red-400"><div className="w-2 h-2 rounded-full bg-red-500"></div> Baixa</div>
-                                                <span className="text-[9px] text-slate-500">Raro</span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-[10px] font-bold text-purple-400"><div className="w-2 h-2 rounded-full bg-purple-500"></div> Mínima</div>
-                                                <span className="text-[9px] text-slate-500">Conceitual</span>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        {/* 4. Auto Toggle */}
-                        <button 
-                            onClick={() => setAutoReview(!autoReview)}
-                            className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${autoReview ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.5)]' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}
-                        >
-                            <Zap size={16} fill={autoReview ? "currentColor" : "none"}/>
-                        </button>
-                    </div>
-
-                    {/* Right Side: Sort/View */}
-                    <div className="relative">
-                        <button 
-                            onClick={(e) => toggleDropdown(e, 'sort')} 
-                            className="h-9 px-3 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-all flex items-center justify-center"
-                        >
-                            <LayoutGrid size={18}/>
-                        </button>
-                        {activeDropdown === 'sort' && (
-                            <div className="absolute top-full right-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-right">
-                                <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ordenação</div>
-                                <button onClick={() => { setSortOrder('default'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg mb-1 ${sortOrder === 'default' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Padrão</button>
-                                <button onClick={() => { setSortOrder('progress'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg ${sortOrder === 'progress' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Progresso</button>
-                            </div>
-                        )}
+                        <div className="relative">
+                            <button 
+                                onClick={(e) => toggleDropdown(e, 'sort')} 
+                                className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all ${sortOrder === 'progress' || activeDropdown === 'sort' ? 'bg-white text-black' : 'text-slate-400 hover:bg-white/10'}`}
+                            >
+                                <LayoutGrid size={14}/>
+                            </button>
+                            {activeDropdown === 'sort' && (
+                                <div className="absolute top-full right-0 mt-2 w-40 bg-[#1c1c1e] border border-white/10 rounded-xl shadow-xl p-1 z-50 animate-scale-in origin-top-right">
+                                    <button onClick={() => { setSortOrder('default'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg mb-1 ${sortOrder === 'default' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>PADRÃO</button>
+                                    <button onClick={() => { setSortOrder('progress'); setActiveDropdown(null); }} className={`w-full text-left px-3 py-2 text-[10px] font-bold rounded-lg ${sortOrder === 'progress' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}>LEAST DONE FIRST</button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-20 space-y-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-24 space-y-6">
                 {groupedSchedule.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-slate-400"><MapIcon size={48} className="mb-4 opacity-20"/><p className="text-sm font-bold">Nenhuma aula encontrada.</p></div>
                 ) : (
@@ -460,26 +459,26 @@ export const CronogramaView = ({
                             <div key={group.id} className={`rounded-[20px] overflow-hidden transition-all duration-300 ${isCompleted && isCollapsed ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                                 {/* Group Header */}
                                 <div 
-                                    className="bg-[#1e1e24] dark:bg-zinc-900 p-4 cursor-pointer hover:brightness-110 transition-all relative overflow-hidden"
+                                    className="bg-zinc-800 dark:bg-zinc-900 p-3.5 cursor-pointer hover:brightness-110 transition-all relative overflow-hidden"
                                     onClick={() => toggleGroup(group.id)}
                                 >
                                     <div className="relative z-10 flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0">
-                                                {groupBy === 'bloco' ? group.id : <Layers size={20}/>}
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-white font-black text-sm shrink-0">
+                                                {groupBy === 'bloco' ? group.id : <Layers size={16}/>}
                                             </div>
                                             <div>
-                                                <h4 className="text-white font-bold text-lg leading-none">{group.label}</h4>
-                                                <div className="flex items-center gap-3 mt-1.5">
-                                                    <div className="w-24 sm:w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                <h4 className="text-white font-black text-sm leading-none uppercase tracking-wide">{group.label}</h4>
+                                                <div className="flex items-center gap-2.5 mt-1.5">
+                                                    <div className="w-16 sm:w-24 h-1 bg-white/10 rounded-full overflow-hidden">
                                                         <div className="h-full bg-blue-500 transition-all duration-500" style={{width: `${group.progress}%`}}></div>
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-slate-400">{group.progress}%</span>
+                                                    <span className="text-[9px] font-bold text-slate-400 tracking-widest">{group.progress}%</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-slate-400">
-                                            {isCollapsed ? <ChevronDown size={24}/> : <ChevronUp size={24}/>}
+                                        <div className="text-slate-500">
+                                            {isCollapsed ? <ChevronDown size={20}/> : <ChevronUp size={20}/>}
                                         </div>
                                     </div>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full pointer-events-none"></div>
@@ -487,18 +486,18 @@ export const CronogramaView = ({
 
                                 {/* Content Body */}
                                 {!isCollapsed && (
-                                    <div className="bg-[#f8f9fc] dark:bg-black/20 p-2 sm:p-4 space-y-6 border-x border-b border-slate-200 dark:border-white/5 rounded-b-[20px]">
+                                    <div className="bg-[#f8f9fc] dark:bg-[#09090b] p-3 sm:p-5 space-y-6 border-x border-b border-slate-200 dark:border-white/5 rounded-b-[20px]">
                                         {group.subGroups.map((sub: any) => (
                                             <div key={sub.name}>
                                                 {/* Subgroup Header */}
-                                                <div className="flex items-center justify-between px-2 mb-3">
+                                                <div className="flex items-center justify-between px-1 mb-3">
                                                     <div className="flex items-center gap-2">
-                                                        <sub.info.icon size={16} className={`text-${sub.info.color}-500`}/>
-                                                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300">
+                                                        <sub.info.icon size={14} className={`text-${sub.info.color}-500`}/>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                                             {sub.name}
                                                         </span>
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-2 py-0.5 rounded-full">
+                                                    <span className="text-[9px] font-bold text-slate-400 bg-slate-200 dark:bg-white/5 px-2 py-0.5 rounded-full">
                                                         {sub.completed}/{sub.items.length}
                                                     </span>
                                                 </div>
