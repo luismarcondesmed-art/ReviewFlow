@@ -143,7 +143,7 @@ export const useSync = () => {
         const timeout = setTimeout(async () => {
             try {
                 // Dynamically import firestore functions needed for saving
-                const { doc, setDoc } = await import('firebase/firestore') as any;
+                const { doc, setDoc, serverTimestamp } = await import('firebase/firestore') as any;
 
                 const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey);
                 
@@ -155,6 +155,23 @@ export const useSync = () => {
                     scheduleProgress,
                     updatedAt: new Date().toISOString()
                 }));
+
+                // Inject serverTimestamp for deleted items that don't have a timestamp yet
+                // We do this AFTER sanitization because JSON.stringify would destroy the FieldValue
+                if (payload.topics) {
+                    payload.topics.forEach((t: any) => {
+                        if (t.deleted && !t.deletedAt) {
+                            t.deletedAt = serverTimestamp();
+                        }
+                    });
+                }
+                if (payload.simulados) {
+                    payload.simulados.forEach((s: any) => {
+                        if (s.deleted && !s.deletedAt) {
+                            s.deletedAt = serverTimestamp();
+                        }
+                    });
+                }
 
                 await setDoc(docRef, payload, { merge: true });
             } catch (e) {

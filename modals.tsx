@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal } from 'lucide-react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from './types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from './utils';
 
@@ -160,17 +160,29 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
     const [baseQuestions, setBaseQuestions] = useState<number | ''>('');
     const [showAdvanced, setShowAdvanced] = useState(false);
 
+    // Linked Lessons State
+    const [linkedLessons, setLinkedLessons] = useState<string[]>([]);
+    const [newLessonInput, setNewLessonInput] = useState('');
+
     useEffect(() => {
         if (isOpen) {
             setActiveTab('details');
-            if (topic && topic.customSettings) {
-                setIntervalsStr(topic.customSettings.intervals.join(', '));
-                setBaseQuestions(topic.customSettings.baseQuestions);
-                setShowAdvanced(true);
+            if (topic) {
+                if (topic.customSettings) {
+                    setIntervalsStr(topic.customSettings.intervals.join(', '));
+                    setBaseQuestions(topic.customSettings.baseQuestions);
+                    setShowAdvanced(true);
+                } else {
+                    setIntervalsStr('');
+                    setBaseQuestions('');
+                    setShowAdvanced(false);
+                }
+                setLinkedLessons(topic.linkedLessons || []);
             } else {
-                setIntervalsStr(''); // Default empty implies automatic
+                setIntervalsStr(''); 
                 setBaseQuestions('');
                 setShowAdvanced(false);
+                setLinkedLessons([]);
             }
         }
     }, [isOpen, topic]);
@@ -179,6 +191,17 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
 
     const safeTopic = topic || {} as Topic;
     const isNew = !safeTopic.id;
+
+    const handleAddLesson = () => {
+        if (newLessonInput.trim()) {
+            setLinkedLessons([...linkedLessons, newLessonInput.trim()]);
+            setNewLessonInput('');
+        }
+    };
+
+    const handleRemoveLesson = (index: number) => {
+        setLinkedLessons(linkedLessons.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -231,11 +254,12 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
         const updated = {
             ...safeTopic,
             title,
-            subarea: subarea || '', // Ensure valid string for Firestore
+            subarea: subarea || '', 
             area,
             importance,
             studyDate,
             reviews,
+            linkedLessons, // Save the linked lessons
             customSettings,
             updatedAt: Date.now()
         };
@@ -298,6 +322,32 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                     </label>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Linked Lessons Section */}
+                        <div className="pt-2">
+                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2 block flex items-center gap-2"><LinkIcon size={12}/> Aulas Vinculadas</label>
+                             <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={newLessonInput}
+                                        onChange={(e) => setNewLessonInput(e.target.value)}
+                                        placeholder="Adicionar aula manualmente..."
+                                        className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-transparent focus:border-blue-500/50"
+                                    />
+                                    <button type="button" onClick={handleAddLesson} className="p-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"><Plus size={16}/></button>
+                                </div>
+                                <div className="max-h-32 overflow-y-auto custom-scrollbar space-y-1">
+                                    {linkedLessons.length === 0 && <p className="text-[10px] text-slate-400 italic">Nenhuma aula vinculada.</p>}
+                                    {linkedLessons.map((lesson, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-2 bg-white dark:bg-black/20 rounded-lg group">
+                                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate pr-2">{lesson}</span>
+                                            <button type="button" onClick={() => handleRemoveLesson(idx)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14}/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                             </div>
                         </div>
 
                         {/* Custom Settings Toggle */}

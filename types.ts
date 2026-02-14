@@ -30,7 +30,12 @@ export interface Topic {
   materialLink?: string;
   studyDate: string;
   reviews: Review[];
+  
+  // New: Linked Lessons from Schedule
+  linkedLessons?: string[]; 
+
   deleted?: boolean;
+  deletedAt?: any; // Firestore Timestamp ou null antes da sync
   updatedAt: number;
   customSettings?: {
       intervals: number[]; // Array of days, e.g. [1, 7, 30]
@@ -47,6 +52,7 @@ export interface Simulado {
   dateTaken: string; // Full ISO string
   difficultyTopics: string[]; // IDs of topics
   deleted?: boolean;
+  deletedAt?: any; // Firestore Timestamp ou null antes da sync
   updatedAt: number;
 }
 

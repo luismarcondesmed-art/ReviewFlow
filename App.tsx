@@ -3,14 +3,14 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
 } from './types';
 import { 
     AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { LevelSystem, TopicCard, CompactLevelSystem } from './components';
@@ -85,9 +85,7 @@ export function App() {
     // PWA Install Prompt Listener
     useEffect(() => {
         const handler = (e: any) => {
-            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             setInstallPrompt(e);
         };
         window.addEventListener('beforeinstallprompt', handler);
@@ -96,9 +94,7 @@ export function App() {
 
     const handleInstallApp = async () => {
         if (!installPrompt) return;
-        // Show the install prompt
         installPrompt.prompt();
-        // Wait for the user to respond to the prompt
         const { outcome } = await installPrompt.userChoice;
         if (outcome === 'accepted') {
             setInstallPrompt(null);
@@ -108,49 +104,50 @@ export function App() {
     const activeTopics = useMemo(() => topics.filter(t => !t.deleted), [topics]);
     const activeSimulados = useMemo(() => simulados.filter(s => !s.deleted), [simulados]);
 
+    const filteredTopics = useMemo(() => {
+        let result = activeTopics;
+        
+        if (filterArea !== 'all') {
+            result = result.filter(t => t.area === filterArea);
+        }
+
+        if (searchTerm) {
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(t => t.title.toLowerCase().includes(lower));
+        }
+
+        result.sort((a, b) => {
+             if (sortOrder === 'date') return (b.updatedAt || 0) - (a.updatedAt || 0);
+             if (sortOrder === 'priority') {
+                 const pMap: any = { high: 3, medium: 2, low: 1 };
+                 return (pMap[b.importance] || 1) - (pMap[a.importance] || 1);
+             }
+             if (sortOrder === 'questions') {
+                 const getQ = (t: Topic) => t.reviews.filter(r => r.done).reduce((acc, r) => acc + r.total, 0);
+                 return getQ(b) - getQ(a);
+             }
+             return 0;
+        });
+        
+        return result;
+    }, [activeTopics, filterArea, searchTerm, sortOrder]);
+
     const stats = useMemo(() => {
         const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0);
         return { totalAnswered: totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0) };
     }, [activeTopics, activeSimulados]);
 
-    // Filtered Topics Logic
-    const filteredTopics = useMemo(() => {
-        let filtered = activeTopics.filter(t => {
-            if (filterArea !== 'all' && t.area !== filterArea) return false;
-            if (searchTerm && !t.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-            return true;
-        });
-
-        return filtered.sort((a, b) => {
-            if (sortOrder === 'date') {
-                return (b.updatedAt || 0) - (a.updatedAt || 0);
-            }
-            if (sortOrder === 'priority') {
-                const pMap = { high: 3, medium: 2, low: 1 };
-                const pA = pMap[a.importance] || 2;
-                const pB = pMap[b.importance] || 2;
-                return pB - pA;
-            }
-            if (sortOrder === 'questions') {
-                const totalA = a.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0);
-                const totalB = b.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0);
-                return totalB - totalA;
-            }
-            return 0;
-        });
-    }, [activeTopics, filterArea, searchTerm, sortOrder]);
-
     // --- Actions ---
     const handleDeleteTopic = (id: string) => {
         const deletionTimestamp = Date.now() + 1000;
-        setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, updatedAt: deletionTimestamp } : t));
+        setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, deletedAt: null, updatedAt: deletionTimestamp } : t));
         setEditTopic(null);
         vibration.success();
     };
 
     const handleDeleteSimulado = (id: string) => {
         const deletionTimestamp = Date.now() + 1000;
-        setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, updatedAt: deletionTimestamp } : s));
+        setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, deletedAt: null, updatedAt: deletionTimestamp } : s));
         setSimuladoModalOpen(false);
         setEditingSimulado(null);
         vibration.success();
@@ -165,34 +162,42 @@ export function App() {
         vibration.success();
     };
 
-    const handleAutoCreateFromSchedule = useCallback((item: any) => {
-        // Map Area
-        let area: AreaType = 'clinica';
-        const ga = (item.grandeArea || '').toLowerCase();
-        if (ga.includes('cirurgia')) area = 'cirurgia';
-        else if (ga.includes('pediatria')) area = 'pediatria';
-        else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go';
-        else if (ga.includes('preventiva')) area = 'preventiva';
-
-        // Determine Priority: "Azul" in Medcof = High, otherwise Medium
-        const isHighPriority = item.importancia && item.importancia.toLowerCase().includes('azul');
-        const importance: ImportanceType = isHighPriority ? 'high' : 'medium';
-
-        const draftTopic: Topic = {
-            id: '', // Will be generated
-            title: item.aula,
-            area: area,
-            subarea: item.disciplina,
-            importance: importance,
-            studyDate: getTodayStr(),
-            reviews: [], // Will be generated
-            deleted: false,
-            updatedAt: 0
-        };
-
-        handleAddTopic(draftTopic);
-        triggerConfetti();
-    }, [config.examDate, topics]);
+    // New: Create Aggregated Topic from Schedule
+    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType) => {
+        // Check if topic exists
+        const existing = topics.find(t => t.title === title && !t.deleted);
+        
+        if (existing) {
+            // Update linked lessons if changed
+            const updated: Topic = {
+                ...existing,
+                linkedLessons: lessons,
+                updatedAt: Date.now()
+            };
+            setTopics(prev => prev.map(t => t.id === existing.id ? updated : t));
+            vibration.success();
+            alert("Matéria atualizada com as novas aulas do bloco!");
+        } else {
+            // Create new
+            const newTopicId = generateId();
+            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId);
+            const newTopic: Topic = {
+                id: newTopicId,
+                title,
+                area,
+                subarea: 'Cronograma',
+                importance: priority,
+                studyDate: getTodayStr(),
+                reviews,
+                linkedLessons: lessons,
+                deleted: false,
+                updatedAt: Date.now()
+            };
+            setTopics(prev => [newTopic, ...prev]);
+            triggerConfetti();
+            vibration.success();
+        }
+    }, [topics, config.examDate]);
 
     const handleUpdateTopic = (updated: Topic) => {
         const old = topics.find(t => t.id === updated.id);
@@ -308,38 +313,50 @@ export function App() {
     return (
         <div className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30">
             
-            {/* Desktop Navigation (Sidebar) */}
-            <aside className="hidden lg:flex flex-col w-72 h-screen fixed left-0 top-0 glass-panel border-r border-white/20 dark:border-white/5 p-6 z-50">
-                <div className="flex items-center gap-4 mb-8 px-2 mt-2">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                        <Activity size={20} strokeWidth={2.5}/>
+            {/* --- NEW DESKTOP SIDEBAR --- */}
+            <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 bg-white/70 dark:bg-black/40 border-r border-slate-200/50 dark:border-white/5 backdrop-blur-2xl z-50 p-4 transition-all">
+                {/* Logo Area */}
+                <div className="flex items-center gap-3 px-2 mt-2 mb-10">
+                    <div className="relative group cursor-pointer">
+                        <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg relative z-10">
+                             <Activity size={18} strokeWidth={2.5}/>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-lg font-black tracking-tight leading-none text-slate-800 dark:text-white">ReviewFlow</h1>
+                    <div className="flex flex-col">
+                        <h1 className="text-lg font-black tracking-tighter text-slate-800 dark:text-white leading-none">ReviewFlow</h1>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Medical Plan</span>
                     </div>
                 </div>
 
-                <nav className="space-y-1.5 mt-2 mb-auto">
-                    {NAV_ITEMS.map((item) => (
-                        <button 
-                            key={item.id} 
-                            onClick={() => setView(item.id as any)} 
-                            className={`w-full group flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-200 relative overflow-hidden ${
-                                view === item.id 
-                                ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white font-bold' 
-                                : 'text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 font-medium'
-                            }`}
-                        >
-                            <item.icon size={18} className={`${view === item.id ? 'text-blue-600 dark:text-blue-400 stroke-[2.5px]' : 'stroke-[2px]'} transition-colors`}/>
-                            <span className="text-sm">{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
+                {/* Main Navigation */}
+                <div className="space-y-1 mb-auto">
+                    {NAV_ITEMS.map(item => {
+                        const isActive = view === item.id;
+                        return (
+                            <button 
+                                key={item.id}
+                                onClick={() => setView(item.id as any)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
+                                    isActive 
+                                    ? 'bg-blue-50/80 dark:bg-white/10 text-blue-600 dark:text-white font-bold shadow-sm' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 font-medium'
+                                }`}
+                            >
+                                {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-500 rounded-r-full"></div>}
+                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={`relative z-10 ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                <span className="relative z-10">{item.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/5">
+                {/* Bottom Section */}
+                <div className="pt-6 border-t border-slate-200/50 dark:border-white/5 space-y-4">
                     <CompactLevelSystem totalQuestions={stats.totalAnswered} />
-                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 transition-all w-full">
-                        <Settings size={18} /> Ajustes
+                    
+                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all w-full border border-transparent hover:border-slate-100 dark:hover:border-white/5">
+                        <Settings size={16} /> Configurações
                     </button>
                 </div>
             </aside>
@@ -370,11 +387,11 @@ export function App() {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0">
+            <main className="flex-1 lg:ml-64 flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0">
                 
                 {/* Floating Sticky Header */}
                 <header className="sticky top-0 z-[60] px-4 pt-safe pointer-events-none">
-                    <div className="mx-auto max-w-[600px] w-full pt-4 pb-2 flex justify-center">
+                    <div className="mx-auto max-w-[900px] w-full pt-4 pb-2 flex justify-center">
                         <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/20 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/40 dark:border-white/10 bg-[#f2f4f7]/50 dark:bg-black/50">
                             
                             <div className="flex-1 flex items-center">
@@ -465,7 +482,7 @@ export function App() {
                                 setFilterArea={setFilterArea}
                             >
                                 <div className="grid grid-cols-1 gap-4">
-                                    {filteredTopics.length === 0 ? (
+                                    {filteredTopics.length === 0 ? ( 
                                         <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
                                             <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
                                                 <BookOpen size={24}/>
@@ -514,7 +531,8 @@ export function App() {
                                     setConfig(prev => ({ ...prev, activeSchedule: schedule }));
                                     vibration.tick();
                                 }}
-                                onAutoCreateTopic={handleAutoCreateFromSchedule}
+                                onCreateAggregatedTopic={handleCreateAggregatedTopic}
+                                existingTopics={activeTopics}
                             />
                         )}
                     </Suspense>
