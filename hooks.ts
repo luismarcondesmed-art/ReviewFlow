@@ -147,9 +147,8 @@ export const useSync = () => {
 
                 const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey);
                 
-                // Firestore throws error on undefined values. JSON.stringify removes them.
-                // We parse it back to an object to send to Firestore.
-                const safePayload = JSON.parse(JSON.stringify({
+                // Sanitize payload to remove undefined values which cause Firestore to crash
+                const payload = JSON.parse(JSON.stringify({
                     topics,
                     simulados,
                     config,
@@ -157,7 +156,7 @@ export const useSync = () => {
                     updatedAt: new Date().toISOString()
                 }));
 
-                await setDoc(docRef, safePayload, { merge: true });
+                await setDoc(docRef, payload, { merge: true });
             } catch (e) {
                 console.error("Save Error:", e);
                 setStatus('error');

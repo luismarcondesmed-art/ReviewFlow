@@ -185,6 +185,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
         const fd = new FormData(e.currentTarget);
         
         const title = fd.get('title') as string;
+        const subarea = fd.get('subarea') as string;
         const area = fd.get('area') as AreaType;
         const importance = fd.get('importance') as ImportanceType;
         const studyDate = fd.get('date') as string;
@@ -200,19 +201,16 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
 
         let reviews = safeTopic.reviews || [];
         
-        // If it's new OR custom settings changed OR date changed, we regenerate future reviews
         const needsRegeneration = isNew || 
             (JSON.stringify(safeTopic.customSettings) !== JSON.stringify(customSettings)) ||
             (safeTopic.studyDate !== studyDate);
 
         if (needsRegeneration) {
-            // If regenerating, we must preserve COMPLETED reviews if this is an edit
-            // Use utils helper to generate new schedule
             const newSchedule = generateSmartSchedule(
                 studyDate, 
-                undefined, // Exam date not needed for custom or simply handled inside
+                undefined, 
                 importance, 
-                [], // existingTopics not needed for this check usually, or pass it if collision detection desired
+                [], 
                 safeTopic.id,
                 customSettings
             );
@@ -220,28 +218,20 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             if (isNew) {
                 reviews = newSchedule;
             } else {
-                // Merge logic: Keep done reviews, append new schedule for future
-                const doneReviews = reviews.filter(r => r.done);
-                // Simple logic: Replace all *pending* reviews with new calculation.
-                // We map new schedule items to old done items if they exist to keep data integrity where possible
-                
                 reviews = newSchedule.map((newR, i) => {
-                    // Try to map to existing done review at same index?
-                    // Or same type?
                     const existing = safeTopic.reviews.find(r => r.type === newR.type);
                     if (existing && existing.done) {
-                        return { ...existing, label: newR.label }; // Keep existing data, update label if needed
+                        return { ...existing, label: newR.label };
                     }
                     return newR;
                 });
             }
-        } else if (safeTopic.importance !== importance && !customSettings) {
-             // Just update targetQ for pending (handled by parent usually, but good to have safety)
         }
 
         const updated = {
             ...safeTopic,
             title,
+            subarea: subarea || '', // Ensure valid string for Firestore
             area,
             importance,
             studyDate,
@@ -290,9 +280,13 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Início</label>
-                                <input name="date" type="date" defaultValue={safeTopic.studyDate || getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500/50 appearance-none min-h-[54px]" required />
+                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Disciplina</label>
+                                <input name="subarea" type="text" defaultValue={safeTopic.subarea || ''} placeholder="Ex: Cardio" className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500/50 appearance-none" />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Início</label>
+                            <input name="date" type="date" defaultValue={safeTopic.studyDate || getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-[#151515] text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500/50 appearance-none min-h-[54px]" required />
                         </div>
                         <div className="space-y-3">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Prioridade</label>
@@ -327,7 +321,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                             placeholder="Ex: 1, 7, 15, 30" 
                                             className="w-full p-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                                         />
-                                        <p className="text-[9px] text-slate-400">Dias a partir do início: Ex: "1" é amanhã, "7" é uma semana do início.</p>
+                                        <p className="text-[9px] text-slate-400">Separe os dias por vírgula. Isso substitui o agendamento automático.</p>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Meta de Questões</label>
