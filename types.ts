@@ -36,7 +36,6 @@ export interface Topic {
       intervals: number[]; // Array of days, e.g. [1, 7, 30]
       baseQuestions: number;
   };
-  linkedScheduleIds?: string[]; // IDs from the schedule (Cronograma) linked to this topic
 }
 
 export interface Simulado {

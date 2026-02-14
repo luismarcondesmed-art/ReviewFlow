@@ -1,18 +1,19 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { 
-    Activity, BookOpen, Calendar, ClipboardList, LayoutGrid, Database, Plus, Search, Settings, 
-    Cloud, MoreHorizontal, X, Map as MapIcon, Download
+    Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
+    Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
+    ArrowLeft, Download
 } from 'lucide-react';
 import { 
-    Topic, Simulado
+    AreaType, Topic, Simulado, ImportanceType
 } from './types';
 import { 
-    generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange
+    AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate
 } from './utils';
 import { useSync, useVibration } from './hooks';
-import { CompactLevelSystem, TopicCard } from './components';
+import { LevelSystem, TopicCard, CompactLevelSystem } from './components';
 import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
 
 // --- Lazy Loaded Views for Performance ---
@@ -84,7 +85,9 @@ export function App() {
     // PWA Install Prompt Listener
     useEffect(() => {
         const handler = (e: any) => {
+            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
+            // Stash the event so it can be triggered later.
             setInstallPrompt(e);
         };
         window.addEventListener('beforeinstallprompt', handler);
@@ -93,7 +96,9 @@ export function App() {
 
     const handleInstallApp = async () => {
         if (!installPrompt) return;
+        // Show the install prompt
         installPrompt.prompt();
+        // Wait for the user to respond to the prompt
         const { outcome } = await installPrompt.userChoice;
         if (outcome === 'accepted') {
             setInstallPrompt(null);
@@ -160,61 +165,34 @@ export function App() {
         vibration.success();
     };
 
-    // LOGIC UPDATE: Group topics by Grand Area + Block AND Link Schedule IDs
     const handleAutoCreateFromSchedule = useCallback((item: any) => {
         // Map Area
-        let area: any = 'clinica';
+        let area: AreaType = 'clinica';
         const ga = (item.grandeArea || '').toLowerCase();
         if (ga.includes('cirurgia')) area = 'cirurgia';
         else if (ga.includes('pediatria')) area = 'pediatria';
         else if (ga.includes('ginecologia') || ga.includes('obstetrícia') || ga.includes('g.o')) area = 'go';
         else if (ga.includes('preventiva')) area = 'preventiva';
 
-        // Determine Priority based on schedule color
-        const isHighPriority = item.importancia && (item.importancia.toLowerCase().includes('azul') || item.importancia.toLowerCase().includes('vermelho'));
-        const importance: any = isHighPriority ? 'high' : 'medium';
+        // Determine Priority: "Azul" in Medcof = High, otherwise Medium
+        const isHighPriority = item.importancia && item.importancia.toLowerCase().includes('azul');
+        const importance: ImportanceType = isHighPriority ? 'high' : 'medium';
 
-        // Define Unified Title (e.g., "Bloco 1 - Clínica Médica")
-        const blockLabel = config.activeSchedule === 'ESTRATEGIA' ? 'Semana' : 'Bloco';
-        const unifiedTitle = `${blockLabel} ${item.bloco} • ${item.grandeArea}`;
-
-        // Check if this consolidated topic already exists
-        const existingTopic = topics.find(t => t.title === unifiedTitle && !t.deleted);
-
-        if (existingTopic) {
-            // Check if this specific lesson ID is already linked
-            const currentLinks = existingTopic.linkedScheduleIds || [];
-            if (!currentLinks.includes(item.id)) {
-                // Link it and update
-                const updatedTopic = { 
-                    ...existingTopic, 
-                    linkedScheduleIds: [...currentLinks, item.id],
-                    updatedAt: Date.now()
-                };
-                setTopics(prev => prev.map(t => t.id === existingTopic.id ? updatedTopic : t));
-                triggerConfetti();
-            }
-            // If already linked, do nothing (or maybe visually highlight)
-            return;
-        }
-
-        // New Topic
         const draftTopic: Topic = {
-            id: '', // Will be generated in handleAddTopic
-            title: unifiedTitle,
+            id: '', // Will be generated
+            title: item.aula,
             area: area,
-            subarea: "Cronograma Unificado",
+            subarea: item.disciplina,
             importance: importance,
             studyDate: getTodayStr(),
             reviews: [], // Will be generated
             deleted: false,
-            updatedAt: 0,
-            linkedScheduleIds: [item.id]
+            updatedAt: 0
         };
 
         handleAddTopic(draftTopic);
         triggerConfetti();
-    }, [config.examDate, config.activeSchedule, topics]);
+    }, [config.examDate, topics]);
 
     const handleUpdateTopic = (updated: Topic) => {
         const old = topics.find(t => t.id === updated.id);

@@ -1,13 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, Link as LinkIcon } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from './types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from './utils';
-import { MEDCOF_SCHEDULE } from './medcofSchedule';
-import { ESTRATEGIA_SCHEDULE } from './estrategiaSchedule';
-
-// Helper to access schedule items
-const ALL_SCHEDULES = [...MEDCOF_SCHEDULE, ...ESTRATEGIA_SCHEDULE];
 
 // --- Mini Chart Component (CSS Bar Chart for Robustness) ---
 export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
@@ -170,9 +164,6 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                     const hasData = totalPossible > 0;
                                     const isExpanded = expandedId === t.id;
                                     
-                                    // Linked Lessons Logic
-                                    const linkedLessons = t.linkedScheduleIds ? ALL_SCHEDULES.filter(s => t.linkedScheduleIds?.includes(s.id)) : [];
-
                                     return (
                                         <React.Fragment key={t.id}>
                                             <tr onClick={() => setExpandedId(isExpanded ? null : t.id)} className={`group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50 dark:bg-white/5' : ''}`}>
@@ -224,23 +215,6 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                                 </div>
                                                             </div>
 
-                                                            {/* Linked Lessons List */}
-                                                            {linkedLessons.length > 0 && (
-                                                                <div className="space-y-2">
-                                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                                        <LinkIcon size={12}/> Aulas Vinculadas
-                                                                    </div>
-                                                                    <div className="bg-white dark:bg-black/20 rounded-xl border border-black/5 dark:border-white/5 divide-y divide-slate-100 dark:divide-white/5">
-                                                                        {linkedLessons.map(l => (
-                                                                            <div key={l.id} className="p-3 text-xs flex justify-between items-center">
-                                                                                <span className="font-bold text-slate-800 dark:text-white">{l.aula}</span>
-                                                                                <span className="text-slate-400 font-medium">Bloco {l.bloco}</span>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
                                                             {/* Review Cards */}
                                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                                 {t.reviews.map((r, i) => (
@@ -287,7 +261,6 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                 filteredSimulados.length === 0 ? (
                                     <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-bold">Nenhum simulado registrado.</td></tr>
                                 ) : filteredSimulados.map(s => {
-                                    // ... (Simulados rendering unchanged) ...
                                     const acc = s.totalQuestions > 0 ? Math.round((s.correctCount / s.totalQuestions) * 100) : 0;
                                     const performanceBg = getPerformanceBgLight(acc, config?.targetAccuracy || 80);
                                     const isExpanded = expandedId === s.id;
