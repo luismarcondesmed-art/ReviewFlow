@@ -1,8 +1,8 @@
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, Plus, BarChart2, CalendarDays } from 'lucide-react';
 import { Topic, Simulado } from './types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo } from './utils';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats } from './utils';
 
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
@@ -106,62 +106,45 @@ export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: num
     );
 });
 
-// --- Activity Bar Chart ---
-export const ActivityBarChart = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    const data = useMemo(() => {
-        const days = [];
-        const today = new Date();
-        const start = new Date();
-        start.setDate(today.getDate() - 13); 
+// --- Detailed Stats Widget ---
+export const DetailedStatsWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const stats = useMemo(() => calculateDetailedStats(topics, simulados), [topics, simulados]);
 
-        for (let i = 0; i < 14; i++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-            const dateStr = d.toISOString().split('T')[0];
-            const dayLabel = d.getDate();
-            const weekDay = ['D','S','T','Q','Q','S','S'][d.getDay()];
-            
-            let qCount = 0;
-            topics.forEach(t => {
-                if(!t.deleted) t.reviews.forEach(r => { if(r.done && r.date === dateStr) qCount += r.total; });
-            });
-            simulados.forEach(s => {
-                if(s.dateTaken.split('T')[0] === dateStr) qCount += s.totalQuestions;
-            });
-            days.push({ day: dayLabel, weekDay, count: qCount });
-        }
-        return days;
-    }, [topics, simulados]);
-
-    const maxQ = Math.max(...data.map(d => d.count), 10);
+    const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
+        <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all">
+            <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</div>
+                <div className="text-2xl font-black text-slate-800 dark:text-white leading-none">{value}</div>
+                {subLabel && <div className="text-[9px] font-bold text-slate-400 mt-1">{subLabel}</div>}
+            </div>
+            <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
+                <Icon size={20} className={colorClass.replace('bg-', 'text-')}/>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="flex items-end justify-between h-24 w-full gap-1 pt-2">
-            {data.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center group">
-                    <div className="relative w-full flex items-end justify-center h-16 bg-slate-100/50 dark:bg-white/5 rounded-lg overflow-hidden backdrop-blur-sm">
-                        <div 
-                            className="w-full bg-blue-500 group-hover:bg-blue-400 transition-all duration-500 rounded-t-[3px] shadow-[0_0_10px_rgba(59,130,246,0.3)]"
-                            style={{ height: `${(d.count / maxQ) * 100}%` }}
-                        ></div>
-                    </div>
-                    <div className="mt-1.5 flex flex-col items-center">
-                        <span className="text-[8px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors">{d.weekDay}</span>
-                    </div>
-                </div>
-            ))}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+            <StatCard label="Média Diária (Semana)" value={stats.avgWeek} subLabel="Questões/dia" icon={TrendingUp} colorClass="bg-blue-500 text-blue-500" />
+            <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
+            <StatCard label="Total Semana" value={stats.totalWeek} subLabel="Questões" icon={CalendarDays} colorClass="bg-purple-500 text-purple-500" />
+            <StatCard label="Total Mês" value={stats.totalMonth} subLabel="Questões" icon={BarChart2} colorClass="bg-emerald-500 text-emerald-500" />
         </div>
-    )
+    );
 });
 
-// --- Evolution Chart (Simulados) ---
-export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
+// --- Evolution Chart (Simulados) with Limit ---
+export const EvolutionChart = React.memo(({ simulados, targetAccuracy, limit }: { simulados: Simulado[], targetAccuracy: number, limit?: number }) => {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const data = useMemo(() => {
         if (!simulados || simulados.length === 0) return [];
         const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());
-        return sorted.map(s => ({
+        
+        // Apply Limit if provided (Get last N)
+        const displayData = limit ? sorted.slice(-limit) : sorted;
+
+        return displayData.map(s => ({
             id: s.id,
             date: s.dateTaken.split('T')[0],
             formattedDate: formatDate(s.dateTaken.split('T')[0]),
@@ -171,7 +154,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy }: { simul
             correct: s.correctCount,
             total: s.totalQuestions
         }));
-    }, [simulados]);
+    }, [simulados, limit]);
 
     if (data.length === 0) {
         return (
@@ -481,8 +464,8 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
     )
 });
 
-// --- Simulados Mini Widget ---
-export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy }: { simulados: Simulado[], targetAccuracy: number }) => {
+// --- Simulados Mini Widget with Actions ---
+export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy, onAdd }: { simulados: Simulado[], targetAccuracy: number, onAdd: () => void }) => {
     const displayData = useMemo(() => {
         if (!simulados || simulados.length === 0) return null;
         const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());
@@ -491,33 +474,50 @@ export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy }: { 
         return { avg, history: last10 };
     }, [simulados]);
 
-    if (!displayData) return (
-        <div className="bg-white/50 dark:bg-white/5 p-6 rounded-[32px] border border-black/5 dark:border-white/5 flex items-center justify-center text-center h-full backdrop-blur-md">
-            <div><ClipboardList className="mx-auto text-slate-300 mb-2" size={24}/><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sem simulados</p></div>
-        </div>
-    );
-
     return (
-        <div className="glass-panel p-6 rounded-[32px] shadow-sm h-full flex flex-col justify-between relative overflow-hidden">
+        <div className="glass-panel p-6 rounded-[32px] shadow-sm h-full flex flex-col relative overflow-hidden group">
             <div className="flex justify-between items-center mb-4 relative z-10">
-                <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-xs uppercase tracking-wide"><ClipboardList size={16} className="text-purple-500"/> Simulados</h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Média: <span className={getPerformanceColor(displayData.avg, targetAccuracy, 'text')}>{displayData.avg}%</span></span>
+                <div className="flex flex-col">
+                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-xs uppercase tracking-wide"><ClipboardList size={16} className="text-purple-500"/> Simulados</h3>
+                    {displayData && <span className="text-[10px] font-bold text-slate-400 mt-1">Média Geral: <span className={getPerformanceColor(displayData.avg, targetAccuracy, 'text')}>{displayData.avg}%</span></span>}
+                </div>
+                <button onClick={onAdd} className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-xl hover:scale-105 active:scale-95 transition-all">
+                    <Plus size={18}/>
+                </button>
             </div>
             
-            <div className="flex items-end gap-1.5 h-24 w-full relative z-10">
-                 <div className="absolute w-full border-t border-dashed border-slate-300 dark:border-white/10 z-0 pointer-events-none" style={{ bottom: `${targetAccuracy}%` }}></div>
-
-                {displayData.history.map((s, i) => {
-                    const acc = Math.round(((s.correctCount || 0) / (s.totalQuestions || 1)) * 100);
-                    const colorClass = getPerformanceColor(acc, targetAccuracy, 'bg');
-                    
-                    return (
-                        <div key={s.id} className="flex-1 flex flex-col justify-end gap-1 group relative h-full z-10">
-                            <div className={`w-full rounded-t-sm transition-all duration-500 ${colorClass} opacity-80 group-hover:opacity-100 group-hover:scale-y-105 origin-bottom`} style={{height: `${acc}%`}}></div>
-                        </div>
-                    );
-                })}
-            </div>
+            {displayData ? (
+                <div className="flex-1 flex flex-col justify-end">
+                    <div className="flex items-end gap-1.5 h-20 w-full relative z-10">
+                        {displayData.history.map((s, i) => {
+                            const acc = Math.round(((s.correctCount || 0) / (s.totalQuestions || 1)) * 100);
+                            const colorClass = getPerformanceColor(acc, targetAccuracy, 'bg');
+                            
+                            return (
+                                <div key={s.id} className="flex-1 flex flex-col justify-end gap-1 group/bar relative h-full z-10">
+                                    <div className={`w-full rounded-t-sm transition-all duration-500 ${colorClass} opacity-80 group-hover/bar:opacity-100 origin-bottom`} style={{height: `${acc}%`}}></div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {/* Recent List */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 space-y-2">
+                        {displayData.history.slice(-2).reverse().map(s => (
+                            <div key={s.id} className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-slate-600 dark:text-slate-300 truncate max-w-[120px]">{s.name} {s.year}</span>
+                                <span className={`font-black ${getPerformanceColor((s.correctCount/s.totalQuestions)*100, targetAccuracy, 'text')}`}>{Math.round((s.correctCount/s.totalQuestions)*100)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+                    <ClipboardList className="mx-auto text-slate-300 mb-2" size={24}/>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Sem simulados</p>
+                    <button onClick={onAdd} className="text-[10px] text-purple-500 font-bold hover:underline">Adicionar Primeiro</button>
+                </div>
+            )}
+            
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 blur-[40px] rounded-full z-0 pointer-events-none"></div>
         </div>
     );

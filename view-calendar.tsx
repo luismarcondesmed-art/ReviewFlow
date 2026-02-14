@@ -15,13 +15,19 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
 
     const { monthData, daysInMonth, firstDay, timelineDays } = useCalendar(topics, simulados, currentDate);
 
-    // Set today as selected day initially
+    // Set today as selected day initially if current month is viewed, else select first day
     useEffect(() => {
         const todayStr = getTodayStr();
-        if (monthData[todayStr]) {
-            setSelectedDay({ date: todayStr, ...monthData[todayStr] });
+        const currentMonthStr = `${year}-${String(month+1).padStart(2,'0')}`;
+        
+        if (todayStr.startsWith(currentMonthStr)) {
+             if (monthData[todayStr]) setSelectedDay({ date: todayStr, ...monthData[todayStr] });
+        } else {
+             // Select first day of viewed month
+             const firstDayStr = `${currentMonthStr}-01`;
+             if (monthData[firstDayStr]) setSelectedDay({ date: firstDayStr, ...monthData[firstDayStr] });
         }
-    }, [monthData]);
+    }, [year, month, monthData]);
 
     const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
     const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -49,15 +55,15 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
             </div>
 
             {viewMode === 'calendar' ? (
-                <div className="flex flex-col gap-6 flex-1 min-h-0">
-                    {/* Modern Grid Calendar */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col shrink-0 p-4">
-                        <div className="grid grid-cols-7 mb-2">
+                <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+                    {/* Modern Grid Calendar (Left Side) */}
+                    <div className="lg:w-2/3 flex flex-col bg-white dark:bg-zinc-900 rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden p-6 h-fit">
+                        <div className="grid grid-cols-7 mb-4">
                             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-                                <div key={d} className="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">{d}</div>
+                                <div key={d} className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">{d}</div>
                             ))}
                         </div>
-                        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                        <div className="grid grid-cols-7 gap-2 lg:gap-4 auto-rows-fr">
                             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} className="aspect-square"></div>)}
                             {Array.from({ length: daysInMonth }).map((_, i) => {
                                 const day = i + 1;
@@ -81,18 +87,18 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                                         className={`aspect-square relative rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group
                                             ${isSelected 
                                                 ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg scale-105 z-10' 
-                                                : 'hover:bg-slate-50 dark:hover:bg-white/10 bg-transparent text-slate-700 dark:text-slate-300'
+                                                : 'hover:bg-slate-50 dark:hover:bg-white/10 bg-slate-50/50 dark:bg-white/5 text-slate-700 dark:text-slate-300'
                                             }
-                                            ${isToday && !isSelected ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : ''}
+                                            ${isToday && !isSelected ? 'border-2 border-blue-500/50' : 'border border-transparent'}
                                         `}
                                     >
-                                        <span className={`text-sm font-bold ${isExam && !isSelected ? 'text-amber-500' : ''}`}>{day}</span>
+                                        <span className={`text-lg font-bold ${isExam && !isSelected ? 'text-amber-500' : ''}`}>{day}</span>
                                         
                                         {/* Indicators */}
-                                        <div className="flex gap-1 mt-1">
-                                            {hasReviews && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-blue-400'}`}></div>}
-                                            {hasSims && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-purple-400'}`}></div>}
-                                            {isExam && !hasReviews && !hasSims && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-amber-400'}`}></div>}
+                                        <div className="flex gap-1 mt-1.5">
+                                            {hasReviews && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-blue-500'}`}></div>}
+                                            {hasSims && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-purple-500'}`}></div>}
+                                            {isExam && !hasReviews && !hasSims && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50 dark:bg-black/30' : 'bg-amber-500'}`}></div>}
                                         </div>
                                     </div>
                                 );
@@ -100,26 +106,29 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                         </div>
                     </div>
 
-                    {/* Details Panel */}
-                    <div className="flex-1 bg-white dark:bg-zinc-900 rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col min-h-0 animate-slide-up">
-                        <div className="px-6 py-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 flex justify-between items-center backdrop-blur-sm">
+                    {/* Details Panel (Right Side) */}
+                    <div className="lg:w-1/3 flex-1 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col min-h-[400px] lg:min-h-0 lg:sticky lg:top-4 lg:h-[calc(100vh-140px)] animate-slide-up">
+                        <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-start bg-slate-50/50 dark:bg-black/20">
                             <div>
-                                <h4 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">
-                                    {selectedDay ? formatFullDate(selectedDay.date) : 'Selecione um dia'}
+                                <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-none mb-1">
+                                    {selectedDay ? selectedDay.date.split('-')[2] : '--'}
                                 </h4>
+                                <span className="text-sm font-bold text-slate-400 uppercase">
+                                    {selectedDay ? new Date(selectedDay.date + 'T12:00:00').toLocaleString('pt-BR', { month: 'long', weekday: 'long' }) : 'Selecione um dia'}
+                                </span>
                             </div>
                             {selectedDay?.date === config.examDate && (
                                 <div className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                                    <Flag size={12}/> Dia da Prova
+                                    <Flag size={12}/> Prova
                                 </div>
                             )}
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-3">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
                             {!selectedDay || (selectedDay.reviews.length === 0 && selectedDay.sims.length === 0) ? (
                                 <div className="flex flex-col items-center justify-center h-full text-slate-400 py-8 opacity-60">
-                                    <CalendarIcon size={40} className="mb-3 opacity-20"/>
-                                    <p className="text-xs font-bold">Agenda livre</p>
+                                    <CalendarIcon size={48} className="mb-4 opacity-20"/>
+                                    <p className="text-sm font-bold text-center">Nenhuma atividade agendada<br/>para este dia.</p>
                                 </div>
                             ) : (
                                 <>
@@ -133,7 +142,8 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                                         </div>
                                     ))}
                                     {selectedDay.reviews.map((r: any) => {
-                                         const theme = getAreaTheme(r.area || 'clinica'); // We need area here, passed down or default
+                                         // Pass Area if available or fallback
+                                         const theme = getAreaTheme(r.area || 'clinica'); 
                                          return (
                                             <div key={r.topicId + r.idx} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all">
                                                 <div className="flex items-center gap-4">

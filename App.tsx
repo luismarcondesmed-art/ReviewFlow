@@ -480,6 +480,7 @@ export function App() {
                                 setSortOrder={setSortOrder}
                                 filterArea={filterArea}
                                 setFilterArea={setFilterArea}
+                                onAddSimulado={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
                             >
                                 <div className="grid grid-cols-1 gap-4">
                                     {filteredTopics.length === 0 ? ( 
@@ -606,6 +607,7 @@ export function App() {
                 onClose={() => setAddModalOpen(false)} 
                 topic={null} 
                 onSave={handleAddTopic}
+                config={config} // Passing config here
             />
 
             <EditTopicModal 
@@ -615,6 +617,7 @@ export function App() {
                 onSave={handleUpdateTopic} 
                 onDelete={handleDeleteTopic}
                 onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} 
+                config={config} // Passing config here
             />
 
             <SimuladoModal 

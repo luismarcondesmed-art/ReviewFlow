@@ -1,3 +1,4 @@
+
 import { AreaType, ImportanceType, Review, Topic, Simulado, ReviewType } from './types';
 
 // --- Constants ---
@@ -7,13 +8,13 @@ export const APP_ID = 'reviewflow';
 // Configuração segura usando Variáveis de Ambiente
 // Uses optional chaining (?.) to prevent runtime crash if import.meta.env is undefined
 export const USER_FIREBASE_CONFIG = { 
-    apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY, 
-    authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN, 
-    projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID, 
-    storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET, 
-    messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID, 
-    appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID, 
-    measurementId: (import.meta as any).env?.VITE_FIREBASE_MEASUREMENT_ID 
+  apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
+  authDomain: "med-heklp.firebaseapp.com",
+  projectId: "med-heklp",
+  storageBucket: "med-heklp.firebasestorage.app",
+  messagingSenderId: "675054342845",
+  appId: "1:675054342845:web:91e53e21060a087123ddd4",
+  measurementId: "G-BLWYTWFFTZ"
 };
 export const AREAS: { id: AreaType; name: string; full: string }[] = [
   { id: 'clinica', name: 'Clínica', full: 'Clínica Médica' },
@@ -335,6 +336,58 @@ export const getLevelInfo = (totalQuestions: number) => {
 
 export const triggerConfetti = () => { 
     if (window.confetti) window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] }); 
+};
+
+export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) => {
+    const today = new Date();
+    const todayStr = getTodayStr();
+    
+    // Determine start of week (Sunday)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+    // Determine start of month
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+
+    let totalToday = 0;
+    let totalWeek = 0;
+    let totalMonth = 0;
+
+    const processItem = (date: string, count: number) => {
+        if (date === todayStr) totalToday += count;
+        if (date >= startOfWeekStr) totalWeek += count;
+        if (date >= startOfMonthStr) totalMonth += count;
+    };
+
+    topics.forEach(t => {
+        if (t.deleted) return;
+        t.reviews.forEach(r => {
+            if (r.done) processItem(r.date, r.total);
+        });
+    });
+
+    simulados.forEach(s => {
+        if (s.deleted) return;
+        const d = s.dateTaken.split('T')[0];
+        processItem(d, s.totalQuestions);
+    });
+
+    // Calculate averages
+    const dayOfWeek = today.getDay() + 1; // 1-based index for math
+    const avgWeek = Math.round(totalWeek / dayOfWeek);
+
+    const dayOfMonth = today.getDate();
+    const avgMonth = Math.round(totalMonth / dayOfMonth);
+
+    return {
+        totalToday,
+        totalWeek,
+        totalMonth,
+        avgWeek,
+        avgMonth
+    };
 };
 
 export interface OptimizationChange {

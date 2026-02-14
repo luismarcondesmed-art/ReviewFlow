@@ -79,22 +79,26 @@ const LessonItem = React.memo(({ item, isChecked, onToggle }: { item: any, isChe
     );
 });
 
-const AreaGroup = ({ 
+interface AreaGroupProps {
+    areaName: string;
+    items: any[];
+    blockId: string;
+    scheduleProgress: ScheduleProgress;
+    toggleCheck: (id: string) => void;
+    onBulkComplete: (ids: string[]) => void;
+    onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType) => void;
+    existingTopic?: Topic;
+}
+
+const AreaGroup: React.FC<AreaGroupProps> = ({ 
     areaName, 
     items, 
     blockId, 
     scheduleProgress, 
     toggleCheck, 
-    onCreateTopic,
+    onBulkComplete,
+    onCreateTopic, 
     existingTopic 
-}: { 
-    areaName: string, 
-    items: any[], 
-    blockId: string, 
-    scheduleProgress: ScheduleProgress, 
-    toggleCheck: (id: string) => void,
-    onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType) => void,
-    existingTopic?: Topic
 }) => {
     const mappedArea = mapArea(areaName);
     const theme = getAreaTheme(mappedArea);
@@ -104,14 +108,11 @@ const AreaGroup = ({
     const progress = Math.round((completedCount / totalCount) * 100);
     const isComplete = progress === 100;
     
-    // Check if topic exists and is up to date (simplified check)
     const topicStatus = existingTopic ? 'created' : 'none';
 
     const handleCreateClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         
-        // Determine Priority based on items
-        // Strategy: Take the highest priority present in the list
         let maxWeight = 0;
         let finalPriority: ImportanceType = 'medium';
 
@@ -119,16 +120,13 @@ const AreaGroup = ({
             const w = getPriorityWeight(i.importancia);
             if (w > maxWeight) {
                 maxWeight = w;
-                if (w >= 5) finalPriority = 'high'; // Azul
-                else if (w >= 4) finalPriority = 'high'; // Verde can be high too? Let's say high.
+                if (w >= 5) finalPriority = 'high';
+                else if (w >= 4) finalPriority = 'high';
                 else if (w <= 2) finalPriority = 'low';
                 else finalPriority = 'medium';
             }
         });
 
-        // Use Medcof logic mentioned in prompt: "Azul" = High. 
-        // Let's stick to standard map: Azul(5) -> High, Verde(4) -> Medium, Others = Low.
-        
         const hasBlue = items.some(i => (i.importancia || '').toLowerCase().includes('azul'));
         if (hasBlue) finalPriority = 'high';
         else {
@@ -139,6 +137,10 @@ const AreaGroup = ({
         const topicTitle = `Bloco ${blockId} - ${areaName}`;
         const lessonNames = items.map(i => i.aula);
         
+        // Auto-complete all lessons in this group
+        const allIds = items.map(i => i.id);
+        onBulkComplete(allIds);
+
         onCreateTopic(topicTitle, mappedArea, lessonNames, finalPriority);
     };
 
@@ -203,15 +205,12 @@ export const CronogramaView = ({
     const [searchLocal, setSearchLocal] = useState('');
     const activeScheduleCode = config.activeSchedule || 'MEDCOF';
 
-    // Combine global search with local search if needed, but preferably rely on one. 
-    // The props `searchTerm` comes from header.
     const finalSearch = searchTerm || searchLocal;
 
     const currentScheduleData = useMemo(() => {
         return activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
     }, [activeScheduleCode]);
 
-    // Grouping Logic: Block -> Grande Area -> Lessons (Sorted by Priority)
     const groupedData = useMemo(() => {
         const blocks: Record<string, Record<string, any[]>> = {};
         
@@ -229,14 +228,12 @@ export const CronogramaView = ({
             blocks[item.bloco][item.grandeArea].push(item);
         });
 
-        // Sort Lessons inside Areas
         Object.keys(blocks).forEach(blk => {
             Object.keys(blocks[blk]).forEach(area => {
                 blocks[blk][area].sort((a, b) => getPriorityWeight(b.importancia) - getPriorityWeight(a.importancia));
             });
         });
 
-        // Convert to Array for rendering
         const sortedBlocks = Object.keys(blocks).sort((a,b) => parseInt(a) - parseInt(b)).map(blk => ({
             id: blk,
             areas: blocks[blk]
@@ -245,23 +242,20 @@ export const CronogramaView = ({
         return sortedBlocks;
     }, [currentScheduleData, finalSearch]);
 
-    // Initial Collapse Logic
     useEffect(() => {
         if (groupedData.length > 0) {
              const newSet = new Set<string>();
-             // Collapse all except the first one that has pending items
              let foundActive = false;
              groupedData.forEach(g => {
                  const allItems = Object.values(g.areas).flat();
-                 // Fix: Cast i to any to avoid "Property 'id' does not exist on type 'unknown'" error
                  const isComplete = allItems.every((i: any) => scheduleProgress[i.id]);
                  
                  if (isComplete && !foundActive) {
                      newSet.add(g.id);
                  } else if (!foundActive) {
-                     foundActive = true; // Keep this one open
+                     foundActive = true; 
                  } else {
-                     newSet.add(g.id); // Collapse future ones
+                     newSet.add(g.id); 
                  }
              });
              setCollapsedBlocks(newSet);
@@ -270,6 +264,14 @@ export const CronogramaView = ({
 
     const toggleCheck = useCallback((id: string) => {
         setScheduleProgress(prev => ({ ...prev, [id]: !prev[id] }));
+    }, []);
+
+    const handleBulkComplete = useCallback((ids: string[]) => {
+        setScheduleProgress(prev => {
+            const next = { ...prev };
+            ids.forEach(id => next[id] = true);
+            return next;
+        });
     }, []);
 
     const toggleBlock = (id: string) => {
@@ -282,7 +284,6 @@ export const CronogramaView = ({
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            {/* Unified Toolbar */}
             <div className="glass-panel p-2 rounded-2xl mb-6 flex flex-col sm:flex-row gap-2 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-white/40 dark:border-white/10">
                 <div className="flex bg-slate-100 dark:bg-black/40 rounded-xl p-1 shrink-0">
                     <button 
@@ -322,7 +323,6 @@ export const CronogramaView = ({
                         const isCollapsed = collapsedBlocks.has(block.id);
                         const areas = Object.keys(block.areas).sort();
                         const allItems = Object.values(block.areas).flat();
-                        // Fix: Cast i to any to avoid "Property 'id' does not exist on type 'unknown'" error
                         const completedCount = allItems.filter((i: any) => scheduleProgress[i.id]).length;
                         const totalCount = allItems.length;
                         const progress = Math.round((completedCount / totalCount) * 100);
@@ -369,6 +369,7 @@ export const CronogramaView = ({
                                                     blockId={block.id}
                                                     scheduleProgress={scheduleProgress}
                                                     toggleCheck={toggleCheck}
+                                                    onBulkComplete={handleBulkComplete}
                                                     onCreateTopic={onCreateAggregatedTopic}
                                                     existingTopic={existing}
                                                 />
