@@ -146,13 +146,18 @@ export const useSync = () => {
                 const { doc, setDoc } = await import('firebase/firestore') as any;
 
                 const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey);
-                await setDoc(docRef, {
+                
+                // Firestore throws error on undefined values. JSON.stringify removes them.
+                // We parse it back to an object to send to Firestore.
+                const safePayload = JSON.parse(JSON.stringify({
                     topics,
                     simulados,
                     config,
                     scheduleProgress,
                     updatedAt: new Date().toISOString()
-                }, { merge: true });
+                }));
+
+                await setDoc(docRef, safePayload, { merge: true });
             } catch (e) {
                 console.error("Save Error:", e);
                 setStatus('error');
