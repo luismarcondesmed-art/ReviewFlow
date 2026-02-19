@@ -8,13 +8,13 @@ export const APP_ID = 'reviewflow';
 // Configuração segura usando Variáveis de Ambiente
 // Uses optional chaining (?.) to prevent runtime crash if import.meta.env is undefined
 export const USER_FIREBASE_CONFIG = { 
-  apiKey: "AIzaSyCvqp5HYUMnogWmwT0O1LFLOMsfqj9P83s",
-  authDomain: "med-heklp.firebaseapp.com",
-  projectId: "med-heklp",
-  storageBucket: "med-heklp.firebasestorage.app",
-  messagingSenderId: "675054342845",
-  appId: "1:675054342845:web:91e53e21060a087123ddd4",
-  measurementId: "G-BLWYTWFFTZ"
+    apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY, 
+    authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN, 
+    projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID, 
+    storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET, 
+    messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID, 
+    appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID, 
+    measurementId: (import.meta as any).env?.VITE_FIREBASE_MEASUREMENT_ID 
 };
 export const AREAS: { id: AreaType; name: string; full: string }[] = [
   { id: 'clinica', name: 'Clínica', full: 'Clínica Médica' },

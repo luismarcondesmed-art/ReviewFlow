@@ -162,13 +162,10 @@ export function App() {
         vibration.success();
     };
 
-    // New: Create Aggregated Topic from Schedule
     const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType) => {
-        // Check if topic exists
         const existing = topics.find(t => t.title === title && !t.deleted);
         
         if (existing) {
-            // Update linked lessons if changed
             const updated: Topic = {
                 ...existing,
                 linkedLessons: lessons,
@@ -178,7 +175,6 @@ export function App() {
             vibration.success();
             alert("Matéria atualizada com as novas aulas do bloco!");
         } else {
-            // Create new
             const newTopicId = generateId();
             const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId);
             const newTopic: Topic = {
@@ -313,38 +309,37 @@ export function App() {
     return (
         <div className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30">
             
-            {/* --- NEW DESKTOP SIDEBAR --- */}
-            <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 bg-white/70 dark:bg-black/40 border-r border-slate-200/50 dark:border-white/5 backdrop-blur-2xl z-50 p-4 transition-all">
+            {/* --- FLOATING MODERN SIDEBAR (DESKTOP) --- */}
+            <aside className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-64 bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl z-50 p-4 rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-500 ease-out will-change-transform">
                 {/* Logo Area */}
-                <div className="flex items-center gap-3 px-2 mt-2 mb-10">
+                <div className="flex items-center gap-3 px-3 mt-4 mb-8">
                     <div className="relative group cursor-pointer">
-                        <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg relative z-10">
-                             <Activity size={18} strokeWidth={2.5}/>
+                        <div className="absolute inset-0 bg-blue-500/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg relative z-10 border border-white/10">
+                             <Activity size={20} strokeWidth={2.5}/>
                         </div>
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-lg font-black tracking-tighter text-slate-800 dark:text-white leading-none">ReviewFlow</h1>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Medical Plan</span>
+                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white leading-none">ReviewFlow</h1>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Medical Plan</span>
                     </div>
                 </div>
 
                 {/* Main Navigation */}
-                <div className="space-y-1 mb-auto">
+                <div className="space-y-1.5 mb-auto">
                     {NAV_ITEMS.map(item => {
                         const isActive = view === item.id;
                         return (
                             <button 
                                 key={item.id}
                                 onClick={() => setView(item.id as any)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-500 group relative overflow-hidden ${
                                     isActive 
-                                    ? 'bg-blue-50/80 dark:bg-white/10 text-blue-600 dark:text-white font-bold shadow-sm' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 font-medium'
+                                    ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-white font-bold shadow-md dark:shadow-none' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-white/5 font-medium hover:pl-5'
                                 }`}
                             >
-                                {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-500 rounded-r-full"></div>}
-                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={`relative z-10 ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={`relative z-10 transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                                 <span className="relative z-10">{item.label}</span>
                             </button>
                         )
@@ -355,13 +350,13 @@ export function App() {
                 <div className="pt-6 border-t border-slate-200/50 dark:border-white/5 space-y-4">
                     <CompactLevelSystem totalQuestions={stats.totalAnswered} />
                     
-                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-all w-full border border-transparent hover:border-slate-100 dark:hover:border-white/5">
-                        <Settings size={16} /> Configurações
+                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-white/50 dark:hover:bg-white/5 transition-all w-full border border-transparent hover:border-white/20 dark:hover:border-white/5 group">
+                        <Settings size={16} className="group-hover:rotate-90 transition-transform duration-700" /> Configurações
                     </button>
                 </div>
             </aside>
 
-            {/* Mobile Top Navigation (Clean) */}
+            {/* Mobile Top Navigation (Fixed) */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 safe-top">
                 <nav className="flex items-center justify-between px-4 py-2 overflow-x-auto no-scrollbar">
                     {NAV_ITEMS.map((item) => {
@@ -373,7 +368,7 @@ export function App() {
                                     vibration.tick(); 
                                     setView(item.id as any);
                                 }} 
-                                className={`flex flex-col items-center justify-center min-w-[60px] py-1 gap-1 rounded-xl transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                                className={`flex flex-col items-center justify-center min-w-[60px] py-1 gap-1 rounded-xl transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400 scale-105' : 'text-slate-400 dark:text-slate-500'}`}
                             >
                                 <item.icon 
                                     size={20} 
@@ -386,13 +381,13 @@ export function App() {
                 </nav>
             </div>
 
-            {/* Main Content */}
-            <main className="flex-1 lg:ml-64 flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0">
+            {/* Main Content Area - Adjusted Margins for Floating Sidebar */}
+            <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[72px] lg:pt-0 transition-all duration-500">
                 
-                {/* Floating Sticky Header */}
-                <header className="sticky top-0 z-[60] px-4 pt-safe pointer-events-none">
-                    <div className="mx-auto max-w-[900px] w-full pt-4 pb-2 flex justify-center">
-                        <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-black/20 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/40 dark:border-white/10 bg-[#f2f4f7]/50 dark:bg-black/50">
+                {/* Floating Sticky Header (Desktop & Mobile) */}
+                <header className="sticky top-0 z-[60] px-4 pt-4 pb-2 pointer-events-none safe-top">
+                    <div className="mx-auto max-w-[1000px] w-full flex justify-center">
+                        <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-black/40 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/60 transition-all duration-300">
                             
                             <div className="flex-1 flex items-center">
                                 {isSearchActive ? (
@@ -407,19 +402,19 @@ export function App() {
                                             onChange={e => setSearchTerm(e.target.value)}
                                             onBlur={() => !searchTerm && setIsSearchActive(false)}
                                         />
-                                        <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="p-1 rounded-full bg-slate-100 dark:bg-white/10 ml-2">
+                                        <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="p-1 rounded-full bg-slate-100 dark:bg-white/10 ml-2 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
                                             <X size={14} className="text-slate-500"/>
                                         </button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => setIsSearchActive(true)} className="flex items-center gap-2 text-left w-full group">
+                                    <button onClick={() => setIsSearchActive(true)} className="flex items-center gap-2 text-left w-full group py-1">
                                         <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2">{currentViewTitle}</h2>
                                     </button>
                                 )}
                             </div>
 
                             <div className="flex items-center gap-3">
-                                {/* Install App Button (Visible when prompted) */}
+                                {/* Install App Button */}
                                 {installPrompt && (
                                     <button 
                                         onClick={handleInstallApp}
@@ -429,34 +424,31 @@ export function App() {
                                     </button>
                                 )}
 
-                                {/* Sync Status Dot */}
-                                {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>}
-                                {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500"></div>}
-                                {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-300"></div>}
+                                {/* Sync Status */}
+                                {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>}
+                                {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
+                                {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>}
                                 
                                 <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
 
-                                {/* Add Button (Desktop only, mobile has FAB) */}
+                                {/* Add Button (Desktop) */}
                                 <div className="relative hidden lg:block">
                                     <button 
                                         onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                        className="w-8 h-8 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                                        className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all duration-300"
                                     >
-                                        <Plus size={16} strokeWidth={3}/>
+                                        <Plus size={18} strokeWidth={3}/>
                                     </button>
                                     {desktopNewMenuOpen && (
-                                        <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-1.5 pointer-events-auto">
-                                            <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
-                                                <BookOpen size={16} className="text-blue-500"/> Nova Matéria
+                                        <div className="absolute top-full right-0 mt-3 w-56 bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl rounded-[24px] shadow-2xl border border-white/20 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-2 pointer-events-auto z-50">
+                                            <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 group">
+                                                <div className="p-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><BookOpen size={16}/></div> Nova Matéria
                                             </button>
-                                            <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200">
-                                                <ClipboardList size={16} className="text-purple-500"/> Novo Simulado
+                                            <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 group">
+                                                <div className="p-1.5 bg-purple-100 dark:bg-purple-500/20 rounded-lg text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform"><ClipboardList size={16}/></div> Novo Simulado
                                             </button>
                                         </div>
                                     )}
-                                </div>
-                                <div className="lg:hidden text-slate-400">
-                                    <Activity size={16}/>
                                 </div>
                             </div>
                         </div>
@@ -546,11 +538,11 @@ export function App() {
                     {isActionMenuOpen && (
                         <>
                             <div className="fixed inset-0 z-[95]" onClick={() => setIsActionMenuOpen(false)}></div>
-                            <div className="absolute bottom-full right-0 mb-3 w-48 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border border-white/20 dark:border-white/10 p-2 flex flex-col gap-1 z-[100] animate-scale-in origin-bottom-right">
+                            <div className="absolute bottom-full right-0 mb-3 w-56 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-white/20 dark:border-white/10 p-2 flex flex-col gap-1 z-[100] animate-scale-in origin-bottom-right">
                                 {installPrompt && (
                                     <button 
                                         onClick={() => { handleInstallApp(); setIsActionMenuOpen(false); }}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                     >
                                         <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Download size={16}/></div>
                                         Instalar App
@@ -558,14 +550,14 @@ export function App() {
                                 )}
                                 <button 
                                     onClick={() => { setAddModalOpen(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg"><BookOpen size={16}/></div>
                                     Nova Matéria
                                 </button>
                                 <button 
                                     onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg"><ClipboardList size={16}/></div>
                                     Novo Simulado
@@ -576,14 +568,14 @@ export function App() {
                                         setIsSearchActive(true);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Search size={16}/></div>
                                     Pesquisar
                                 </button>
                                 <button 
                                     onClick={() => { setSettingsOpen(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400 rounded-lg"><Settings size={16}/></div>
                                     Ajustes
@@ -594,9 +586,9 @@ export function App() {
 
                     <button 
                         onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} 
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.15)] border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent' : 'bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border-white/20 dark:border-white/10 text-slate-800 dark:text-white'}`}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:shadow-black/50 border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent rotate-90 scale-90' : 'bg-white dark:bg-zinc-800 border-white/20 dark:border-white/10 text-slate-800 dark:text-white hover:scale-105'}`}
                     >
-                        {isActionMenuOpen ? <X size={22} /> : <MoreHorizontal size={22} />}
+                        {isActionMenuOpen ? <X size={24} /> : <MoreHorizontal size={24} />}
                     </button>
                 </div>
             </div>
@@ -607,7 +599,7 @@ export function App() {
                 onClose={() => setAddModalOpen(false)} 
                 topic={null} 
                 onSave={handleAddTopic}
-                config={config} // Passing config here
+                config={config} 
             />
 
             <EditTopicModal 
@@ -617,7 +609,7 @@ export function App() {
                 onSave={handleUpdateTopic} 
                 onDelete={handleDeleteTopic}
                 onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} 
-                config={config} // Passing config here
+                config={config} 
             />
 
             <SimuladoModal 
