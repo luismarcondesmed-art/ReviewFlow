@@ -22,6 +22,7 @@ const CalendarView = lazy(() => import('./views/view-calendar').then(module => (
 const DatabaseView = lazy(() => import('./views/view-database').then(module => ({ default: module.DatabaseView })));
 const SimuladosView = lazy(() => import('./views/view-simulados').then(module => ({ default: module.SimuladosView })));
 const CronogramaView = lazy(() => import('./views/view-cronograma').then(module => ({ default: module.CronogramaView })));
+const StatsView = lazy(() => import('./views/view-stats').then(module => ({ default: module.StatsView })));
 
 // --- Loading Skeleton ---
 const LoadingSpinner = () => (
@@ -35,7 +36,7 @@ export function App() {
     const vibration = useVibration();
     
     // UI State
-    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database'>('list');
+    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'stats'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
     
@@ -302,6 +303,7 @@ export function App() {
         { id: 'simulados', label: 'Simulados', icon: ClipboardList, title: 'Simulados' },
         { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
         { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
+        { id: 'stats', label: 'Estatísticas', icon: PieChart, title: 'Estatísticas ENAMED' },
     ];
 
     const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
@@ -528,6 +530,8 @@ export function App() {
                                 existingTopics={activeTopics}
                             />
                         )}
+
+                        {view === 'stats' && <StatsView />}
                     </Suspense>
                 </div>
             </main>

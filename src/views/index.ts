@@ -4,3 +4,4 @@ export * from './view-database';
 export * from './view-cronograma';
 export * from './view-analytics';
 export * from './view-simulados';
+export * from './view-stats';
