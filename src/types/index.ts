@@ -19,6 +19,7 @@ export interface Review {
   difficulty?: 'easy' | 'medium' | 'hard' | null;
   targetQ: number;
   completedAt?: string; // ISO Full Timestamp (When it was actually done)
+  timeSpent?: number; // Time spent in seconds
 }
 
 export interface Topic {

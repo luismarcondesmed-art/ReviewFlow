@@ -352,17 +352,24 @@ export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) =
     let totalToday = 0;
     let totalWeek = 0;
     let totalMonth = 0;
+    let totalTime = 0;
+    let totalQuestionsWithTime = 0;
 
-    const processItem = (date: string, count: number) => {
+    const processItem = (date: string, count: number, timeSpent?: number) => {
         if (date === todayStr) totalToday += count;
         if (date >= startOfWeekStr) totalWeek += count;
         if (date >= startOfMonthStr) totalMonth += count;
+
+        if (timeSpent && timeSpent > 0 && count > 0) {
+            totalTime += timeSpent;
+            totalQuestionsWithTime += count;
+        }
     };
 
     topics.forEach(t => {
         if (t.deleted) return;
         t.reviews.forEach(r => {
-            if (r.done) processItem(r.date, r.total);
+            if (r.done) processItem(r.date, r.total, r.timeSpent);
         });
     });
 
@@ -379,12 +386,15 @@ export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) =
     const dayOfMonth = today.getDate();
     const avgMonth = Math.round(totalMonth / dayOfMonth);
 
+    const avgTimePerQuestion = totalQuestionsWithTime > 0 ? Math.round(totalTime / totalQuestionsWithTime) : null;
+
     return {
         totalToday,
         totalWeek,
         totalMonth,
         avgWeek,
-        avgMonth
+        avgMonth,
+        avgTimePerQuestion
     };
 };
 

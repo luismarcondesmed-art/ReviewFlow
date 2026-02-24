@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, Plus, BarChart2, CalendarDays } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play } from 'lucide-react';
 import { Topic, Simulado } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats } from '../utils';
 
@@ -22,9 +22,9 @@ export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestio
 
     return (
         <div className="relative w-full mb-2">
-            {/* Popover / Dropup */}
+            {/* Popover / Dropdown */}
             {isOpen && (
-                <div className="absolute bottom-full left-0 w-full mb-3 p-4 bg-white/10 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
+                <div className="absolute top-full left-0 w-full mt-3 p-4 bg-white/10 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Próximo Nível</span>
                         <span className="text-xs font-black text-white">{level + 1}</span>
@@ -41,7 +41,7 @@ export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestio
             {/* Trigger Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
             >
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-lg shrink-0`}>
                     <RankIcon size={18} fill="currentColor" className="opacity-90"/>
@@ -50,7 +50,7 @@ export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestio
                     <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">{rank.label}</div>
                     <div className="text-xs font-black text-slate-800 dark:text-white truncate">Nível {level}</div>
                 </div>
-                <ChevronUp size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}/>
+                <ChevronDown size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}/>
             </button>
         </div>
     );
@@ -107,28 +107,31 @@ export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: num
 });
 
 // --- Detailed Stats Widget ---
-export const DetailedStatsWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = false }: { topics: Topic[], simulados: Simulado[], compact?: boolean }) => {
     const stats = useMemo(() => calculateDetailedStats(topics, simulados), [topics, simulados]);
 
     const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
-        <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all">
+        <div className={`flex-1 bg-white dark:bg-zinc-900 rounded-2xl ${compact ? 'p-3' : 'p-4'} border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all`}>
             <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</div>
-                <div className="text-2xl font-black text-slate-800 dark:text-white leading-none">{value}</div>
-                {subLabel && <div className="text-[9px] font-bold text-slate-400 mt-1">{subLabel}</div>}
+                <div className={`text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1`}>{label}</div>
+                <div className={`${compact ? 'text-xl' : 'text-2xl'} font-black text-slate-800 dark:text-white leading-none`}>{value}</div>
+                {!compact && subLabel && <div className="text-[9px] font-bold text-slate-400 mt-1">{subLabel}</div>}
             </div>
-            <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
-                <Icon size={20} className={colorClass.replace('bg-', 'text-')}/>
+            <div className={`p-2 sm:p-3 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
+                <Icon size={compact ? 16 : 20} className={colorClass.replace('bg-', 'text-')}/>
             </div>
         </div>
     );
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-            <StatCard label="Média Diária (Semana)" value={stats.avgWeek} subLabel="Questões/dia" icon={TrendingUp} colorClass="bg-blue-500 text-blue-500" />
+        <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-5 gap-4'} w-full`}>
+            <StatCard label="Média Diária" value={stats.avgWeek} subLabel="Questões/dia" icon={TrendingUp} colorClass="bg-blue-500 text-blue-500" />
             <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
             <StatCard label="Total Semana" value={stats.totalWeek} subLabel="Questões" icon={CalendarDays} colorClass="bg-purple-500 text-purple-500" />
             <StatCard label="Total Mês" value={stats.totalMonth} subLabel="Questões" icon={BarChart2} colorClass="bg-emerald-500 text-emerald-500" />
+            {stats.avgTimePerQuestion && (
+                 <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
+            )}
         </div>
     );
 });
@@ -371,97 +374,268 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
     )
 });
 
+// --- Future Load Widget ---
+export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => {
+    const today = new Date();
+    const next7Days = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        return { dateStr, dayOfWeek, load: 0 };
+    });
+
+    topics.forEach(t => {
+        if (t.deleted) return;
+        t.reviews.forEach(r => {
+            if (!r.done) {
+                const day = next7Days.find(d => d.dateStr === r.date);
+                if (day) day.load += r.targetQ;
+            }
+        });
+    });
+
+    const maxLoad = Math.max(...next7Days.map(d => d.load), 100); // Minimum scale of 100
+
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-end justify-between gap-1 sm:gap-2 h-24 sm:h-32 mt-2">
+                {next7Days.map((day, i) => {
+                    const heightPct = Math.max((day.load / maxLoad) * 100, 5); // Minimum 5% height for visibility
+                    const isToday = i === 0;
+                    return (
+                        <div key={day.dateStr} className="flex flex-col items-center gap-1.5 sm:gap-2 flex-1 group relative">
+                            <div className="w-full bg-slate-100 dark:bg-white/5 rounded-t-md sm:rounded-t-lg flex items-end justify-center relative overflow-hidden h-full">
+                                <div 
+                                    className={`w-full rounded-t-md sm:rounded-t-lg transition-all duration-500 ${isToday ? 'bg-blue-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
+                                    style={{ height: `${heightPct}%` }}
+                                ></div>
+                            </div>
+                            <span className={`text-[8px] sm:text-[10px] font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
+                                {isToday ? 'Hoj' : day.dayOfWeek.substring(0, 3)}
+                            </span>
+                            
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                <div className="bg-slate-900 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                                    {day.load}q
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+});
+
+// --- Retention Widget ---
+export const RetentionWidget = React.memo(({ topics }: { topics: Topic[] }) => {
+    const stats = useMemo(() => {
+        let hot = 0, warm = 0, cold = 0, freezing = 0;
+        const today = new Date();
+        
+        topics.forEach(t => {
+            if (t.deleted) return;
+            const lastReview = [...t.reviews].filter(r => r.done).sort((a,b) => b.date.localeCompare(a.date))[0];
+            if (!lastReview) {
+                freezing++;
+                return;
+            }
+            
+            const diffTime = Math.abs(today.getTime() - new Date(lastReview.date + 'T12:00:00').getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays <= 3) hot++;
+            else if (diffDays <= 7) warm++;
+            else if (diffDays <= 30) cold++;
+            else freezing++;
+        });
+        
+        const total = hot + warm + cold + freezing;
+        return { hot, warm, cold, freezing, total };
+    }, [topics]);
+
+    const getPct = (val: number) => stats.total > 0 ? Math.round((val / stats.total) * 100) : 0;
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 p-5 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-sm h-full">
+            <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-xs uppercase tracking-wide mb-4">
+                <Flame size={16} className="text-orange-500"/> Retenção
+            </h3>
+            
+            <div className="space-y-4">
+                <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span>Quente (0-3d)</span>
+                        <span>{stats.hot} ({getPct(stats.hot)}%)</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500" style={{width: `${getPct(stats.hot)}%`}}></div>
+                    </div>
+                </div>
+                
+                <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span>Morno (4-7d)</span>
+                        <span>{stats.warm} ({getPct(stats.warm)}%)</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-400" style={{width: `${getPct(stats.warm)}%`}}></div>
+                    </div>
+                </div>
+                
+                <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span>Frio (8-30d)</span>
+                        <span>{stats.cold} ({getPct(stats.cold)}%)</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-400" style={{width: `${getPct(stats.cold)}%`}}></div>
+                    </div>
+                </div>
+                
+                <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span>Congelado ({'>'}30d)</span>
+                        <span>{stats.freezing} ({getPct(stats.freezing)}%)</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-slate-300 dark:bg-slate-700" style={{width: `${getPct(stats.freezing)}%`}}></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+
 // --- Topic Card ---
 export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void }) => {
     const theme = getAreaTheme(topic.area);
     const nextReviewIdx = topic.reviews.findIndex(r => !r.done);
     const nextReview = topic.reviews[nextReviewIdx];
-    const progress = topic.reviews.filter(r => r.done).length / topic.reviews.length * 100;
     const prevReview = nextReviewIdx > 0 ? topic.reviews[nextReviewIdx - 1] : null;
     const errorRate = prevReview && prevReview.total > 0 ? Math.round(((prevReview.total - prevReview.correct) / prevReview.total) * 100) : null;
     const today = getTodayStr();
     const priority = getPriorityInfo(topic.importance);
+    const isPico = topic.importance === 'high';
+
+    // Calculate days since last review
+    let lastReviewText = "Não iniciado";
+    let heatIcon = <div className="text-blue-400" title="Frio"><Flame size={14} /></div>; // Default cold
+    
+    if (prevReview) {
+        const prevDate = new Date(prevReview.date + 'T12:00:00');
+        const todayDate = new Date(today + 'T12:00:00');
+        const diffTime = Math.abs(todayDate.getTime() - prevDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            lastReviewText = "Hoje";
+            heatIcon = <div className="text-red-500" title="Quente"><Flame size={14} fill="currentColor" /></div>;
+        } else if (diffDays === 1) {
+            lastReviewText = "Ontem";
+            heatIcon = <div className="text-orange-500" title="Morno"><Flame size={14} fill="currentColor" /></div>;
+        } else {
+            lastReviewText = `Há ${diffDays} dias`;
+            if (diffDays <= 3) heatIcon = <div className="text-orange-400" title="Morno"><Flame size={14} fill="currentColor" /></div>;
+            else if (diffDays <= 7) heatIcon = <div className="text-amber-400" title="Esfriando"><Flame size={14} /></div>;
+            // else remains cold (blue)
+        }
+    }
 
     return (
-        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm relative group hover:border-blue-500/30 transition-all">
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${theme.bg} ${theme.text}`}>
-                        <BookOpen size={20}/>
+        <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all
+            ${isPico 
+                ? 'border-indigo-300 dark:border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] dark:shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
+                : 'border-black/5 dark:border-white/5 hover:border-blue-500/30'
+            }
+        `}>
+            <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${theme.bg} ${theme.text}`}>
+                        <BookOpen size={16}/>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{topic.title}</h4>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate">{topic.title}</h4>
+                            {heatIcon}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${priority.bg} ${priority.text}`}>{priority.label}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
+                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full ${priority.bg} ${priority.text}`}>{priority.label}</span>
+                            <span className="text-[9px] font-medium text-slate-400 flex items-center gap-1">
+                                <Clock size={10}/> {lastReviewText}
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div className="flex gap-1 transition-opacity">
-                     <button onClick={onEdit} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
-                     {onDelete && (
-                         <button onClick={() => onDelete(topic.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
-                     )}
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${theme.bg.replace('bg-', 'bg-').replace('100', '500')}`} style={{width: `${progress}%`}}></div>
-                </div>
-                {errorRate !== null && (
-                    <div className="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded flex items-center gap-1" title="Taxa de erro da última revisão">
-                        <AlertCircle size={10}/> {errorRate}% Erro
+                
+                <div className="flex items-center gap-1 shrink-0">
+                    {nextReview && (
+                        <button 
+                            onClick={() => onReview(topic.id, nextReviewIdx)} 
+                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-md mr-1"
+                            title="Revisar"
+                        >
+                            <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
+                        </button>
+                    )}
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
+                        {onDelete && (
+                            <button onClick={() => onDelete(topic.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Next Action Box */}
-            {nextReview ? (
-                <div className="flex items-center justify-between bg-slate-50 dark:bg-black/20 p-3 rounded-xl mb-4">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Calendar size={14} className="text-slate-400"/>
-                            <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                {nextReview.label} <span className="text-slate-400 font-medium">• {formatDate(nextReview.date)}</span>
+            <div className="flex items-center justify-between">
+                {/* Timeline Dots */}
+                <div className="flex items-center gap-1.5">
+                    {topic.reviews.map((r, i) => {
+                        const isDone = r.done;
+                        const isToday = r.date === today;
+                        const isNext = !isDone && i === nextReviewIdx;
+                        
+                        let dotColor = 'bg-slate-200 dark:bg-zinc-700'; // Future
+                        if (isDone) dotColor = 'bg-emerald-500';
+                        else if (isToday || isNext) dotColor = 'bg-blue-500';
+
+                        return (
+                            <div key={i} className="relative group/dot flex items-center">
+                                <div className={`w-2 h-2 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-blue-500/30' : ''}`} />
+                                {i < topic.reviews.length - 1 && (
+                                    <div className={`w-3 h-px ${isDone ? 'bg-emerald-500/50' : 'bg-slate-200 dark:bg-zinc-700'}`} />
+                                )}
+                                
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none z-10">
+                                    <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
+                                        {r.label} ({formatDate(r.date)})
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className="text-[10px] font-bold text-blue-500 flex items-center gap-1">
-                            <Target size={10}/> Meta: {nextReview.targetQ} questões
-                        </div>
-                    </div>
-                    {/* Allow review button regardless of date */}
-                    <button onClick={() => onReview(topic.id, nextReviewIdx)} className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-lg shadow-lg active:scale-95 transition-all uppercase tracking-wide">
-                        Revisar
-                    </button>
+                        );
+                    })}
                 </div>
-            ) : (
-                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide mb-4">
-                    <Check size={16}/> Ciclo Concluído
-                </div>
-            )}
 
-            {/* Full Schedule List (Timeline) */}
-            <div className="flex gap-1.5 overflow-x-auto pb-2 custom-scrollbar opacity-60 group-hover:opacity-100 transition-opacity">
-                {topic.reviews.map((r, i) => {
-                    const isDone = r.done;
-                    const isNext = !isDone && i === nextReviewIdx;
-                    return (
-                        <div key={i} className={`flex-shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-lg border text-[9px] font-bold min-w-[50px] ${
-                            isDone 
-                                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                                : isNext 
-                                    ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
-                                    : 'bg-transparent border-slate-100 dark:border-white/5 text-slate-400'
-                        }`}>
-                            <span className="uppercase tracking-wide">{r.label.split(':')[0]}</span>
-                            <span className="mt-0.5">{formatDate(r.date)}</span>
+                {/* Next Target & Error Rate */}
+                <div className="flex items-center gap-2">
+                    {errorRate !== null && (
+                        <div className="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <AlertCircle size={10}/> {errorRate}% Erro
                         </div>
-                    )
-                })}
+                    )}
+                    {nextReview && (
+                        <div className="text-[9px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <Target size={10}/> {nextReview.targetQ}q
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
-    )
+    );
 });
 
 // --- Simulados Mini Widget with Actions ---

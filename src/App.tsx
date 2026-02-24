@@ -127,6 +127,18 @@ export function App() {
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
+    // PWA Badges
+    useEffect(() => {
+        const today = getTodayStr();
+        const pending = topics.reduce((acc, t) => {
+            if (t.deleted) return acc;
+            return acc + t.reviews.filter(r => r.date <= today && !r.done).length;
+        }, 0);
+        if ('setAppBadge' in navigator) {
+            (navigator as any).setAppBadge(pending).catch(() => {});
+        }
+    }, [topics]);
+
     const handleInstallApp = async () => {
         if (!installPrompt) return;
         installPrompt.prompt();
@@ -246,13 +258,21 @@ export function App() {
         vibration.success();
     };
 
-    const handleReviewSubmit = (data: { correct: number; total: number; difficulty: string }) => {
+    const handleReviewSubmit = (data: { correct: number; total: number; difficulty: string; timeSpent?: number }) => {
         if (!reviewData) return;
-        const { correct, total, difficulty } = data;
+        const { correct, total, difficulty, timeSpent } = data;
         setTopics(prev => prev.map(t => {
             if (t.id !== reviewData.tId) return t;
             const newReviews = [...t.reviews];
-            newReviews[reviewData.rIdx] = { ...newReviews[reviewData.rIdx], done: true, correct, total, difficulty: difficulty as any, completedAt: new Date().toISOString() };
+            newReviews[reviewData.rIdx] = { 
+                ...newReviews[reviewData.rIdx], 
+                done: true, 
+                correct, 
+                total, 
+                difficulty: difficulty as any, 
+                completedAt: new Date().toISOString(),
+                timeSpent
+            };
             if (reviewData.rIdx + 1 < newReviews.length) {
                 const acc = total > 0 ? correct/total : 0;
                 newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc);
@@ -345,58 +365,70 @@ export function App() {
 
     return (
         <div 
-            className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30"
+            className="min-h-screen bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-blue-500/30"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEndHandler}
         >
             
-            {/* --- FLOATING MODERN SIDEBAR (DESKTOP) --- */}
-            <aside className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-64 bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl z-50 p-4 rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-500 ease-out will-change-transform">
-                {/* Logo Area */}
-                <div className="flex items-center gap-3 px-3 mt-4 mb-8">
-                    <div className="relative group cursor-pointer">
-                        <div className="absolute inset-0 bg-blue-500/30 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg relative z-10 border border-white/10">
-                             <Activity size={20} strokeWidth={2.5}/>
+            {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
+            <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
+                <div className="flex items-center gap-12">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
+                        <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
+                             <Activity size={16} strokeWidth={2.5}/>
                         </div>
+                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white">ReviewFlow</h1>
                     </div>
-                    <div className="flex flex-col">
-                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white leading-none">ReviewFlow</h1>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Medical Plan</span>
+                    <nav className="flex items-center gap-2">
+                        {NAV_ITEMS.map(item => {
+                            const isActive = view === item.id;
+                            return (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => setView(item.id as any)}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                >
+                                    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                                    {item.label}
+                                </button>
+                            )
+                        })}
+                    </nav>
+                </div>
+                <div className="flex items-center gap-6">
+                    <div className="hidden xl:block">
+                        <CompactLevelSystem totalQuestions={stats.totalAnswered} />
                     </div>
-                </div>
-
-                {/* Main Navigation */}
-                <div className="space-y-1.5 mb-auto">
-                    {NAV_ITEMS.map(item => {
-                        const isActive = view === item.id;
-                        return (
-                            <button 
-                                key={item.id}
-                                onClick={() => setView(item.id as any)}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-500 group relative overflow-hidden ${
-                                    isActive 
-                                    ? 'bg-white dark:bg-white/10 text-blue-600 dark:text-white font-bold shadow-md dark:shadow-none' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-white/5 font-medium hover:pl-5'
-                                }`}
-                            >
-                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={`relative z-10 transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                                <span className="relative z-10">{item.label}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-
-                {/* Bottom Section */}
-                <div className="pt-6 border-t border-slate-200/50 dark:border-white/5 space-y-4">
-                    <CompactLevelSystem totalQuestions={stats.totalAnswered} />
                     
-                    <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-white/50 dark:hover:bg-white/5 transition-all w-full border border-transparent hover:border-white/20 dark:hover:border-white/5 group">
-                        <Settings size={16} className="group-hover:rotate-90 transition-transform duration-700" /> Configurações
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Add Button (Desktop) */}
+                        <div className="relative">
+                            <button 
+                                onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
+                                className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md hover:scale-105 active:scale-90 transition-all duration-300"
+                            >
+                                <Plus size={18} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
+                            </button>
+                            {desktopNewMenuOpen && (
+                                <div className="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-2 animate-scale-in z-50">
+                                    <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center"><BookOpen size={16}/></div>
+                                        Novo Tema
+                                    </button>
+                                    <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><ClipboardList size={16}/></div>
+                                        Novo Simulado
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-all">
+                            <Settings size={18} />
+                        </button>
+                    </div>
                 </div>
-            </aside>
+            </header>
 
             {/* Mobile Top Navigation (Fixed) */}
             <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-black/5 dark:border-white/5 safe-top">
@@ -423,12 +455,12 @@ export function App() {
                 </nav>
             </div>
 
-            {/* Main Content Area - Adjusted Margins for Floating Sidebar */}
-            <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[calc(80px+env(safe-area-inset-top))] lg:pt-0 transition-all duration-500">
+            {/* Main Content Area */}
+            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-[calc(80px+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 
-                {/* Floating Sticky Header (Desktop & Mobile) */}
-                <header className="sticky top-0 z-[60] px-4 pt-4 pb-2 pointer-events-none safe-top hidden lg:block">
-                    <div className="mx-auto max-w-[1000px] w-full flex justify-center">
+                {/* Floating Sticky Header (Mobile Only) */}
+                <header className="sticky top-0 z-[60] px-0 pt-4 pb-2 pointer-events-none safe-top lg:hidden">
+                    <div className="mx-auto w-full flex justify-center">
                         <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-black/40 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/60 transition-all duration-300">
                             
                             <div className="flex-1 flex items-center">
@@ -450,7 +482,8 @@ export function App() {
                                     </div>
                                 ) : (
                                     <button onClick={() => setIsSearchActive(true)} className="flex items-center gap-2 text-left w-full group py-1">
-                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2">{currentViewTitle}</h2>
+                                        <Search className="text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
+                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2 hidden">{currentViewTitle}</h2>
                                     </button>
                                 )}
                             </div>
@@ -472,32 +505,12 @@ export function App() {
                                 {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>}
                                 
                                 <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
-
-                                {/* Add Button (Desktop) */}
-                                <div className="relative hidden lg:block">
-                                    <button 
-                                        onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                        className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-90 transition-all duration-300"
-                                    >
-                                        <Plus size={18} strokeWidth={3}/>
-                                    </button>
-                                    {desktopNewMenuOpen && (
-                                        <div className="absolute top-full right-0 mt-3 w-56 bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl rounded-[24px] shadow-2xl border border-white/20 dark:border-white/10 overflow-hidden animate-scale-in origin-top-right p-2 pointer-events-auto z-50">
-                                            <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 group">
-                                                <div className="p-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"><BookOpen size={16}/></div> Nova Matéria
-                                            </button>
-                                            <button onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setDesktopNewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 group">
-                                                <div className="p-1.5 bg-purple-100 dark:bg-purple-500/20 rounded-lg text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform"><ClipboardList size={16}/></div> Novo Simulado
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="flex-1 p-4 lg:p-8 pt-2 max-w-[1200px] mx-auto w-full">
+                <div className="flex-1 w-full">
                     <Suspense fallback={<LoadingSpinner />}>
                         {view === 'list' && (
                             <HubView 
@@ -509,35 +522,14 @@ export function App() {
                                     const t = topics.find(topic => topic.id === id);
                                     if(t) setEditTopic(t);
                                 }}
+                                onDeleteTopic={handleDeleteTopic}
                                 searchTerm={searchTerm}
                                 sortOrder={sortOrder}
                                 setSortOrder={setSortOrder}
                                 filterArea={filterArea}
                                 setFilterArea={setFilterArea}
                                 onAddSimulado={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
-                            >
-                                <div className="grid grid-cols-1 gap-4">
-                                    {filteredTopics.length === 0 ? ( 
-                                        <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-white/5 border border-dashed border-slate-200 dark:border-white/10 rounded-[2rem]">
-                                            <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                                                <BookOpen size={24}/>
-                                            </div>
-                                            <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Nada encontrado</h4>
-                                            <p className="text-sm text-slate-500">Tente ajustar os filtros.</p>
-                                        </div>
-                                    ) : (
-                                        filteredTopics.map(t => (
-                                            <TopicCard 
-                                                key={t.id} 
-                                                topic={t} 
-                                                onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} 
-                                                onDelete={handleDeleteTopic} 
-                                                onEdit={() => setEditTopic(t)} 
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            </HubView>
+                            />
                         )}
                         {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
                         

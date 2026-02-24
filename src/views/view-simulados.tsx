@@ -19,7 +19,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in gap-6">
-             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+             <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                     <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3"><ClipboardList size={28} className="text-purple-500"/> Simulados</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Provas</p>
@@ -27,7 +27,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
             </div>
 
             {/* Performance Chart Section */}
-            <div className="glass-panel p-6 rounded-[32px] shadow-sm flex flex-col h-64 relative overflow-hidden">
+            <div className="glass-panel p-6 rounded-[32px] shadow-sm flex flex-col h-64 relative overflow-hidden mt-2 lg:mt-0">
                 <div className="w-full flex items-center justify-between mb-4 z-10">
                     <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><BarChart2 size={16} className="text-purple-500"/> Desempenho Recente</h4>
                     <div className="flex bg-slate-100 dark:bg-white/10 p-1 rounded-lg">

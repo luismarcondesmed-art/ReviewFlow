@@ -628,12 +628,12 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
 };
 
 export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: any) => {
-    const [formState, setFormState] = useState({ correct: '', total: '20', difficulty: 'medium' });
+    const [formState, setFormState] = useState({ correct: '', total: '20', difficulty: 'medium', timeSpent: '' });
     
     useEffect(() => { 
         if (isOpen && topic && reviewIdx !== null) { 
             const target = topic.reviews[reviewIdx]?.targetQ || 20; 
-            setFormState({ correct: '', total: String(target), difficulty: 'medium' }); 
+            setFormState({ correct: '', total: String(target), difficulty: 'medium', timeSpent: '' }); 
         } 
     }, [isOpen, topic, reviewIdx]);
     
@@ -649,7 +649,8 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
         onSubmit({
             correct: correctNum,
             total: totalNum,
-            difficulty: formState.difficulty
+            difficulty: formState.difficulty,
+            timeSpent: (parseInt(formState.timeSpent) || 0) * 60 // Convert minutes to seconds
         }); 
         onClose(); 
     };
@@ -667,8 +668,8 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                     </div>
                 </div>
                 
-                <div className="flex gap-4">
-                    <div className="flex-1 bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
                         <label className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">Acertos</label>
                         <input 
@@ -677,13 +678,13 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             value={formState.correct} 
                             onChange={(e) => setFormState(s => ({...s, correct: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-5xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
                             placeholder="0"
                             autoFocus
                         />
                     </div>
                     
-                    <div className="flex-1 bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
+                    <div className="bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
                         <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Total</label>
                         <input 
@@ -692,8 +693,21 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             value={formState.total} 
                             onChange={(e) => setFormState(s => ({...s, total: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-5xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
                             placeholder="20"
+                        />
+                    </div>
+
+                    <div className="col-span-2 bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
+                        <label className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-3">Tempo (minutos)</label>
+                        <input 
+                            type="number" 
+                            inputMode="numeric"
+                            value={formState.timeSpent} 
+                            onChange={(e) => setFormState(s => ({...s, timeSpent: e.target.value}))} 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            placeholder="Opcional"
                         />
                     </div>
                 </div>
