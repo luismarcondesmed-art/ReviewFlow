@@ -211,8 +211,8 @@ export function App() {
             alert("Matéria atualizada com as novas aulas do bloco!");
         } else {
             const newTopicId = generateId();
-            const customSettings = baseQuestions ? { intervals: [1, 7, 30], baseQuestions } : undefined;
-            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, customSettings);
+            // Pass baseQuestions as overrideBaseQuestions to maintain AI schedule
+            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, undefined, baseQuestions);
             const newTopic: Topic = {
                 id: newTopicId,
                 title,
@@ -223,8 +223,7 @@ export function App() {
                 reviews,
                 linkedLessons: lessons,
                 deleted: false,
-                updatedAt: Date.now(),
-                customSettings
+                updatedAt: Date.now()
             };
             setTopics(prev => [newTopic, ...prev]);
             triggerConfetti();

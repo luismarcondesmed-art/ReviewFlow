@@ -107,9 +107,9 @@ export const getPerformanceBgLight = (score: number, target: number) => {
     return 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300';
 }
 
-export const calculateNextLoad = (importanceId: ImportanceType, diffId: string | null, stage: string, acc: number | null): number => {
+export const calculateNextLoad = (importanceId: ImportanceType, diffId: string | null, stage: string, acc: number | null, overrideBaseQ?: number): number => {
   const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
-  const base = impObj.baseQ;
+  const base = overrideBaseQ || impObj.baseQ;
   const stageFactor = SYSTEM_PARAMS.SPACING_FACTORS[stage] || 1.0;
   const diffWeight = diffId === 'easy' ? 0.9 : diffId === 'hard' ? 1.1 : 1.0;
   let perfFactor = 1.0;
@@ -124,7 +124,7 @@ export const calculateNextLoad = (importanceId: ImportanceType, diffId: string |
 
   let n = Math.round(base * stageFactor * diffWeight * perfFactor);
   if (acc !== null && acc < 0.60) n += 10;
-  return Math.max(15, Math.min(n, 100));
+  return Math.max(15, Math.min(n, 150)); // Increased max cap to 150 for dynamic blocks
 };
 
 // --- NEW SMART SCHEDULING LOGIC ---
@@ -162,10 +162,12 @@ export const generateSmartSchedule = (
     importanceId: ImportanceType,
     existingTopics: Topic[] = [],
     currentTopicId?: string,
-    customSettings?: { intervals: number[], baseQuestions: number }
+    customSettings?: { intervals: number[], baseQuestions: number },
+    overrideBaseQuestions?: number
 ): Review[] => {
     const impObj = IMPORTANCE_LEVELS.find(i => i.id === importanceId) || IMPORTANCE_LEVELS[1];
     const today = getTodayStr();
+    const baseQ = overrideBaseQuestions || (customSettings ? customSettings.baseQuestions : impObj.baseQ);
     
     // --- CUSTOM SCHEDULE LOGIC ---
     if (customSettings && customSettings.intervals.length > 0) {
@@ -178,20 +180,16 @@ export const generateSmartSchedule = (
             date: studyDate, 
             label: 'R0: Estudo', 
             done: false, correct: 0, total: 0, difficulty: null, 
-            targetQ: customSettings.baseQuestions || impObj.baseQ 
+            targetQ: baseQ 
         });
 
         let previousDate = studyDate;
 
         customSettings.intervals.forEach((intervalDays, index) => {
             const idealDate = addDays(previousDate, intervalDays);
-            // We can optionally use findNextEmptyDate here, but custom schedules usually imply strict adherence.
-            // Let's stick to strict dates for custom, or basic busy logic. Let's use busy logic for UX niceness.
             let actualDate = findNextEmptyDate(idealDate, busyDates);
             busyDates.add(actualDate);
             
-            // Note: In custom logic, gap is usually "from previous review".
-            // So we update previousDate.
             previousDate = actualDate; 
 
             schedule.push({
@@ -202,7 +200,7 @@ export const generateSmartSchedule = (
                 correct: 0,
                 total: 0,
                 difficulty: null,
-                targetQ: customSettings.baseQuestions || calculateNextLoad(importanceId, 'medium', `R${index+1}`, null)
+                targetQ: baseQ || calculateNextLoad(importanceId, 'medium', `R${index+1}`, null, baseQ)
             });
         });
 
@@ -247,23 +245,23 @@ export const generateSmartSchedule = (
         date: studyDate, 
         label: 'R0: Fixação', 
         done: false, correct: 0, total: 0, difficulty: null, 
-        targetQ: impObj.baseQ 
+        targetQ: baseQ 
     });
     
     let r1Ideal = addDays(studyDate, r1Gap);
     let r1Actual = findNextEmptyDate(r1Ideal, busyDates);
     busyDates.add(r1Actual);
-    schedule.push({ type: 'R1', date: r1Actual, label: 'R1: Pico', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R1', null) });
+    schedule.push({ type: 'R1', date: r1Actual, label: 'R1: Pico', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R1', null, baseQ) });
 
     let r2Ideal = addDays(r1Actual, r2Gap);
     let r2Actual = findNextEmptyDate(r2Ideal, busyDates);
     busyDates.add(r2Actual);
-    schedule.push({ type: 'R2', date: r2Actual, label: 'R2: Manutenção', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R2', null) });
+    schedule.push({ type: 'R2', date: r2Actual, label: 'R2: Manutenção', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R2', null, baseQ) });
 
     let r3Ideal = addDays(r2Actual, r3Gap);
     let r3Actual = findNextEmptyDate(r3Ideal, busyDates);
     busyDates.add(r3Actual);
-    schedule.push({ type: 'R3', date: r3Actual, label: 'R3: Longo Prazo', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R3', null) });
+    schedule.push({ type: 'R3', date: r3Actual, label: 'R3: Longo Prazo', done: false, correct: 0, total: 0, difficulty: null, targetQ: calculateNextLoad(importanceId, 'medium', 'R3', null, baseQ) });
 
     if (daysUntilExam > 7) {
         const finalStart = addDays(effectiveExamDate, -7);
@@ -285,7 +283,7 @@ export const generateSmartSchedule = (
         }
 
         if (finalActual <= effectiveExamDate) {
-             schedule.push({ type: 'R_FINAL', date: finalActual, label: 'Revisão Final', done: false, correct: 0, total: 0, difficulty: null, targetQ: impObj.baseQ * 1.5 });
+             schedule.push({ type: 'R_FINAL', date: finalActual, label: 'Revisão Final', done: false, correct: 0, total: 0, difficulty: null, targetQ: Math.round(baseQ * 1.5) });
         }
     }
 
