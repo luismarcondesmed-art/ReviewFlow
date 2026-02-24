@@ -180,7 +180,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 relative">
                          {/* Timeline Line */}
-                         <div className="absolute left-[2.35rem] top-6 bottom-6 w-0.5 bg-slate-100 dark:bg-white/10"></div>
+                         <div className="absolute left-[3.5rem] top-6 bottom-6 w-0.5 bg-slate-100 dark:bg-white/10"></div>
 
                         {timelineDays.length === 0 ? (
                              <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -188,11 +188,11 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config }: { topi
                                 <p className="text-sm font-bold">Nenhuma atividade prevista</p>
                             </div>
                         ) : timelineDays.map((day, i) => (
-                             <div key={i} className="relative pl-12">
+                             <div key={i} className="relative pl-20">
                                 {/* Date Bubble */}
-                                <div className={`absolute left-0 top-0 w-16 flex flex-col items-center justify-center p-2 rounded-xl border border-slate-100 dark:border-white/10 z-10 ${day.isToday ? 'bg-blue-600 text-white shadow-lg border-blue-600' : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300'}`}>
+                                <div className={`absolute left-0 top-0 w-14 h-14 flex flex-col items-center justify-center rounded-2xl border border-slate-100 dark:border-white/10 z-10 ${day.isToday ? 'bg-blue-600 text-white shadow-lg border-blue-600' : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-300'}`}>
                                      <span className="text-xl font-black leading-none">{day.date.split('-')[2]}</span>
-                                     <span className="text-[9px] font-bold uppercase opacity-80">{new Date(day.date + 'T12:00:00').toLocaleString('default', { month: 'short' })}</span>
+                                     <span className="text-[9px] font-bold uppercase opacity-80 mt-0.5">{new Date(day.date + 'T12:00:00').toLocaleString('default', { month: 'short' })}</span>
                                 </div>
                                 
                                 <div className="space-y-3 pt-1">

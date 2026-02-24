@@ -296,12 +296,12 @@ export const StatsView = () => {
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
               <PieChart size={18} className="text-indigo-500" /> 1º Nível: Especialidades
             </h2>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:max-h-[600px] pb-4 lg:pb-0 pr-2 custom-scrollbar snap-x">
               {especialidadesData.map((esp, idx) => (
                 <button
                   key={esp.name}
                   onClick={() => setSelectedEspecialidade(esp.name)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group ${
+                  className={`shrink-0 w-[240px] lg:w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group snap-start ${
                     selectedEspecialidade === esp.name 
                       ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/30' 
                       : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30'

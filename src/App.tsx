@@ -55,6 +55,40 @@ export function App() {
     // Mobile Navigation
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
 
+    // Swipe to change tabs
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEndHandler = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe || isRightSwipe) {
+            const currentIndex = NAV_ITEMS.findIndex(item => item.id === view);
+            if (isLeftSwipe && currentIndex < NAV_ITEMS.length - 1) {
+                setView(NAV_ITEMS[currentIndex + 1].id as any);
+                vibration.tick();
+            }
+            if (isRightSwipe && currentIndex > 0) {
+                setView(NAV_ITEMS[currentIndex - 1].id as any);
+                vibration.tick();
+            }
+        }
+    };
+
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editTopic, setEditTopic] = useState<Topic | null>(null);
@@ -163,7 +197,7 @@ export function App() {
         vibration.success();
     };
 
-    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType) => {
+    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => {
         const existing = topics.find(t => t.title === title && !t.deleted);
         
         if (existing) {
@@ -177,7 +211,8 @@ export function App() {
             alert("Matéria atualizada com as novas aulas do bloco!");
         } else {
             const newTopicId = generateId();
-            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId);
+            const customSettings = baseQuestions ? { intervals: [1, 7, 30], baseQuestions } : undefined;
+            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, customSettings);
             const newTopic: Topic = {
                 id: newTopicId,
                 title,
@@ -188,7 +223,8 @@ export function App() {
                 reviews,
                 linkedLessons: lessons,
                 deleted: false,
-                updatedAt: Date.now()
+                updatedAt: Date.now(),
+                customSettings
             };
             setTopics(prev => [newTopic, ...prev]);
             triggerConfetti();
@@ -309,7 +345,12 @@ export function App() {
     const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
 
     return (
-        <div className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30">
+        <div 
+            className="min-h-screen bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-200 flex flex-col lg:flex-row font-sans overflow-x-hidden selection:bg-blue-500/30"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEndHandler}
+        >
             
             {/* --- FLOATING MODERN SIDEBAR (DESKTOP) --- */}
             <aside className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-64 bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl z-50 p-4 rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-500 ease-out will-change-transform">
@@ -359,8 +400,8 @@ export function App() {
             </aside>
 
             {/* Mobile Top Navigation (Fixed) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-[#f2f4f7]/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 safe-top">
-                <nav className="flex items-center justify-between px-4 py-2 overflow-x-auto no-scrollbar">
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-black/5 dark:border-white/5 safe-top">
+                <nav className="flex items-center justify-between px-4 py-3 overflow-x-auto no-scrollbar">
                     {NAV_ITEMS.map((item) => {
                         const isActive = view === item.id;
                         return (
@@ -370,13 +411,13 @@ export function App() {
                                     vibration.tick(); 
                                     setView(item.id as any);
                                 }} 
-                                className={`flex flex-col items-center justify-center min-w-[60px] py-1 gap-1 rounded-xl transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400 scale-105' : 'text-slate-400 dark:text-slate-500'}`}
+                                className={`flex flex-col items-center justify-center min-w-[60px] gap-1 transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
                             >
                                 <item.icon 
-                                    size={20} 
+                                    size={22} 
                                     strokeWidth={isActive ? 2.5 : 2} 
                                 />
-                                <span className={`text-[9px] font-bold whitespace-nowrap transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
+                                <span className={`text-[10px] font-medium whitespace-nowrap transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
                             </button>
                         );
                     })}
@@ -384,10 +425,10 @@ export function App() {
             </div>
 
             {/* Main Content Area - Adjusted Margins for Floating Sidebar */}
-            <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[calc(72px+env(safe-area-inset-top))] lg:pt-0 transition-all duration-500">
+            <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen relative pb-28 lg:pb-0 pt-[calc(80px+env(safe-area-inset-top))] lg:pt-0 transition-all duration-500">
                 
                 {/* Floating Sticky Header (Desktop & Mobile) */}
-                <header className="sticky top-0 z-[60] px-4 pt-4 pb-2 pointer-events-none safe-top">
+                <header className="sticky top-0 z-[60] px-4 pt-4 pb-2 pointer-events-none safe-top hidden lg:block">
                     <div className="mx-auto max-w-[1000px] w-full flex justify-center">
                         <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-black/40 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/60 transition-all duration-300">
                             

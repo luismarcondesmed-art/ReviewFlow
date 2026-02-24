@@ -40,7 +40,7 @@ const mapArea = (area: string): AreaType => {
     if (area.includes("Clínica")) return 'clinica';
     if (area.includes("Cirurgia")) return 'cirurgia';
     if (area.includes("Pediatria")) return 'pediatria';
-    if (area.includes("Ginecologia") || area.includes("Obstetrícia")) return 'go';
+    if (area.includes("Ginecologia") || area.includes("Obstetrícia") || area.includes("G.O.")) return 'go';
     if (area.includes("Preventiva")) return 'preventiva';
     return 'clinica';
 };
@@ -86,7 +86,7 @@ interface AreaGroupProps {
     scheduleProgress: ScheduleProgress;
     toggleCheck: (id: string) => void;
     onBulkComplete: (ids: string[]) => void;
-    onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType) => void;
+    onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void;
     existingTopic?: Topic;
 }
 
@@ -115,6 +115,7 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
         
         let maxWeight = 0;
         let finalPriority: ImportanceType = 'medium';
+        let totalQuestions = 0;
 
         items.forEach(i => {
             const w = getPriorityWeight(i.importancia);
@@ -125,23 +126,39 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                 else if (w <= 2) finalPriority = 'low';
                 else finalPriority = 'medium';
             }
+            
+            // Calculate questions per lesson based on priority
+            if (w >= 4) totalQuestions += 15; // High priority
+            else if (w === 3) totalQuestions += 10; // Medium priority
+            else totalQuestions += 5; // Low priority
         });
 
         const hasBlue = items.some(i => (i.importancia || '').toLowerCase().includes('azul'));
         if (hasBlue) finalPriority = 'high';
         else {
              const hasGreen = items.some(i => (i.importancia || '').toLowerCase().includes('verde'));
-             finalPriority = hasGreen ? 'medium' : 'low';
+             if (!hasBlue && hasGreen) finalPriority = 'medium';
         }
 
+        // Cap total questions at 50
+        const baseQuestions = Math.min(totalQuestions, 50);
+
         const topicTitle = `Bloco ${blockId} - ${areaName}`;
-        const lessonNames = items.map(i => i.aula);
+        
+        // Append estimated questions to lesson names
+        const lessonNames = items.map(i => {
+            const w = getPriorityWeight(i.importancia);
+            let q = 5;
+            if (w >= 4) q = 15;
+            else if (w === 3) q = 10;
+            return `${i.aula} (~${q}q)`;
+        });
         
         // Auto-complete all lessons in this group
         const allIds = items.map(i => i.id);
         onBulkComplete(allIds);
 
-        onCreateTopic(topicTitle, mappedArea, lessonNames, finalPriority);
+        onCreateTopic(topicTitle, mappedArea, lessonNames, finalPriority, baseQuestions);
     };
 
     return (
@@ -198,7 +215,7 @@ export const CronogramaView = ({
     config: UserConfig, 
     searchTerm?: string, 
     onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA') => void,
-    onCreateAggregatedTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType) => void,
+    onCreateAggregatedTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void,
     existingTopics: Topic[]
 }) => {
     const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
