@@ -1,0 +1,524 @@
+
+import React, { useMemo, useState } from 'react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, Plus, BarChart2, CalendarDays } from 'lucide-react';
+import { Topic, Simulado } from '../types';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats } from '../utils';
+
+// --- Helper: Get Rank Name ---
+const getRankInfo = (level: number) => {
+    if (level < 10) return { label: 'Estudante', icon: BookOpen, color: 'text-slate-400', bg: 'from-slate-700 to-slate-900' };
+    if (level < 20) return { label: 'Interno', icon: Star, color: 'text-blue-400', bg: 'from-blue-600 to-blue-900' };
+    if (level < 30) return { label: 'Residente', icon: Medal, color: 'text-amber-400', bg: 'from-amber-600 to-amber-900' };
+    if (level < 50) return { label: 'Especialista', icon: Trophy, color: 'text-emerald-400', bg: 'from-emerald-600 to-emerald-900' };
+    return { label: 'Chefe de Serviço', icon: Crown, color: 'text-purple-400', bg: 'from-purple-600 to-purple-900' };
+};
+
+// --- Compact Level System (Sidebar) ---
+export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+    const rank = getRankInfo(level);
+    const RankIcon = rank.icon;
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="relative w-full mb-2">
+            {/* Popover / Dropup */}
+            {isOpen && (
+                <div className="absolute bottom-full left-0 w-full mb-3 p-4 bg-white/10 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Próximo Nível</span>
+                        <span className="text-xs font-black text-white">{level + 1}</span>
+                    </div>
+                    <div className="h-1.5 bg-black/20 rounded-full overflow-hidden mb-2">
+                        <div className={`h-full bg-gradient-to-r ${rank.bg}`} style={{width: `${progress}%`}}></div>
+                    </div>
+                    <div className="text-right text-[9px] font-bold text-slate-500">
+                        {Math.round(nextLevelXP - currentXP).toLocaleString()} XP restantes
+                    </div>
+                </div>
+            )}
+
+            {/* Trigger Button */}
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+            >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-lg shrink-0`}>
+                    <RankIcon size={18} fill="currentColor" className="opacity-90"/>
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                    <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">{rank.label}</div>
+                    <div className="text-xs font-black text-slate-800 dark:text-white truncate">Nível {level}</div>
+                </div>
+                <ChevronUp size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}/>
+            </button>
+        </div>
+    );
+});
+
+// --- Level System (Full Widget - for Dashboard) ---
+export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+    const rank = getRankInfo(level);
+    const RankIcon = rank.icon;
+
+    return (
+        <div className="relative w-full mb-8 group select-none">
+            <div className={`absolute inset-0 bg-gradient-to-r ${rank.bg} opacity-10 blur-2xl rounded-3xl -z-10 transition-colors duration-700`}></div>
+            <div className="bg-white/60 dark:bg-[#121214]/80 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[28px] p-5 shadow-xl relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${rank.bg} flex items-center justify-center shadow-lg text-white shadow-black/20 group-hover:scale-110 transition-transform duration-500`}>
+                            <RankIcon size={24} fill="currentColor" className="opacity-90"/>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Rank Atual</div>
+                            <div className={`text-sm font-black tracking-tight ${rank.color} drop-shadow-sm`}>{rank.label}</div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nível</div>
+                        <div className="text-3xl font-black text-slate-800 dark:text-white leading-none">{level}</div>
+                    </div>
+                </div>
+                <div className="relative z-10">
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
+                        <span>{currentXP.toLocaleString()} XP</span>
+                        <span>{nextLevelXP.toLocaleString()} XP</span>
+                    </div>
+                    <div className="h-4 bg-slate-200/50 dark:bg-black/40 rounded-full overflow-hidden border border-white/50 dark:border-white/5 backdrop-blur-md shadow-inner">
+                        <div 
+                            className={`h-full bg-gradient-to-r ${rank.bg} relative shadow-[0_0_15px_rgba(0,0,0,0.3)] transition-all duration-1000 ease-out`} 
+                            style={{width: `${progress}%`}}
+                        >
+                            <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                        </div>
+                    </div>
+                    <div className="text-right mt-1">
+                        <span className="text-[9px] font-bold text-slate-400">{Math.round(nextLevelXP - currentXP).toLocaleString()} XP para o próximo nível</span>
+                    </div>
+                </div>
+                <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none transform rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                    <RankIcon size={120} />
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// --- Detailed Stats Widget ---
+export const DetailedStatsWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const stats = useMemo(() => calculateDetailedStats(topics, simulados), [topics, simulados]);
+
+    const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
+        <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all">
+            <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</div>
+                <div className="text-2xl font-black text-slate-800 dark:text-white leading-none">{value}</div>
+                {subLabel && <div className="text-[9px] font-bold text-slate-400 mt-1">{subLabel}</div>}
+            </div>
+            <div className={`p-3 rounded-xl ${colorClass} bg-opacity-10 dark:bg-opacity-20`}>
+                <Icon size={20} className={colorClass.replace('bg-', 'text-')}/>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+            <StatCard label="Média Diária (Semana)" value={stats.avgWeek} subLabel="Questões/dia" icon={TrendingUp} colorClass="bg-blue-500 text-blue-500" />
+            <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
+            <StatCard label="Total Semana" value={stats.totalWeek} subLabel="Questões" icon={CalendarDays} colorClass="bg-purple-500 text-purple-500" />
+            <StatCard label="Total Mês" value={stats.totalMonth} subLabel="Questões" icon={BarChart2} colorClass="bg-emerald-500 text-emerald-500" />
+        </div>
+    );
+});
+
+// --- Evolution Chart (Simulados) with Limit ---
+export const EvolutionChart = React.memo(({ simulados, targetAccuracy, limit }: { simulados: Simulado[], targetAccuracy: number, limit?: number }) => {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+    const data = useMemo(() => {
+        if (!simulados || simulados.length === 0) return [];
+        const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());
+        
+        // Apply Limit if provided (Get last N)
+        const displayData = limit ? sorted.slice(-limit) : sorted;
+
+        return displayData.map(s => ({
+            id: s.id,
+            date: s.dateTaken.split('T')[0],
+            formattedDate: formatDate(s.dateTaken.split('T')[0]),
+            name: s.name,
+            year: s.year,
+            acc: Math.round((s.correctCount / (s.totalQuestions || 1)) * 100),
+            correct: s.correctCount,
+            total: s.totalQuestions
+        }));
+    }, [simulados, limit]);
+
+    if (data.length === 0) {
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center text-slate-400 opacity-60 rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 backdrop-blur-sm">
+                <TrendingUp size={24} className="mb-2 opacity-50"/>
+                <span className="text-[10px] font-bold uppercase tracking-wide">Sem dados</span>
+            </div>
+        );
+    }
+
+    const minVal = 40; 
+    const maxVal = 100;
+    const valRange = maxVal - minVal;
+    const paddingY = 20; 
+
+    const getX = (index: number) => {
+        if (data.length <= 1) return 50;
+        return (index / (data.length - 1)) * 100;
+    }
+    
+    const getY = (val: number) => {
+        const clamped = Math.max(minVal, Math.min(val, maxVal));
+        const normalized = (clamped - minVal) / valRange; 
+        return (100 - paddingY) - (normalized * (100 - paddingY * 2));
+    }
+
+    let dPath = '';
+    if (data.length > 1) {
+        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
+        for (let i = 0; i < data.length - 1; i++) {
+            const x0 = getX(i);
+            const y0 = getY(data[i].acc);
+            const x1 = getX(i + 1);
+            const y1 = getY(data[i+1].acc);
+            const cX = (x0 + x1) / 2;
+            dPath += ` C ${cX} ${y0}, ${cX} ${y1}, ${x1} ${y1}`;
+        }
+    } else if (data.length === 1) {
+        dPath = `M ${getX(0)} ${getY(data[0].acc)}`;
+    }
+
+    const areaPath = data.length > 1 ? `${dPath} L 100 100 L 0 100 Z` : '';
+    const targetY = getY(targetAccuracy);
+
+    return (
+        <div className="w-full h-full relative group/chart select-none px-4 pb-4 pt-6">
+            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4"/>
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0"/>
+                    </linearGradient>
+                </defs>
+                {[60, 80, 100].map(val => (
+                    <line key={val} x1="0" y1={getY(val)} x2="100" y2={getY(val)} stroke="currentColor" className="text-slate-200 dark:text-white/5" strokeWidth="0.5" strokeDasharray="4" vectorEffect="non-scaling-stroke"/>
+                ))}
+                <line x1="0" y1={targetY} x2="100" y2={targetY} stroke="currentColor" className="text-emerald-500/50" strokeWidth="1" strokeDasharray="4" vectorEffect="non-scaling-stroke"/>
+                {data.length > 1 && (
+                    <>
+                        <path d={areaPath} fill="url(#chartGradient)" vectorEffect="non-scaling-stroke" />
+                        <path d={dPath} fill="none" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className="drop-shadow-sm"/>
+                    </>
+                )}
+            </svg>
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
+                {data.map((point, i) => {
+                    const left = getX(i);
+                    const top = getY(point.acc);
+                    const isHovered = hoveredIndex === i;
+                    const isHigh = top < 30;
+
+                    return (
+                        <div 
+                            key={point.id}
+                            className="absolute flex items-center justify-center pointer-events-auto"
+                            style={{ left: `${left}%`, top: `${top}%`, transform: 'translate(-50%, -50%)', zIndex: isHovered ? 50 : 10 }}
+                            onMouseEnter={() => setHoveredIndex(i)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                        >
+                            <div className="w-8 h-8 rounded-full bg-transparent cursor-pointer"></div>
+                            <div className={`absolute rounded-full border-2 border-white dark:border-zinc-900 transition-all duration-300 ease-out shadow-sm ${isHovered ? 'w-4 h-4 bg-purple-600 shadow-[0_0_15px_rgba(139,92,246,0.5)] scale-110' : 'w-2 h-2 bg-purple-500'}`}></div>
+                            {isHovered && (
+                                <div className={`absolute ${isHigh ? 'top-full mt-3' : 'bottom-full mb-3'} flex flex-col items-center animate-scale-in z-[60]`}>
+                                    <div className="bg-slate-900/95 dark:bg-black/95 backdrop-blur-xl text-white p-3 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 min-w-[140px] text-center transform transition-transform">
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{point.formattedDate}</div>
+                                        <div className="font-bold text-xs text-white mb-1 whitespace-nowrap">{point.name}</div>
+                                        <div className="flex items-center justify-center gap-2 mt-1">
+                                            <span className="text-xl font-black text-purple-400">{point.acc}%</span>
+                                            <span className="text-[9px] font-bold text-slate-400 bg-white/10 px-1.5 py-0.5 rounded">{point.correct}/{point.total}</span>
+                                        </div>
+                                    </div>
+                                    <div className={`w-2.5 h-2.5 bg-slate-900/95 dark:bg-black/95 rotate-45 border-r border-b border-white/10 absolute ${isHigh ? '-top-1 rotate-[225deg]' : '-bottom-1 rotate-45'}`}></div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    );
+});
+
+export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topic[], onReview: (id: string, idx: number) => void }) => {
+    const today = getTodayStr();
+    const suggestions = useMemo(() => topics
+        .filter(t => !t.deleted)
+        .flatMap(t => t.reviews.map((r, idx) => ({ ...r, topic: t, idx })))
+        .filter(r => !r.done && r.date <= today)
+        .sort((a,b) => {
+            if (a.date !== b.date) return a.date.localeCompare(b.date);
+            if (a.topic.importance === 'high' && b.topic.importance !== 'high') return -1;
+            if (a.topic.importance !== 'high' && b.topic.importance === 'high') return 1;
+            return 0;
+        })
+        .slice(0, 3), [topics, today]);
+
+    if (suggestions.length === 0) return (
+        <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-[20px] border border-dashed border-slate-200 dark:border-white/10 text-center">
+            <p className="text-xs font-bold text-slate-400">Nenhuma sugestão imediata.</p>
+        </div>
+    );
+
+    return (
+        <div className="space-y-3">
+            {suggestions.map((item) => {
+                const theme = getAreaTheme(item.topic.area);
+                const isOverdue = item.date < today;
+                const priority = getPriorityInfo(item.topic.importance);
+                return (
+                    <div key={`${item.topic.id}-${item.idx}`} className="bg-white dark:bg-zinc-900/50 backdrop-blur-sm p-4 rounded-[20px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-sm ${theme.bg} ${theme.text}`}>
+                                {isOverdue ? <AlertCircle size={20}/> : <Calendar size={20}/>}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm text-slate-800 dark:text-white line-clamp-1">{item.topic.title}</h4>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                        {isOverdue ? 'Atrasado' : 'Hoje'}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></div>
+                                        <span className="text-[10px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={() => onReview(item.topic.id, item.idx)} className="p-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+                            <ChevronRight size={18}/>
+                        </button>
+                    </div>
+                )
+            })}
+        </div>
+    )
+});
+
+// --- Heatmap Widget - Modern Dot Matrix ---
+export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const days = useMemo(() => {
+        const dArr = [];
+        const today = new Date();
+        const start = new Date(today);
+        start.setDate(today.getDate() - 34); 
+
+        for (let i = 0; i < 35; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const dStr = d.toISOString().split('T')[0];
+            let count = 0;
+            topics.forEach(t => { if(!t.deleted) t.reviews.forEach(r => { if(r.done && r.date === dStr) count += r.total; })});
+            simulados.forEach(s => { if(s.dateTaken.split('T')[0] === dStr) count += s.totalQuestions; });
+            dArr.push({ date: dStr, count, dayObj: d });
+        }
+        return dArr;
+    }, [topics, simulados]);
+
+    return (
+        <div className="w-full flex flex-col items-center">
+             <div className="grid grid-cols-7 gap-2.5">
+                {days.map((d, i) => {
+                    let colorClass = 'bg-slate-100 dark:bg-white/5 scale-90';
+                    let glow = '';
+                    
+                    if (d.count > 0) {
+                        colorClass = 'bg-emerald-300 dark:bg-emerald-500/40 scale-100';
+                        glow = 'shadow-[0_0_8px_rgba(16,185,129,0.3)]';
+                    }
+                    if (d.count > 20) {
+                        colorClass = 'bg-emerald-400 dark:bg-emerald-500/70 scale-105';
+                        glow = 'shadow-[0_0_12px_rgba(16,185,129,0.5)]';
+                    }
+                    if (d.count > 50) {
+                        colorClass = 'bg-emerald-500 dark:bg-emerald-500 scale-110';
+                        glow = 'shadow-[0_0_15px_rgba(16,185,129,0.7)]';
+                    }
+
+                    return (
+                        <div key={d.date} className="relative group cursor-default">
+                             <div 
+                                className={`w-3 h-3 rounded-full transition-all duration-500 ease-out ${colorClass} ${glow}`}
+                            />
+                            {/* Simple tooltip */}
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded-md whitespace-nowrap">
+                                    {d.dayObj.getDate()}/{d.dayObj.getMonth()+1}: {d.count}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    )
+});
+
+// --- Topic Card ---
+export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { topic: Topic; onReview: (id: string, idx: number) => void; onDelete?: (id: string) => void; onEdit: () => void }) => {
+    const theme = getAreaTheme(topic.area);
+    const nextReviewIdx = topic.reviews.findIndex(r => !r.done);
+    const nextReview = topic.reviews[nextReviewIdx];
+    const progress = topic.reviews.filter(r => r.done).length / topic.reviews.length * 100;
+    const prevReview = nextReviewIdx > 0 ? topic.reviews[nextReviewIdx - 1] : null;
+    const errorRate = prevReview && prevReview.total > 0 ? Math.round(((prevReview.total - prevReview.correct) / prevReview.total) * 100) : null;
+    const today = getTodayStr();
+    const priority = getPriorityInfo(topic.importance);
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm relative group hover:border-blue-500/30 transition-all">
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${theme.bg} ${theme.text}`}>
+                        <BookOpen size={20}/>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-slate-800 dark:text-white leading-tight">{topic.title}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${priority.bg} ${priority.text}`}>{priority.label}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex gap-1 transition-opacity">
+                     <button onClick={onEdit} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={16}/></button>
+                     {onDelete && (
+                         <button onClick={() => onDelete(topic.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={16}/></button>
+                     )}
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${theme.bg.replace('bg-', 'bg-').replace('100', '500')}`} style={{width: `${progress}%`}}></div>
+                </div>
+                {errorRate !== null && (
+                    <div className="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded flex items-center gap-1" title="Taxa de erro da última revisão">
+                        <AlertCircle size={10}/> {errorRate}% Erro
+                    </div>
+                )}
+            </div>
+
+            {/* Next Action Box */}
+            {nextReview ? (
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-black/20 p-3 rounded-xl mb-4">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Calendar size={14} className="text-slate-400"/>
+                            <div className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                {nextReview.label} <span className="text-slate-400 font-medium">• {formatDate(nextReview.date)}</span>
+                            </div>
+                        </div>
+                        <div className="text-[10px] font-bold text-blue-500 flex items-center gap-1">
+                            <Target size={10}/> Meta: {nextReview.targetQ} questões
+                        </div>
+                    </div>
+                    {/* Allow review button regardless of date */}
+                    <button onClick={() => onReview(topic.id, nextReviewIdx)} className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-lg shadow-lg active:scale-95 transition-all uppercase tracking-wide">
+                        Revisar
+                    </button>
+                </div>
+            ) : (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide mb-4">
+                    <Check size={16}/> Ciclo Concluído
+                </div>
+            )}
+
+            {/* Full Schedule List (Timeline) */}
+            <div className="flex gap-1.5 overflow-x-auto pb-2 custom-scrollbar opacity-60 group-hover:opacity-100 transition-opacity">
+                {topic.reviews.map((r, i) => {
+                    const isDone = r.done;
+                    const isNext = !isDone && i === nextReviewIdx;
+                    return (
+                        <div key={i} className={`flex-shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-lg border text-[9px] font-bold min-w-[50px] ${
+                            isDone 
+                                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                : isNext 
+                                    ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
+                                    : 'bg-transparent border-slate-100 dark:border-white/5 text-slate-400'
+                        }`}>
+                            <span className="uppercase tracking-wide">{r.label.split(':')[0]}</span>
+                            <span className="mt-0.5">{formatDate(r.date)}</span>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+});
+
+// --- Simulados Mini Widget with Actions ---
+export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy, onAdd }: { simulados: Simulado[], targetAccuracy: number, onAdd: () => void }) => {
+    const displayData = useMemo(() => {
+        if (!simulados || simulados.length === 0) return null;
+        const sorted = [...simulados].sort((a,b) => new Date(a.dateTaken).getTime() - new Date(b.dateTaken).getTime());
+        const last10 = sorted.slice(-10); 
+        const avg = Math.round(sorted.reduce((acc, s) => acc + ((s.correctCount || 0) / (s.totalQuestions || 1)), 0) / sorted.length * 100);
+        return { avg, history: last10 };
+    }, [simulados]);
+
+    return (
+        <div className="glass-panel p-6 rounded-[32px] shadow-sm h-full flex flex-col relative overflow-hidden group">
+            <div className="flex justify-between items-center mb-4 relative z-10">
+                <div className="flex flex-col">
+                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 text-xs uppercase tracking-wide"><ClipboardList size={16} className="text-purple-500"/> Simulados</h3>
+                    {displayData && <span className="text-[10px] font-bold text-slate-400 mt-1">Média Geral: <span className={getPerformanceColor(displayData.avg, targetAccuracy, 'text')}>{displayData.avg}%</span></span>}
+                </div>
+                <button onClick={onAdd} className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-xl hover:scale-105 active:scale-95 transition-all">
+                    <Plus size={18}/>
+                </button>
+            </div>
+            
+            {displayData ? (
+                <div className="flex-1 flex flex-col justify-end">
+                    <div className="flex items-end gap-1.5 h-20 w-full relative z-10">
+                        {displayData.history.map((s, i) => {
+                            const acc = Math.round(((s.correctCount || 0) / (s.totalQuestions || 1)) * 100);
+                            const colorClass = getPerformanceColor(acc, targetAccuracy, 'bg');
+                            
+                            return (
+                                <div key={s.id} className="flex-1 flex flex-col justify-end gap-1 group/bar relative h-full z-10">
+                                    <div className={`w-full rounded-t-sm transition-all duration-500 ${colorClass} opacity-80 group-hover/bar:opacity-100 origin-bottom`} style={{height: `${acc}%`}}></div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {/* Recent List */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 space-y-2">
+                        {displayData.history.slice(-2).reverse().map(s => (
+                            <div key={s.id} className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-slate-600 dark:text-slate-300 truncate max-w-[120px]">{s.name} {s.year}</span>
+                                <span className={`font-black ${getPerformanceColor((s.correctCount/s.totalQuestions)*100, targetAccuracy, 'text')}`}>{Math.round((s.correctCount/s.totalQuestions)*100)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+                    <ClipboardList className="mx-auto text-slate-300 mb-2" size={24}/>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Sem simulados</p>
+                    <button onClick={onAdd} className="text-[10px] text-purple-500 font-bold hover:underline">Adicionar Primeiro</button>
+                </div>
+            )}
+            
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-purple-500/10 blur-[40px] rounded-full z-0 pointer-events-none"></div>
+        </div>
+    );
+});
