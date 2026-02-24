@@ -669,69 +669,66 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
-                        <label className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">Acertos</label>
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-[24px] border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-emerald-500/50 focus-within:bg-emerald-50/50 dark:focus-within:bg-emerald-900/10">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Acertos</label>
                         <input 
                             type="number" 
                             inputMode="numeric"
                             value={formState.correct} 
                             onChange={(e) => setFormState(s => ({...s, correct: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="0"
                             autoFocus
                         />
                     </div>
                     
-                    <div className="bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
-                        <label className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-3">Total</label>
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-[24px] border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Total</label>
                         <input 
                             type="number" 
                             inputMode="numeric"
                             value={formState.total} 
                             onChange={(e) => setFormState(s => ({...s, total: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="20"
                         />
                     </div>
 
-                    <div className="col-span-2 bg-white dark:bg-white/5 p-4 rounded-[24px] border border-slate-100 dark:border-white/5 flex flex-col items-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
-                        <label className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-3">Tempo (minutos)</label>
+                    <div className="col-span-2 bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-[24px] border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-purple-500/50 focus-within:bg-purple-50/50 dark:focus-within:bg-purple-900/10">
+                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">Tempo (minutos)</label>
                         <input 
                             type="number" 
                             inputMode="numeric"
                             value={formState.timeSpent} 
                             onChange={(e) => setFormState(s => ({...s, timeSpent: e.target.value}))} 
-                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-200 dark:placeholder-slate-700" 
+                            className="w-full text-center text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="Opcional"
                         />
                     </div>
                 </div>
                 
-                <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-400">Aproveitamento</span>
-                    <span className={`text-4xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-100/50 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aproveitamento</span>
+                    <span className={`text-3xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
                         {scorePercentage}%
                     </span>
                 </div>
                 
                 <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block px-1">Dificuldade Sentida</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block px-1 text-center">Dificuldade Sentida</label>
                     <div className="grid grid-cols-3 gap-3">
                         {[
-                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }, 
-                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' }, 
-                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-500/30' }, 
+                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-500/30' }, 
+                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-500/30' }
                         ].map(lvl => (
                             <button 
                                 key={lvl.id} 
                                 type="button" 
                                 onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))} 
-                                className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all border-2 ${formState.difficulty === lvl.id ? 'border-current shadow-sm scale-105' : 'border-transparent bg-slate-50 dark:bg-white/5 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'} ${formState.difficulty === lvl.id ? lvl.color : ''}`}
+                                className={`py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all border ${formState.difficulty === lvl.id ? `shadow-sm scale-105 ${lvl.color}` : 'border-slate-200/60 dark:border-white/5 bg-slate-50 dark:bg-zinc-800/50 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'}`}
                             >
                                 <span className="text-2xl leading-none mb-1">{lvl.emoji}</span>
                                 <span className="text-[10px] font-bold uppercase tracking-wide">{lvl.label}</span>

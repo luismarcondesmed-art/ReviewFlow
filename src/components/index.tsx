@@ -376,55 +376,94 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
 
 // --- Future Load Widget ---
 export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => {
-    const today = new Date();
-    const next7Days = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
-        const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-        return { dateStr, dayOfWeek, load: 0 };
-    });
+    const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'total'>('week');
+    
+    const chartData = useMemo(() => {
+        const todayStr = getTodayStr();
+        const todayDate = new Date(todayStr + 'T12:00:00');
+        
+        let daysCount = 7;
+        if (period === 'day') daysCount = 1;
+        if (period === 'month') daysCount = 30;
+        if (period === 'total') daysCount = 90; // Limit to 90 days for visualization
 
-    topics.forEach(t => {
-        if (t.deleted) return;
-        t.reviews.forEach(r => {
-            if (!r.done) {
-                const day = next7Days.find(d => d.dateStr === r.date);
-                if (day) day.load += r.targetQ;
-            }
+        const days = Array.from({ length: daysCount }).map((_, i) => {
+            const d = new Date(todayDate);
+            d.setDate(todayDate.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+            return { dateStr, dayOfWeek, load: 0, dateObj: d };
         });
-    });
 
-    const maxLoad = Math.max(...next7Days.map(d => d.load), 100); // Minimum scale of 100
+        let totalLoad = 0;
+
+        topics.forEach(t => {
+            if (t.deleted) return;
+            t.reviews.forEach(r => {
+                if (!r.done && r.date >= todayStr) {
+                    totalLoad += r.targetQ;
+                    const day = days.find(d => d.dateStr === r.date);
+                    if (day) day.load += r.targetQ;
+                    else if (period === 'total') {
+                        // If it's beyond 90 days, add to the last bar or just count in total
+                        const lastDay = days[days.length - 1];
+                        if (r.date > lastDay.dateStr) {
+                            lastDay.load += r.targetQ;
+                        }
+                    }
+                }
+            });
+        });
+
+        return { days, totalLoad };
+    }, [topics, period]);
+
+    const maxLoad = Math.max(...chartData.days.map(d => d.load), 10); // Minimum scale of 10
 
     return (
         <div className="flex flex-col h-full justify-between">
-            <div className="flex items-end justify-between gap-1 sm:gap-2 h-24 sm:h-32 mt-2">
-                {next7Days.map((day, i) => {
-                    const heightPct = Math.max((day.load / maxLoad) * 100, 5); // Minimum 5% height for visibility
+            <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-bold text-slate-500">
+                    Total: <span className="text-blue-500">{chartData.totalLoad}q</span>
+                </div>
+                <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
+                    <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
+                    <button onClick={() => setPeriod('week')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'week' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
+                    <button onClick={() => setPeriod('month')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'month' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Mês</button>
+                    <button onClick={() => setPeriod('total')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'total' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Total</button>
+                </div>
+            </div>
+            <div className="flex items-end justify-between gap-0.5 sm:gap-1 h-24 sm:h-32 mt-2">
+                {chartData.days.map((day, i) => {
+                    const heightPct = Math.max((day.load / maxLoad) * 100, 2); // Minimum 2% height for visibility
                     const isToday = i === 0;
+                    const showLabel = period === 'day' || period === 'week' || (period === 'month' && i % 5 === 0) || (period === 'total' && i % 15 === 0);
+                    
                     return (
-                        <div key={day.dateStr} className="flex flex-col items-center gap-1.5 sm:gap-2 flex-1 group relative">
-                            <div className="w-full bg-slate-100 dark:bg-white/5 rounded-t-md sm:rounded-t-lg flex items-end justify-center relative overflow-hidden h-full">
+                        <div key={day.dateStr} className="flex flex-col items-center gap-1.5 sm:gap-2 flex-1 group relative h-full">
+                            <div className="w-full bg-slate-100 dark:bg-white/5 rounded-t-sm sm:rounded-t-md flex items-end justify-center relative overflow-hidden h-full">
                                 <div 
-                                    className={`w-full rounded-t-md sm:rounded-t-lg transition-all duration-500 ${isToday ? 'bg-blue-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
+                                    className={`w-full rounded-t-sm sm:rounded-t-md transition-all duration-500 ${isToday ? 'bg-blue-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
                                     style={{ height: `${heightPct}%` }}
                                 ></div>
                             </div>
-                            <span className={`text-[8px] sm:text-[10px] font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
-                                {isToday ? 'Hoj' : day.dayOfWeek.substring(0, 3)}
-                            </span>
+                            {showLabel && (
+                                <span className={`text-[7px] sm:text-[9px] font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} absolute -bottom-4`}>
+                                    {isToday ? 'Hoj' : (period === 'week' ? day.dayOfWeek.substring(0, 3) : `${day.dateObj.getDate()}/${day.dateObj.getMonth()+1}`)}
+                                </span>
+                            )}
                             
                             {/* Tooltip */}
                             <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                                 <div className="bg-slate-900 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-lg">
-                                    {day.load}q
+                                    {day.dateObj.getDate()}/{day.dateObj.getMonth()+1}: {day.load}q
                                 </div>
                             </div>
                         </div>
                     );
                 })}
             </div>
+            <div className="h-4"></div> {/* Spacer for labels */}
         </div>
     );
 });
@@ -572,21 +611,21 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
-                    {nextReview && (
-                        <button 
-                            onClick={() => onReview(topic.id, nextReviewIdx)} 
-                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-md mr-1"
-                            title="Revisar"
-                        >
-                            <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
-                        </button>
-                    )}
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
                         {onDelete && (
                             <button onClick={() => onDelete(topic.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
                         )}
                     </div>
+                    {nextReview && (
+                        <button 
+                            onClick={() => onReview(topic.id, nextReviewIdx)} 
+                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-md ml-1"
+                            title="Revisar"
+                        >
+                            <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
+                        </button>
+                    )}
                 </div>
             </div>
 

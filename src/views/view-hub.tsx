@@ -200,7 +200,7 @@ export const HubView = ({
 
                         {/* Previsão de Carga */}
                         <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                            <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga (Próximos 7 dias)</h4>
+                            <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
                             <div className="h-48">
                                 <FutureLoadWidget topics={activeTopics} />
                             </div>

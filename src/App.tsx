@@ -481,10 +481,9 @@ export function App() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => setIsSearchActive(true)} className="flex items-center gap-2 text-left w-full group py-1">
-                                        <Search className="text-slate-400 group-hover:text-blue-500 transition-colors" size={16} />
-                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2 hidden">{currentViewTitle}</h2>
-                                    </button>
+                                    <div className="flex items-center gap-2 text-left w-full group py-1">
+                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2">{currentViewTitle}</h2>
+                                    </div>
                                 )}
                             </div>
 
