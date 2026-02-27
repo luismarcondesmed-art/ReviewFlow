@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User } from 'lucide-react';
 import { Topic, Simulado } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats } from '../utils';
 
@@ -14,6 +14,71 @@ const getRankInfo = (level: number) => {
 };
 
 // --- Compact Level System (Sidebar) ---
+import { calculateStreak } from '../utils';
+
+export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados }: { totalQuestions: number, topics: Topic[], simulados: Simulado[] }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+    const rank = getRankInfo(level);
+    const RankIcon = rank.icon;
+    const [isOpen, setIsOpen] = useState(false);
+    const streak = calculateStreak(topics, simulados);
+
+    return (
+        <div className="relative">
+            {/* Trigger Button */}
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+            >
+                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-sm`}>
+                    <User size={16} fill="currentColor" className="opacity-90"/>
+                </div>
+            </button>
+
+            {/* Popover / Dropdown */}
+            {isOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md`}>
+                            <RankIcon size={24} fill="currentColor" className="opacity-90"/>
+                        </div>
+                        <div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{rank.label}</div>
+                            <div className="text-lg font-black text-slate-800 dark:text-white">Nível {level}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-3 mb-4">
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
+                            <span className="text-xs font-bold text-slate-500">Questões Feitas</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">{totalQuestions}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
+                            <span className="text-xs font-bold text-slate-500">Ofensiva Atual</span>
+                            <span className="text-sm font-black text-orange-500 flex items-center gap-1">
+                                <Flame size={14} className="fill-orange-500"/> {streak} dias
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="mb-1">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Próximo Nível</span>
+                            <span className="text-[10px] font-black text-slate-800 dark:text-white">{level + 1}</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-200 dark:bg-black/20 rounded-full overflow-hidden mb-1">
+                            <div className={`h-full bg-gradient-to-r ${rank.bg}`} style={{width: `${progress}%`}}></div>
+                        </div>
+                        <div className="text-right text-[9px] font-bold text-slate-500">
+                            {Math.round(nextLevelXP - currentXP).toLocaleString()} XP restantes
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+});
+
 export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
     const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
     const rank = getRankInfo(level);

@@ -1,11 +1,12 @@
 
 import React, { useMemo, useState } from 'react';
 import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList
+    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
-import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS } from '../utils';
+import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
 import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget } from '../components';
+import { Modal } from '../modals';
 
 export const HubView = ({ 
     topics, simulados, config, onReview, onEditTopic, onDeleteTopic,
@@ -19,6 +20,7 @@ export const HubView = ({
     onAddSimulado?: () => void
 }) => {
     const [activeTab, setActiveTab] = useState<'temas' | 'stats' | 'simulados'>('temas');
+    const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
     
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
@@ -82,7 +84,7 @@ export const HubView = ({
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base">
                         {dueItems.length > 0 ? (
-                            <>Você tem <strong className="text-blue-500">{dueItems.length} revisões</strong> pendentes para hoje.</>
+                            <>Você tem <button onClick={() => setIsPendingModalOpen(true)} className="font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
                         ) : (
                             <>Você não tem revisões pendentes para hoje. Aproveite para descansar ou adiantar temas.</>
                         )}
@@ -99,6 +101,55 @@ export const HubView = ({
                     </button>
                 )}
             </div>
+
+            {/* Pending Reviews Modal */}
+            <Modal isOpen={isPendingModalOpen} onClose={() => setIsPendingModalOpen(false)} title="Revisões Pendentes">
+                <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+                    {dueItems.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                            <CheckCircle2 size={48} className="mx-auto mb-4 text-emerald-500 opacity-50" />
+                            <p className="font-bold">Nenhuma revisão pendente!</p>
+                        </div>
+                    ) : (
+                        dueItems.map((item: any) => {
+                            const theme = getAreaTheme(item.topic.area);
+                            const isOverdue = item.date < today;
+                            const priority = getPriorityInfo(item.topic.importance);
+                            
+                            return (
+                                <div key={`${item.topic.id}-${item.idx}`} className="bg-white dark:bg-zinc-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm ${theme.bg} ${theme.text}`}>
+                                            {isOverdue ? <AlertCircle size={20}/> : <Calendar size={20}/>}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-slate-800 dark:text-white line-clamp-1">{item.topic.title}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                                    {isOverdue ? 'Atrasado' : 'Hoje'}
+                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></div>
+                                                    <span className="text-[10px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setIsPendingModalOpen(false);
+                                            onReview(item.topic.id, item.idx);
+                                        }} 
+                                        className="p-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+                                    >
+                                        <PlayCircle size={18}/>
+                                    </button>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </Modal>
 
             {/* TABS */}
             <div className="flex gap-6 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar">

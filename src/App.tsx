@@ -13,7 +13,8 @@ import {
     triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID
 } from './utils';
 import { useSync, useVibration } from './hooks';
-import { LevelSystem, TopicCard, CompactLevelSystem } from './components';
+import { NotificationService } from './services/notificationService';
+import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown } from './components';
 import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
 
 // --- Lazy Loaded Views for Performance ---
@@ -40,6 +41,16 @@ export function App() {
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
     
+    // Initialize Notification Service
+    useEffect(() => {
+        if (config) {
+            NotificationService.getInstance().startService(config);
+        }
+        return () => {
+            NotificationService.getInstance().stopService();
+        };
+    }, [config]);
+
     // PWA Install State
     const [installPrompt, setInstallPrompt] = useState<any>(null);
     
@@ -378,7 +389,10 @@ export function App() {
                         <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
-                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white">ReviewFlow</h1>
+                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white mr-4">ReviewFlow</h1>
+                        <div className="hidden lg:block mr-6">
+                            <UserStatsDropdown totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} />
+                        </div>
                     </div>
                     <nav className="flex items-center gap-2">
                         {NAV_ITEMS.map(item => {
@@ -397,10 +411,6 @@ export function App() {
                     </nav>
                 </div>
                 <div className="flex items-center gap-6">
-                    <div className="hidden xl:block">
-                        <CompactLevelSystem totalQuestions={stats.totalAnswered} />
-                    </div>
-                    
                     <div className="flex items-center gap-2">
                         {/* Add Button (Desktop) */}
                         <div className="relative">

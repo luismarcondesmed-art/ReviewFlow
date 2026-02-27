@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon } from 'lucide-react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from '../types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
@@ -470,13 +470,38 @@ export const OptimizationResultModal = ({ isOpen, onClose, onConfirm, changes }:
 
 export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, onSaveKey, onExport, onImport, themeMode, setThemeMode, runOptimization, onShowOptimizationInfo, status, installPrompt, onInstallApp, onOpenTutorial }: any) => {
     const [tempKey, setTempKey] = useState(syncKey);
-    const [tempConfig, setTempConfig] = useState(config);
+    const [tempConfig, setTempConfig] = useState<UserConfig>(config || { examDate: getTodayStr(), targetAccuracy: 80, activeSchedule: 'MEDCOF' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { setTempKey(syncKey); }, [syncKey]);
-    useEffect(() => { setTempConfig(config); }, [config]);
+    useEffect(() => { 
+        if (config) {
+            setTempConfig({
+                ...config,
+                notifications: config.notifications || {
+                    enabled: false,
+                    time: '08:00',
+                    showModules: true,
+                    showQuestionCount: true,
+                    showNextTasks: false
+                }
+            }); 
+        }
+    }, [config]);
 
-    const handleSave = () => { onSaveConfig(tempConfig); onClose(); };
+    const handleSave = async () => { 
+        if (tempConfig.notifications?.enabled) {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert('Você precisa permitir as notificações no seu navegador para usar este recurso.');
+                    setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, enabled: false } }));
+                }
+            }
+        }
+        onSaveConfig(tempConfig); 
+        onClose(); 
+    };
 
     const statusContent = (
         <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
@@ -504,6 +529,55 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         <div className="text-left"><div className="text-xs font-bold opacity-80 uppercase">Disponível</div><div className="font-black text-sm">Instalar Aplicativo</div></div>
                     </button>
                 )}
+                
+                {/* Notificações */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Bell size={18} className="text-yellow-500"/> Alertas Matinais</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={tempConfig.notifications?.enabled || false}
+                                onChange={(e) => setTempConfig(prev => ({
+                                    ...prev,
+                                    notifications: { ...prev.notifications!, enabled: e.target.checked }
+                                }))}
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-yellow-500"></div>
+                        </label>
+                    </div>
+                    
+                    {tempConfig.notifications?.enabled && (
+                        <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-white/5 animate-scale-in">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Horário do Alerta</label>
+                                <input 
+                                    type="time" 
+                                    value={tempConfig.notifications?.time || '08:00'} 
+                                    onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, time: e.target.value } }))} 
+                                    className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white appearance-none" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">O que incluir na notificação?</label>
+                                <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
+                                    <input type="checkbox" checked={tempConfig.notifications?.showModules} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showModules: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Quais módulos revisar</span>
+                                </label>
+                                <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
+                                    <input type="checkbox" checked={tempConfig.notifications?.showQuestionCount} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showQuestionCount: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Quantidade de questões</span>
+                                </label>
+                                <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
+                                    <input type="checkbox" checked={tempConfig.notifications?.showNextTasks} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showNextTasks: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Próximas tarefas (Amanhã)</span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
                     <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><BookOpen size={18} className="text-purple-500"/> Cronograma Ativo</h4>
                     <div className="relative">

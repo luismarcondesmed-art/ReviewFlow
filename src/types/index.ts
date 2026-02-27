@@ -61,6 +61,13 @@ export interface UserConfig {
   examDate: string; // YYYY-MM-DD
   targetAccuracy: number; // 0-100
   activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
+  notifications?: {
+    enabled: boolean;
+    time: string; // HH:mm format
+    showModules: boolean;
+    showQuestionCount: boolean;
+    showNextTasks: boolean;
+  };
 }
 
 export interface ScheduleItem {

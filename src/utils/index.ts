@@ -46,6 +46,66 @@ const SYSTEM_PARAMS = {
 
 export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
+export const calculateStreak = (topics: Topic[], simulados: Simulado[]): number => {
+    const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
+    today.setHours(0, 0, 0, 0);
+    
+    // Collect all unique dates where a review or simulado was completed
+    const activityDates = new Set<string>();
+    
+    topics.forEach(t => {
+        t.reviews.forEach(r => {
+            if (r.done && r.completedAt) {
+                // Extract just the date part (YYYY-MM-DD) from completedAt
+                activityDates.add(r.completedAt.split('T')[0]);
+            }
+        });
+    });
+    
+    simulados.forEach(s => {
+        if (s.dateTaken) {
+            // Extract just the date part (YYYY-MM-DD) from dateTaken
+            activityDates.add(s.dateTaken.split('T')[0]);
+        }
+    });
+    
+    const sortedDates = Array.from(activityDates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    
+    if (sortedDates.length === 0) return 0;
+    
+    let streak = 0;
+    let currentDate = new Date(today);
+    
+    // Check if there's activity today or yesterday to start the streak
+    const mostRecentActivity = new Date(sortedDates[0]);
+    mostRecentActivity.setHours(0, 0, 0, 0);
+    
+    const diffTime = Math.abs(currentDate.getTime() - mostRecentActivity.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 1) return 0; // Streak broken
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+        const activityDate = new Date(sortedDates[i]);
+        activityDate.setHours(0, 0, 0, 0);
+        
+        const expectedDate = new Date(today);
+        expectedDate.setDate(today.getDate() - streak);
+        
+        if (activityDate.getTime() === expectedDate.getTime()) {
+            streak++;
+        } else if (activityDate.getTime() > expectedDate.getTime()) {
+            // Multiple activities on the same day, ignore
+            continue;
+        } else {
+            // Gap found
+            break;
+        }
+    }
+    
+    return streak;
+};
+
 export const generateId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
 
 export const formatDate = (d: string) => { 
