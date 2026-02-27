@@ -93,15 +93,26 @@ export class NotificationService {
         return currMinutes >= schMinutes && currMinutes <= schMinutes + 5;
     }
 
-    private showNotification(config: UserConfig) {
+    private async showNotification(config: UserConfig) {
         if (Notification.permission === 'granted') {
             const options: NotificationOptions = {
                 body: this.getNotificationBody(config),
-                icon: '/pwa-192x192.png', // Assuming this exists or will exist
-                badge: '/pwa-192x192.png',
-                tag: 'daily-review-reminder'
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'daily-review-reminder',
+                requireInteraction: true
             };
 
+            // Try to use Service Worker registration for "persistent" notification
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if (registration) {
+                    registration.showNotification('Hora de Revisar! 📚', options);
+                    return;
+                }
+            }
+
+            // Fallback to standard Notification API
             new Notification('Hora de Revisar! 📚', options);
         }
     }
