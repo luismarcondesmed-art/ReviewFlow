@@ -474,8 +474,10 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { setTempKey(syncKey); }, [syncKey]);
+    
+    // Only update tempConfig when the modal opens to prevent overwriting user changes during sync
     useEffect(() => { 
-        if (config) {
+        if (isOpen && config) {
             setTempConfig({
                 ...config,
                 notifications: config.notifications || {
@@ -487,18 +489,45 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                 }
             }); 
         }
-    }, [config]);
+    }, [isOpen]);
 
-    const handleSave = async () => { 
-        if (tempConfig.notifications?.enabled) {
-            if ('Notification' in window) {
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    alert('Você precisa permitir as notificações no seu navegador para usar este recurso.');
-                    setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, enabled: false } }));
-                }
+    const handleNotificationToggle = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const isEnabled = e.target.checked;
+        
+        if (isEnabled) {
+            if (!('Notification' in window)) {
+                alert('Este navegador não suporta notificações desktop.');
+                return;
             }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    setTempConfig(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications!, enabled: true }
+                    }));
+                } else {
+                    alert('Você precisa permitir as notificações no navegador para ativar este recurso.');
+                    // Force update to unchecked if it was checked visually
+                    setTempConfig(prev => ({
+                        ...prev,
+                        notifications: { ...prev.notifications!, enabled: false }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                alert('Erro ao solicitar permissão de notificação.');
+            }
+        } else {
+            setTempConfig(prev => ({
+                ...prev,
+                notifications: { ...prev.notifications!, enabled: false }
+            }));
         }
+    };
+
+    const handleSave = () => { 
         onSaveConfig(tempConfig); 
         onClose(); 
     };
@@ -539,10 +568,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                                 type="checkbox" 
                                 className="sr-only peer" 
                                 checked={tempConfig.notifications?.enabled || false}
-                                onChange={(e) => setTempConfig(prev => ({
-                                    ...prev,
-                                    notifications: { ...prev.notifications!, enabled: e.target.checked }
-                                }))}
+                                onChange={handleNotificationToggle}
                             />
                             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-yellow-500"></div>
                         </label>
