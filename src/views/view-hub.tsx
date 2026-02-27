@@ -152,20 +152,32 @@ export const HubView = ({
             </Modal>
 
             {/* TABS */}
-            <div className="flex gap-6 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar">
+            <div className="flex gap-6 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar" role="tablist" aria-label="Seções do Hub">
                 <button 
+                    role="tab"
+                    aria-selected={activeTab === 'temas'}
+                    aria-controls="panel-temas"
+                    id="tab-temas"
                     className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'temas' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
                     onClick={() => setActiveTab('temas')}
                 >
                     <BookOpen size={16} /> Banco de Temas
                 </button>
                 <button 
+                    role="tab"
+                    aria-selected={activeTab === 'stats'}
+                    aria-controls="panel-stats"
+                    id="tab-stats"
                     className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'stats' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
                     onClick={() => setActiveTab('stats')}
                 >
                     <BarChart2 size={16} /> Estatísticas
                 </button>
                 <button 
+                    role="tab"
+                    aria-selected={activeTab === 'simulados'}
+                    aria-controls="panel-simulados"
+                    id="tab-simulados"
                     className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'simulados' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
                     onClick={() => setActiveTab('simulados')}
                 >
@@ -176,11 +188,12 @@ export const HubView = ({
             {/* TAB CONTENT */}
             <div className="pt-2">
                 {activeTab === 'temas' && (
-                    <div className="flex flex-col gap-6 animate-fade-in">
+                    <div role="tabpanel" id="panel-temas" aria-labelledby="tab-temas" className="flex flex-col gap-6 animate-fade-in">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar w-full sm:w-auto">
                                 <div className="relative flex-1 sm:flex-none">
                                     <select 
+                                        aria-label="Filtrar por área"
                                         className="w-full appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
                                         value={filterArea}
                                         onChange={(e) => setFilterArea(e.target.value)}
@@ -193,6 +206,7 @@ export const HubView = ({
                                 
                                 <div className="relative flex-1 sm:flex-none">
                                     <select 
+                                        aria-label="Ordenar por"
                                         className="w-full appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
                                         value={sortOrder}
                                         onChange={(e) => setSortOrder(e.target.value)}

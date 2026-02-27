@@ -47,25 +47,31 @@ const SYSTEM_PARAMS = {
 export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
 export const calculateStreak = (topics: Topic[], simulados: Simulado[]): number => {
-    const today = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000));
+    // Use local date for today
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     // Collect all unique dates where a review or simulado was completed
     const activityDates = new Set<string>();
     
+    const getLocalDateStr = (dateStr: string) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        // Adjust to local timezone string YYYY-MM-DD
+        return d.toLocaleDateString('en-CA'); 
+    };
+    
     topics.forEach(t => {
         t.reviews.forEach(r => {
             if (r.done && r.completedAt) {
-                // Extract just the date part (YYYY-MM-DD) from completedAt
-                activityDates.add(r.completedAt.split('T')[0]);
+                activityDates.add(getLocalDateStr(r.completedAt));
             }
         });
     });
     
     simulados.forEach(s => {
         if (s.dateTaken) {
-            // Extract just the date part (YYYY-MM-DD) from dateTaken
-            activityDates.add(s.dateTaken.split('T')[0]);
+            activityDates.add(getLocalDateStr(s.dateTaken));
         }
     });
     
@@ -74,31 +80,32 @@ export const calculateStreak = (topics: Topic[], simulados: Simulado[]): number 
     if (sortedDates.length === 0) return 0;
     
     let streak = 0;
-    let currentDate = new Date(today);
+    // Check from today backwards
+    const todayStr = today.toLocaleDateString('en-CA');
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+    // If no activity today or yesterday, streak is 0
+    if (!activityDates.has(todayStr) && !activityDates.has(yesterdayStr)) {
+        return 0;
+    }
+
+    // Start checking from today (or yesterday if today is missing)
+    let checkDate = new Date(today);
     
-    // Check if there's activity today or yesterday to start the streak
-    const mostRecentActivity = new Date(sortedDates[0]);
-    mostRecentActivity.setHours(0, 0, 0, 0);
-    
-    const diffTime = Math.abs(currentDate.getTime() - mostRecentActivity.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays > 1) return 0; // Streak broken
-    
-    for (let i = 0; i < sortedDates.length; i++) {
-        const activityDate = new Date(sortedDates[i]);
-        activityDate.setHours(0, 0, 0, 0);
-        
-        const expectedDate = new Date(today);
-        expectedDate.setDate(today.getDate() - streak);
-        
-        if (activityDate.getTime() === expectedDate.getTime()) {
+    // If we have activity today, start counting from today. 
+    // If not, but we have yesterday (checked above), start from yesterday.
+    if (!activityDates.has(todayStr)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    while (true) {
+        const dateStr = checkDate.toLocaleDateString('en-CA');
+        if (activityDates.has(dateStr)) {
             streak++;
-        } else if (activityDate.getTime() > expectedDate.getTime()) {
-            // Multiple activities on the same day, ignore
-            continue;
+            checkDate.setDate(checkDate.getDate() - 1);
         } else {
-            // Gap found
             break;
         }
     }
@@ -467,7 +474,11 @@ export interface OptimizationChange {
 }
 
 export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: OptimizationChange[] } => {
-    const newTopics: Topic[] = JSON.parse(JSON.stringify(topics));
+    // Use structuredClone for better performance than JSON.parse/stringify
+    const newTopics: Topic[] = typeof structuredClone === 'function' 
+        ? structuredClone(topics) 
+        : JSON.parse(JSON.stringify(topics));
+        
     const changes: OptimizationChange[] = [];
     const todayStr = getTodayStr();
     const todayDate = new Date(todayStr + 'T12:00:00');

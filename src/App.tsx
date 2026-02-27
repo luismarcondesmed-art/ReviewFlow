@@ -27,8 +27,12 @@ const StatsView = lazy(() => import('./views/view-stats').then(module => ({ defa
 
 // --- Loading Skeleton ---
 const LoadingSpinner = () => (
-    <div className="flex h-full w-full items-center justify-center p-10">
-        <Activity size={32} className="animate-spin text-blue-500 opacity-50"/>
+    <div className="flex flex-col h-full w-full items-center justify-center p-10 gap-4 animate-fade-in">
+        <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-slate-100 dark:border-white/10"></div>
+            <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+        </div>
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Carregando</span>
     </div>
 );
 

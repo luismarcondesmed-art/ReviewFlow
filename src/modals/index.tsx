@@ -8,11 +8,19 @@ import { ESTRATEGIA_SCHEDULE } from '../services/estrategiaSchedule';
 
 // --- Modern Glass Modal ---
 export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode; headerContent?: React.ReactNode }) => {
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (isOpen) window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 p-0">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 p-0" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             {/* Backdrop with stronger blur for depth */}
-            <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-out" onClick={onClose} />
+            <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-out" onClick={onClose} aria-hidden="true" />
             
             {/* Modal Container: Floating Glass Panel */}
             <div className="relative w-full max-w-md bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl rounded-t-[32px] sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
@@ -20,10 +28,10 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isO
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-black/5 dark:border-white/5 flex justify-between items-center z-10 sticky top-0 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-xl">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
+                        <h3 id="modal-title" className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
                         {headerContent}
                     </div>
-                    <button onClick={onClose} className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90">
+                    <button onClick={onClose} aria-label="Fechar" className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90">
                         <X size={20} className="text-slate-500 dark:text-slate-300"/>
                     </button>
                 </div>

@@ -28,6 +28,7 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
             {/* Trigger Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label="Perfil do Usuário"
                 className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
             >
                 <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-sm`}>
