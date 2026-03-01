@@ -1,8 +1,19 @@
 
-import React, { useMemo, useState } from 'react';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User } from 'lucide-react';
-import { Topic, Simulado } from '../types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats } from '../utils';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X } from 'lucide-react';
+import { Topic, Simulado, AreaType } from '../types';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION } from '../utils';
+
+export const getAreaIcon = (area: AreaType) => {
+    switch (area) {
+        case 'clinica': return Stethoscope;
+        case 'cirurgia': return Scissors;
+        case 'pediatria': return Baby;
+        case 'go': return Flower2;
+        case 'preventiva': return ShieldAlert;
+        default: return BookOpen;
+    }
+};
 
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
@@ -12,6 +23,8 @@ const getRankInfo = (level: number) => {
     if (level < 50) return { label: 'Especialista', icon: Trophy, color: 'text-emerald-400', bg: 'from-emerald-600 to-emerald-900' };
     return { label: 'Chefe de Serviço', icon: Crown, color: 'text-purple-400', bg: 'from-purple-600 to-purple-900' };
 };
+
+
 
 // --- Compact Level System (Sidebar) ---
 import { calculateStreak } from '../utils';
@@ -62,7 +75,7 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
                         </div>
                     </div>
 
-                    <div className="mb-1">
+                    <div className="mb-3">
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Próximo Nível</span>
                             <span className="text-[10px] font-black text-slate-800 dark:text-white">{level + 1}</span>
@@ -73,6 +86,10 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
                         <div className="text-right text-[9px] font-bold text-slate-500">
                             {Math.round(nextLevelXP - currentXP).toLocaleString()} XP restantes
                         </div>
+                    </div>
+                    
+                    <div className="pt-3 border-t border-slate-100 dark:border-white/5 text-center">
+                        <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">v{APP_VERSION}</span>
                     </div>
                 </div>
             )}
@@ -174,7 +191,8 @@ export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: num
 
 // --- Detailed Stats Widget ---
 export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = false }: { topics: Topic[], simulados: Simulado[], compact?: boolean }) => {
-    const stats = useMemo(() => calculateDetailedStats(topics, simulados), [topics, simulados]);
+    const [range, setRange] = useState<'week' | 'month' | 'year' | 'all'>('week');
+    const stats = useMemo(() => calculateDetailedStats(topics, simulados, range), [topics, simulados, range]);
 
     const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
         <div className={`flex-1 bg-white dark:bg-zinc-900 rounded-2xl ${compact ? 'p-3' : 'p-4'} border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all`}>
@@ -189,15 +207,76 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
         </div>
     );
 
+    const rangeLabel = range === 'week' ? 'Semana' : range === 'month' ? 'Mês' : range === 'year' ? 'Ano' : 'Total';
+
     return (
-        <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-5 gap-4'} w-full`}>
-            <StatCard label="Média Diária" value={stats.avgWeek} subLabel="Questões/dia" icon={TrendingUp} colorClass="bg-blue-500 text-blue-500" />
-            <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
-            <StatCard label="Total Semana" value={stats.totalWeek} subLabel="Questões" icon={CalendarDays} colorClass="bg-purple-500 text-purple-500" />
-            <StatCard label="Total Mês" value={stats.totalMonth} subLabel="Questões" icon={BarChart2} colorClass="bg-emerald-500 text-emerald-500" />
-            {stats.avgTimePerQuestion && (
-                 <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
+        <div className="w-full space-y-4">
+            {!compact && (
+                <div className="flex justify-end gap-1 mb-2">
+                    {(['week', 'month', 'year', 'all'] as const).map((r) => (
+                        <button 
+                            key={r}
+                            onClick={() => setRange(r)}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-slate-800 text-white dark:bg-white dark:text-black' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                        >
+                            {r === 'week' ? '7D' : r === 'month' ? '30D' : r === 'year' ? '1A' : 'Tudo'}
+                        </button>
+                    ))}
+                </div>
             )}
+            <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'} w-full`}>
+                <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
+                <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-blue-500 text-blue-500" />
+                {stats.avgTimePerQuestion && (
+                     <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
+                )}
+                {/* Placeholder for another stat or remove if 3 is enough */}
+                <StatCard label="Média Diária" value={Math.round(stats.totalRange / (range === 'week' ? 7 : range === 'month' ? 30 : range === 'year' ? 365 : 1))} subLabel="Estimada" icon={TrendingUp} colorClass="bg-purple-500 text-purple-500" />
+            </div>
+        </div>
+    );
+});
+
+// --- Area Stats Widget ---
+export const AreaStatsWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const stats = useMemo(() => {
+        const counts: Record<string, number> = {};
+        AREAS.forEach(a => counts[a.id] = 0);
+
+        topics.forEach(t => {
+            if (t.deleted) return;
+            t.reviews.forEach(r => {
+                if (r.done) counts[t.area] = (counts[t.area] || 0) + r.total;
+            });
+        });
+
+        // Simulados don't strictly have an area unless we parse it, assuming they are general for now or mixed.
+        // If simulados have areas, we'd add them here. For now, just topics.
+        
+        return AREAS.map(area => ({
+            ...area,
+            count: counts[area.id] || 0,
+            icon: getAreaIcon(area.id)
+        })).sort((a, b) => b.count - a.count);
+    }, [topics]);
+
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {stats.map((area) => {
+                const Icon = area.icon;
+                const theme = getAreaTheme(area.id);
+                return (
+                    <div key={area.id} className="bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm flex flex-col items-center text-center gap-2 group hover:border-slate-300 dark:hover:border-white/20 transition-all">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${theme.bg} ${theme.text} group-hover:scale-110 transition-transform`}>
+                            <Icon size={20} />
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{area.name}</div>
+                            <div className="text-lg font-black text-slate-800 dark:text-white">{area.count}</div>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 });
@@ -381,60 +460,108 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
     )
 });
 
-// --- Heatmap Widget - Modern Dot Matrix ---
+// --- Heatmap Widget - GitHub Style Calendar ---
 export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
-    const days = useMemo(() => {
-        const dArr = [];
+    const calendarData = useMemo(() => {
         const today = new Date();
-        const start = new Date(today);
-        start.setDate(today.getDate() - 34); 
+        const endDate = new Date(today);
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 364); // Last 365 days
 
-        for (let i = 0; i < 35; i++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-            const dStr = d.toISOString().split('T')[0];
-            let count = 0;
-            topics.forEach(t => { if(!t.deleted) t.reviews.forEach(r => { if(r.done && r.date === dStr) count += r.total; })});
-            simulados.forEach(s => { if(s.dateTaken.split('T')[0] === dStr) count += s.totalQuestions; });
-            dArr.push({ date: dStr, count, dayObj: d });
+        // Align start date to Sunday
+        while (startDate.getDay() !== 0) {
+            startDate.setDate(startDate.getDate() - 1);
         }
-        return dArr;
+
+        const dataMap = new Map<string, number>();
+        topics.forEach(t => { 
+            if(!t.deleted) t.reviews.forEach(r => { 
+                if(r.done) {
+                    const d = r.date;
+                    dataMap.set(d, (dataMap.get(d) || 0) + r.total);
+                }
+            });
+        });
+        simulados.forEach(s => { 
+            const d = s.dateTaken.split('T')[0];
+            dataMap.set(d, (dataMap.get(d) || 0) + s.totalQuestions); 
+        });
+
+        const weeks = [];
+        let currentWeek = [];
+        const currentDate = new Date(startDate);
+
+        // Generate weeks until we pass today
+        while (currentDate <= endDate || currentWeek.length > 0) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const count = dataMap.get(dateStr) || 0;
+            
+            currentWeek.push({
+                date: dateStr,
+                count,
+                dayObj: new Date(currentDate)
+            });
+
+            if (currentWeek.length === 7) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
+            
+            currentDate.setDate(currentDate.getDate() + 1);
+            if (currentDate > endDate && currentWeek.length === 0) break;
+        }
+        
+        // Fill last week if incomplete (shouldn't happen with Sunday alignment but good safety)
+        if (currentWeek.length > 0) {
+            while (currentWeek.length < 7) {
+                currentWeek.push({ date: '', count: 0, dayObj: null as any });
+            }
+            weeks.push(currentWeek);
+        }
+
+        return weeks;
     }, [topics, simulados]);
 
     return (
-        <div className="w-full flex flex-col items-center">
-             <div className="grid grid-cols-7 gap-2.5">
-                {days.map((d, i) => {
-                    let colorClass = 'bg-slate-100 dark:bg-white/5 scale-90';
-                    let glow = '';
-                    
-                    if (d.count > 0) {
-                        colorClass = 'bg-emerald-300 dark:bg-emerald-500/40 scale-100';
-                        glow = 'shadow-[0_0_8px_rgba(16,185,129,0.3)]';
-                    }
-                    if (d.count > 20) {
-                        colorClass = 'bg-emerald-400 dark:bg-emerald-500/70 scale-105';
-                        glow = 'shadow-[0_0_12px_rgba(16,185,129,0.5)]';
-                    }
-                    if (d.count > 50) {
-                        colorClass = 'bg-emerald-500 dark:bg-emerald-500 scale-110';
-                        glow = 'shadow-[0_0_15px_rgba(16,185,129,0.7)]';
-                    }
+        <div className="w-full overflow-x-auto custom-scrollbar pb-2">
+            <div className="flex gap-1 min-w-max">
+                {calendarData.map((week, wIdx) => (
+                    <div key={wIdx} className="flex flex-col gap-1">
+                        {week.map((day, dIdx) => {
+                            if (!day.dayObj) return <div key={dIdx} className="w-2.5 h-2.5"></div>;
+                            
+                            let colorClass = 'bg-slate-100 dark:bg-white/5';
+                            if (day.count > 0) colorClass = 'bg-emerald-200 dark:bg-emerald-900/50';
+                            if (day.count > 10) colorClass = 'bg-emerald-300 dark:bg-emerald-700/60';
+                            if (day.count > 30) colorClass = 'bg-emerald-400 dark:bg-emerald-600/80';
+                            if (day.count > 60) colorClass = 'bg-emerald-500 dark:bg-emerald-500';
 
-                    return (
-                        <div key={d.date} className="relative group cursor-default">
-                             <div 
-                                className={`w-3 h-3 rounded-full transition-all duration-500 ease-out ${colorClass} ${glow}`}
-                            />
-                            {/* Simple tooltip */}
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded-md whitespace-nowrap">
-                                    {d.dayObj.getDate()}/{d.dayObj.getMonth()+1}: {d.count}
+                            return (
+                                <div key={day.date} className="relative group">
+                                    <div 
+                                        className={`w-2.5 h-2.5 rounded-sm transition-colors ${colorClass}`}
+                                    />
+                                    {/* Tooltip */}
+                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10 z-50">
+                                            {day.dayObj.getDate()}/{day.dayObj.getMonth()+1}: {day.count} questões
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+            <div className="flex justify-end items-center gap-2 mt-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                <span>Menos</span>
+                <div className="flex gap-1">
+                    <div className="w-2.5 h-2.5 rounded-sm bg-slate-100 dark:bg-white/5"></div>
+                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-200 dark:bg-emerald-900/50"></div>
+                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-400 dark:bg-emerald-600/80"></div>
+                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-500"></div>
+                </div>
+                <span>Mais</span>
             </div>
         </div>
     )
@@ -649,8 +776,10 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
         }
     }
 
-    return (
-        <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all
+    const AreaIcon = getAreaIcon(topic.area);
+
+    const CardContent = () => (
+        <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all w-full
             ${isPico 
                 ? 'border-indigo-300 dark:border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] dark:shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
                 : 'border-black/5 dark:border-white/5 hover:border-blue-500/30'
@@ -659,7 +788,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
             <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${theme.bg} ${theme.text}`}>
-                        <BookOpen size={16}/>
+                        <AreaIcon size={16}/>
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -676,7 +805,8 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-1 shrink-0">
+                {/* Desktop Actions */}
+                <div className="hidden md:flex items-center gap-1 shrink-0">
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
                         {onDelete && (
@@ -688,6 +818,18 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                             onClick={() => onReview(topic.id, nextReviewIdx)} 
                             className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-md ml-1"
                             title="Revisar"
+                        >
+                            <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
+                        </button>
+                    )}
+                </div>
+                
+                {/* Mobile Play Button (Always visible) */}
+                <div className="md:hidden flex items-center gap-1 shrink-0">
+                    {nextReview && (
+                        <button 
+                            onClick={() => onReview(topic.id, nextReviewIdx)} 
+                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full shadow-md ml-1"
                         >
                             <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
                         </button>
@@ -716,8 +858,12 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                                 
                                 {/* Tooltip */}
                                 <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none z-10">
-                                    <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap">
+                                    <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
                                         {r.label} ({formatDate(r.date)})
+                                        {/* Show questions count */}
+                                        <div className="text-[8px] text-slate-400 font-normal mt-0.5">
+                                            {r.done ? `${r.total} questões feitas` : `${r.targetQ} questões`}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -736,6 +882,28 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                         <div className="text-[9px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded flex items-center gap-1">
                             <Target size={10}/> {nextReview.targetQ}q
                         </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="relative group overflow-hidden rounded-2xl">
+            {/* Mobile Swipe Container */}
+            <div className="flex overflow-x-auto snap-x no-scrollbar md:overflow-visible">
+                <div className="min-w-full snap-center relative z-10">
+                    <CardContent />
+                </div>
+                {/* Mobile Actions (Revealed on Swipe) */}
+                <div className="min-w-[120px] snap-center flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 md:hidden px-4">
+                    <button onClick={onEdit} className="p-3 bg-white dark:bg-zinc-800 rounded-full text-slate-600 dark:text-white shadow-sm">
+                        <Edit size={18}/>
+                    </button>
+                    {onDelete && (
+                        <button onClick={() => onDelete(topic.id)} className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-500 shadow-sm">
+                            <Trash2 size={18}/>
+                        </button>
                     )}
                 </div>
             </div>

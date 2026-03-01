@@ -403,7 +403,27 @@ export const triggerConfetti = () => {
     if (window.confetti) window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] }); 
 };
 
-export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) => {
+export const APP_VERSION = '1.2.0';
+
+export const filterDataByRange = (data: any[], dateKey: string, range: 'week' | 'month' | 'year' | 'all') => {
+    const today = new Date();
+    const cutoff = new Date(today);
+    
+    if (range === 'week') cutoff.setDate(today.getDate() - 7);
+    if (range === 'month') cutoff.setMonth(today.getMonth() - 1);
+    if (range === 'year') cutoff.setFullYear(today.getFullYear() - 1);
+    if (range === 'all') return data;
+
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    return data.filter(item => {
+        const d = item[dateKey];
+        // Handle both YYYY-MM-DD and ISO strings
+        const dateStr = d.includes('T') ? d.split('T')[0] : d;
+        return dateStr >= cutoffStr;
+    });
+};
+
+export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[], range: 'week' | 'month' | 'year' | 'all' = 'all') => {
     const today = new Date();
     const todayStr = getTodayStr();
     
@@ -417,17 +437,22 @@ export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) =
     const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
 
     let totalToday = 0;
-    let totalWeek = 0;
-    let totalMonth = 0;
+    let totalRange = 0;
     let totalTime = 0;
     let totalQuestionsWithTime = 0;
+    
+    // Calculate cutoff for the selected range
+    const cutoff = new Date(today);
+    if (range === 'week') cutoff.setDate(today.getDate() - 7);
+    if (range === 'month') cutoff.setMonth(today.getMonth() - 1);
+    if (range === 'year') cutoff.setFullYear(today.getFullYear() - 1);
+    const cutoffStr = range === 'all' ? '1970-01-01' : cutoff.toISOString().split('T')[0];
 
     const processItem = (date: string, count: number, timeSpent?: number) => {
         if (date === todayStr) totalToday += count;
-        if (date >= startOfWeekStr) totalWeek += count;
-        if (date >= startOfMonthStr) totalMonth += count;
+        if (date >= cutoffStr) totalRange += count;
 
-        if (timeSpent && timeSpent > 0 && count > 0) {
+        if (timeSpent && timeSpent > 0 && count > 0 && date >= cutoffStr) {
             totalTime += timeSpent;
             totalQuestionsWithTime += count;
         }
@@ -446,21 +471,11 @@ export const calculateDetailedStats = (topics: Topic[], simulados: Simulado[]) =
         processItem(d, s.totalQuestions);
     });
 
-    // Calculate averages
-    const dayOfWeek = today.getDay() + 1; // 1-based index for math
-    const avgWeek = Math.round(totalWeek / dayOfWeek);
-
-    const dayOfMonth = today.getDate();
-    const avgMonth = Math.round(totalMonth / dayOfMonth);
-
     const avgTimePerQuestion = totalQuestionsWithTime > 0 ? Math.round(totalTime / totalQuestionsWithTime) : null;
 
     return {
         totalToday,
-        totalWeek,
-        totalMonth,
-        avgWeek,
-        avgMonth,
+        totalRange,
         avgTimePerQuestion
     };
 };

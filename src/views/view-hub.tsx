@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
-import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget } from '../components';
+import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget } from '../components';
 import { Modal } from '../modals';
 
 export const HubView = ({ 
@@ -248,26 +248,32 @@ export const HubView = ({
                             <DetailedStatsWidget topics={activeTopics} simulados={activeSimulados} />
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Constância */}
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm flex flex-col">
-                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
-                                <div className="flex-1 flex items-center justify-center">
-                                    <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
-                                </div>
-                            </div>
+                        {/* Desempenho por Área */}
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                             <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Desempenho por Área</h4>
+                             <AreaStatsWidget topics={activeTopics} simulados={activeSimulados} />
+                        </div>
 
+                        {/* Constância */}
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                             <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
+                             <div className="flex justify-center overflow-x-auto">
+                                <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
+                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Retenção */}
                             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
                                 <RetentionWidget topics={activeTopics} />
                             </div>
-                        </div>
 
-                        {/* Previsão de Carga */}
-                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                            <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
-                            <div className="h-48">
-                                <FutureLoadWidget topics={activeTopics} />
+                            {/* Previsão de Carga */}
+                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
+                                <div className="h-48">
+                                    <FutureLoadWidget topics={activeTopics} />
+                                </div>
                             </div>
                         </div>
                     </div>
