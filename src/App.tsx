@@ -70,40 +70,6 @@ export function App() {
     // Mobile Navigation
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
 
-    // Swipe to change tabs
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
-    const minSwipeDistance = 50;
-
-    const onTouchStart = (e: React.TouchEvent) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const onTouchMove = (e: React.TouchEvent) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const onTouchEndHandler = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
-
-        if (isLeftSwipe || isRightSwipe) {
-            const currentIndex = NAV_ITEMS.findIndex(item => item.id === view);
-            if (isLeftSwipe && currentIndex < NAV_ITEMS.length - 1) {
-                setView(NAV_ITEMS[currentIndex + 1].id as any);
-                vibration.tick();
-            }
-            if (isRightSwipe && currentIndex > 0) {
-                setView(NAV_ITEMS[currentIndex - 1].id as any);
-                vibration.tick();
-            }
-        }
-    };
-
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editTopic, setEditTopic] = useState<Topic | null>(null);
@@ -381,9 +347,6 @@ export function App() {
     return (
         <div 
             className="min-h-[100dvh] bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-blue-500/30 touch-manipulation"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEndHandler}
         >
             
             {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
