@@ -318,7 +318,38 @@ export const useAnalytics = (
     return { institutions, years, groupedData, metrics, filteredSimuladosForChart };
 };
 
-// --- New Hook: useCalendar ---
+// --- New Hook: useNotifications ---
+export const useNotifications = () => {
+    const [permission, setPermission] = useState<NotificationPermission>('default');
+
+    useEffect(() => {
+        if ('Notification' in window) {
+            setPermission(Notification.permission);
+        }
+    }, []);
+
+    const requestPermission = async () => {
+        if (!('Notification' in window)) {
+            alert('Este navegador não suporta notificações.');
+            return 'denied';
+        }
+        const p = await Notification.requestPermission();
+        setPermission(p);
+        return p;
+    };
+
+    const sendNotification = (title: string, options?: NotificationOptions) => {
+        if (permission === 'granted') {
+            new Notification(title, {
+                icon: '/vite.svg', // Fallback icon
+                ...options
+            });
+        }
+    };
+
+    return { permission, requestPermission, sendNotification };
+};
+
 export const useCalendar = (topics: Topic[], simulados: Simulado[], currentDate: Date, examDate?: string) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();

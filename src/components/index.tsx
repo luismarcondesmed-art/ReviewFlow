@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION } from '../utils';
@@ -194,6 +195,35 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
     const [range, setRange] = useState<'week' | 'month' | 'year' | 'all'>('week');
     const stats = useMemo(() => calculateDetailedStats(topics, simulados, range), [topics, simulados, range]);
 
+    // Calculate Accuracy for the range
+    const accuracy = useMemo(() => {
+        let correct = 0;
+        let total = 0;
+        const today = new Date();
+        const cutoff = new Date(today);
+        if (range === 'week') cutoff.setDate(today.getDate() - 7);
+        if (range === 'month') cutoff.setMonth(today.getMonth() - 1);
+        if (range === 'year') cutoff.setFullYear(today.getFullYear() - 1);
+        const cutoffStr = range === 'all' ? '1970-01-01' : cutoff.toISOString().split('T')[0];
+
+        topics.forEach(t => {
+            if (t.deleted) return;
+            t.reviews.forEach(r => {
+                if (r.done && r.date >= cutoffStr) {
+                    correct += r.correct;
+                    total += r.total;
+                }
+            });
+        });
+        simulados.forEach(s => {
+            if (s.dateTaken >= cutoffStr) {
+                 correct += s.correctCount;
+                 total += s.totalQuestions;
+            }
+        });
+        return total > 0 ? Math.round((correct / total) * 100) : 0;
+    }, [topics, simulados, range]);
+
     const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
         <div className={`flex-1 bg-white dark:bg-zinc-900 rounded-2xl ${compact ? 'p-3' : 'p-4'} border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all`}>
             <div>
@@ -227,11 +257,12 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
             <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'} w-full`}>
                 <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
                 <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-blue-500 text-blue-500" />
-                {stats.avgTimePerQuestion && (
+                <StatCard label="Taxa de Acerto" value={`${accuracy}%`} subLabel={`em ${rangeLabel.toLowerCase()}`} icon={Target} colorClass="bg-emerald-500 text-emerald-500" />
+                {stats.avgTimePerQuestion ? (
                      <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
+                ) : (
+                    <StatCard label="Média Diária" value={Math.round(stats.totalRange / (range === 'week' ? 7 : range === 'month' ? 30 : range === 'year' ? 365 : 1))} subLabel="Estimada" icon={TrendingUp} colorClass="bg-purple-500 text-purple-500" />
                 )}
-                {/* Placeholder for another stat or remove if 3 is enough */}
-                <StatCard label="Média Diária" value={Math.round(stats.totalRange / (range === 'week' ? 7 : range === 'month' ? 30 : range === 'year' ? 365 : 1))} subLabel="Estimada" icon={TrendingUp} colorClass="bg-purple-500 text-purple-500" />
             </div>
         </div>
     );
@@ -473,18 +504,28 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
             startDate.setDate(startDate.getDate() - 1);
         }
 
-        const dataMap = new Map<string, number>();
+        const dataMap = new Map<string, { count: number, correct: number, total: number }>();
         topics.forEach(t => { 
             if(!t.deleted) t.reviews.forEach(r => { 
                 if(r.done) {
                     const d = r.date;
-                    dataMap.set(d, (dataMap.get(d) || 0) + r.total);
+                    const current = dataMap.get(d) || { count: 0, correct: 0, total: 0 };
+                    dataMap.set(d, { 
+                        count: current.count + r.total, 
+                        correct: current.correct + r.correct, 
+                        total: current.total + r.total 
+                    });
                 }
             });
         });
         simulados.forEach(s => { 
             const d = s.dateTaken.split('T')[0];
-            dataMap.set(d, (dataMap.get(d) || 0) + s.totalQuestions); 
+            const current = dataMap.get(d) || { count: 0, correct: 0, total: 0 };
+            dataMap.set(d, { 
+                count: current.count + s.totalQuestions, 
+                correct: current.correct + s.correctCount, 
+                total: current.total + s.totalQuestions 
+            }); 
         });
 
         const weeks = [];
@@ -494,11 +535,13 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
         // Generate weeks until we pass today
         while (currentDate <= endDate || currentWeek.length > 0) {
             const dateStr = currentDate.toISOString().split('T')[0];
-            const count = dataMap.get(dateStr) || 0;
+            const data = dataMap.get(dateStr) || { count: 0, correct: 0, total: 0 };
             
             currentWeek.push({
                 date: dateStr,
-                count,
+                count: data.count,
+                correct: data.correct,
+                total: data.total,
                 dayObj: new Date(currentDate)
             });
 
@@ -514,7 +557,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
         // Fill last week if incomplete (shouldn't happen with Sunday alignment but good safety)
         if (currentWeek.length > 0) {
             while (currentWeek.length < 7) {
-                currentWeek.push({ date: '', count: 0, dayObj: null as any });
+                currentWeek.push({ date: '', count: 0, correct: 0, total: 0, dayObj: null as any });
             }
             weeks.push(currentWeek);
         }
@@ -530,21 +573,26 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         {week.map((day, dIdx) => {
                             if (!day.dayObj) return <div key={dIdx} className="w-2.5 h-2.5"></div>;
                             
-                            let colorClass = 'bg-slate-100 dark:bg-white/5';
-                            if (day.count > 0) colorClass = 'bg-emerald-200 dark:bg-emerald-900/50';
-                            if (day.count > 10) colorClass = 'bg-emerald-300 dark:bg-emerald-700/60';
-                            if (day.count > 30) colorClass = 'bg-emerald-400 dark:bg-emerald-600/80';
-                            if (day.count > 60) colorClass = 'bg-emerald-500 dark:bg-emerald-500';
+                            let colorClass = 'bg-slate-100 dark:bg-white/5 border border-transparent';
+                            if (day.count > 0) colorClass = 'bg-emerald-200 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800';
+                            if (day.count > 10) colorClass = 'bg-emerald-300 dark:bg-emerald-700/60 border-emerald-400 dark:border-emerald-600';
+                            if (day.count > 30) colorClass = 'bg-emerald-400 dark:bg-emerald-600/80 border-emerald-500 dark:border-emerald-500';
+                            if (day.count > 60) colorClass = 'bg-emerald-500 dark:bg-emerald-500 border-emerald-600 dark:border-emerald-400';
 
                             return (
                                 <div key={day.date} className="relative group">
                                     <div 
-                                        className={`w-2.5 h-2.5 rounded-sm transition-colors ${colorClass}`}
+                                        className={`w-2.5 h-2.5 rounded-[2px] transition-all ${colorClass}`}
                                     />
                                     {/* Tooltip */}
                                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10 z-50">
-                                            {day.dayObj.getDate()}/{day.dayObj.getMonth()+1}: {day.count} questões
+                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10 z-50 flex flex-col items-center">
+                                            <span>{day.dayObj.getDate()}/{day.dayObj.getMonth()+1}</span>
+                                            {day.count > 0 ? (
+                                                <span className="text-emerald-400">{day.correct}/{day.total} ({Math.round(day.correct/day.total*100)}%)</span>
+                                            ) : (
+                                                <span className="opacity-50">Sem atividade</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -556,10 +604,10 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
             <div className="flex justify-end items-center gap-2 mt-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
                 <span>Menos</span>
                 <div className="flex gap-1">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-slate-100 dark:bg-white/5"></div>
-                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-200 dark:bg-emerald-900/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-400 dark:bg-emerald-600/80"></div>
-                    <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-500"></div>
+                    <div className="w-2.5 h-2.5 rounded-[2px] bg-slate-100 dark:bg-white/5"></div>
+                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-200 dark:bg-emerald-900/50"></div>
+                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-400 dark:bg-emerald-600/80"></div>
+                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-500 dark:bg-emerald-500"></div>
                 </div>
                 <span>Mais</span>
             </div>
@@ -778,6 +826,25 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
 
     const AreaIcon = getAreaIcon(topic.area);
 
+    // Mobile Swipe Logic
+    const controls = useAnimation();
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const handleDragEnd = (event: any, info: PanInfo) => {
+        if (info.offset.x > 50) {
+            controls.start({ x: 100 });
+        } else {
+            controls.start({ x: 0 });
+        }
+    };
+
     const CardContent = () => (
         <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all w-full
             ${isPico 
@@ -890,23 +957,22 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
 
     return (
         <div className="relative group overflow-hidden rounded-2xl">
-            {/* Mobile Swipe Container */}
-            <div className="flex overflow-x-auto snap-x no-scrollbar md:overflow-visible">
-                <div className="min-w-full snap-center relative z-10">
-                    <CardContent />
-                </div>
-                {/* Mobile Actions (Revealed on Swipe) */}
-                <div className="min-w-[120px] snap-center flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 md:hidden px-4">
-                    <button onClick={onEdit} className="p-3 bg-white dark:bg-zinc-800 rounded-full text-slate-600 dark:text-white shadow-sm">
-                        <Edit size={18}/>
-                    </button>
-                    {onDelete && (
-                        <button onClick={() => onDelete(topic.id)} className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-500 shadow-sm">
-                            <Trash2 size={18}/>
-                        </button>
-                    )}
-                </div>
+            {/* Mobile Actions (Left) - Revealed on Swipe Right */}
+            <div className="absolute inset-y-0 left-0 flex items-center pl-4 gap-2 md:hidden z-0 w-full bg-slate-100 dark:bg-zinc-800/50">
+                 <button onClick={onEdit} className="p-2 bg-white dark:bg-zinc-700 rounded-full text-slate-600 dark:text-white shadow-sm"><Edit size={18}/></button>
+                 {onDelete && <button onClick={() => onDelete(topic.id)} className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full text-red-500 shadow-sm"><Trash2 size={18}/></button>}
             </div>
+
+            <motion.div
+                drag={isMobile ? "x" : false}
+                dragConstraints={{ left: 0, right: 100 }}
+                dragElastic={0.1}
+                onDragEnd={handleDragEnd}
+                animate={controls}
+                className="relative z-10"
+            >
+                <CardContent />
+            </motion.div>
         </div>
     );
 });

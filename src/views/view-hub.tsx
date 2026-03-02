@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar
+    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
@@ -20,11 +20,13 @@ export const HubView = ({
     onAddSimulado?: () => void
 }) => {
     const [activeTab, setActiveTab] = useState<'temas' | 'stats' | 'simulados'>('temas');
-    const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+    const [popoverPosition, setPopoverPosition] = useState<{x: number, y: number, position: 'above' | 'below'} | null>(null);
     
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
     const activeSimulados = simulados.filter(s => !s.deleted);
+
+    // ... (keep filteredActiveTopics and dueItems logic unchanged) ...
 
     const filteredActiveTopics = useMemo(() => {
         let result = activeTopics;
@@ -62,7 +64,7 @@ export const HubView = ({
                  if (a.date !== b.date) return a.date.localeCompare(b.date);
                  const pMap: any = { high: 3, medium: 2, low: 1 };
                  return (pMap[b.topic.importance] || 2) - (pMap[a.topic.importance] || 2);
-            });
+             });
     }, [filteredActiveTopics, today]);
 
     const startQuickSession = () => {
@@ -71,8 +73,18 @@ export const HubView = ({
         }
     };
 
+    const handlePendingClick = (e: React.MouseEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const showAbove = rect.top > 320;
+        setPopoverPosition({ 
+            x: rect.left + rect.width / 2, 
+            y: showAbove ? rect.top : rect.bottom,
+            position: showAbove ? 'above' : 'below'
+        });
+    };
+
     return (
-        <div className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full">
+        <div className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
             
             {/* HERO: Para fazer hoje */}
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
@@ -84,7 +96,7 @@ export const HubView = ({
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base">
                         {dueItems.length > 0 ? (
-                            <>Você tem <button onClick={() => setIsPendingModalOpen(true)} className="font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
+                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
                         ) : (
                             <>Você não tem revisões pendentes para hoje. Aproveite para descansar ou adiantar temas.</>
                         )}
@@ -102,54 +114,70 @@ export const HubView = ({
                 )}
             </div>
 
-            {/* Pending Reviews Modal */}
-            <Modal isOpen={isPendingModalOpen} onClose={() => setIsPendingModalOpen(false)} title="Revisões Pendentes">
-                <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
-                    {dueItems.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                            <CheckCircle2 size={48} className="mx-auto mb-4 text-emerald-500 opacity-50" />
-                            <p className="font-bold">Nenhuma revisão pendente!</p>
+            {/* Pending Reviews Popover (Context Aware) */}
+            {popoverPosition && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setPopoverPosition(null)}></div>
+                    <div 
+                        className={`fixed z-50 w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
+                        style={{ 
+                            top: popoverPosition.position === 'below' ? popoverPosition.y + 10 : undefined,
+                            bottom: popoverPosition.position === 'above' ? window.innerHeight - popoverPosition.y + 10 : undefined,
+                            left: popoverPosition.x, 
+                            transform: 'translateX(-50%)' 
+                        }}
+                    >
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
+                            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
+                            <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
                         </div>
-                    ) : (
-                        dueItems.map((item: any) => {
-                            const theme = getAreaTheme(item.topic.area);
-                            const isOverdue = item.date < today;
-                            const priority = getPriorityInfo(item.topic.importance);
-                            
-                            return (
-                                <div key={`${item.topic.id}-${item.idx}`} className="bg-white dark:bg-zinc-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm ${theme.bg} ${theme.text}`}>
-                                            {isOverdue ? <AlertCircle size={20}/> : <Calendar size={20}/>}
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-sm text-slate-800 dark:text-white line-clamp-1">{item.topic.title}</h4>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
-                                                    {isOverdue ? 'Atrasado' : 'Hoje'}
-                                                </span>
-                                                <div className="flex items-center gap-1">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></div>
-                                                    <span className="text-[10px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1">
+                            {dueItems.length === 0 ? (
+                                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                                    <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
+                                    <p className="font-bold text-xs">Tudo feito!</p>
+                                </div>
+                            ) : (
+                                dueItems.map((item: any) => {
+                                    const theme = getAreaTheme(item.topic.area);
+                                    const isOverdue = item.date < today;
+                                    const priority = getPriorityInfo(item.topic.importance);
+                                    
+                                    return (
+                                        <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
+                                                    {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                                            {isOverdue ? 'Atrasado' : 'Hoje'}
+                                                        </span>
+                                                        <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <button 
+                                                onClick={() => {
+                                                    setPopoverPosition(null);
+                                                    onReview(item.topic.id, item.idx);
+                                                }} 
+                                                className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <PlayCircle size={16}/>
+                                            </button>
                                         </div>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            setIsPendingModalOpen(false);
-                                            onReview(item.topic.id, item.idx);
-                                        }} 
-                                        className="p-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
-                                    >
-                                        <PlayCircle size={18}/>
-                                    </button>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-            </Modal>
+                                    );
+                                })
+                            )}
+                        </div>
+                        {/* Arrow */}
+                        <div className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-white/10 rotate-45 ${popoverPosition.position === 'above' ? 'bottom-[-6px] border-b border-r' : 'top-[-6px] border-t border-l'}`}></div>
+                    </div>
+                </>
+            )}
 
             {/* TABS */}
             <div className="flex gap-6 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar" role="tablist" aria-label="Seções do Hub">

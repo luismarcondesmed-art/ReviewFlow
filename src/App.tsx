@@ -544,7 +544,7 @@ export function App() {
                                 onAddSimulado={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
                             />
                         )}
-                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} />}
+                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} onUpdateTopic={handleUpdateTopic} />}
                         
                         {view === 'database' && (
                             <DatabaseView 
@@ -573,6 +573,7 @@ export function App() {
                                 }}
                                 onCreateAggregatedTopic={handleCreateAggregatedTopic}
                                 existingTopics={activeTopics}
+                                onUpdateTopic={handleUpdateTopic}
                             />
                         )}
 

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-    Check, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Map as MapIcon, ArrowUpDown, Info, X, Zap, Search, Plus
+    Check, ChevronDown, ChevronUp, Filter, LayoutGrid, List, Map as MapIcon, ArrowUpDown, Info, X, Zap, Search, Plus, Link as LinkIcon
 } from 'lucide-react';
 import { UserConfig, ScheduleProgress, AreaType, Topic, ImportanceType } from '../types';
 import { getAreaTheme, getTodayStr } from '../utils';
@@ -88,6 +88,7 @@ interface AreaGroupProps {
     onBulkComplete: (ids: string[]) => void;
     onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void;
     existingTopic?: Topic;
+    onUpdateTopic?: (topic: Topic) => void;
 }
 
 const AreaGroup: React.FC<AreaGroupProps> = ({ 
@@ -98,7 +99,8 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
     toggleCheck, 
     onBulkComplete,
     onCreateTopic, 
-    existingTopic 
+    existingTopic,
+    onUpdateTopic
 }) => {
     const mappedArea = mapArea(areaName);
     const theme = getAreaTheme(mappedArea);
@@ -161,6 +163,18 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
         onCreateTopic(topicTitle, mappedArea, lessonNames, finalPriority, baseQuestions);
     };
 
+    const handleNotionClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!existingTopic || !onUpdateTopic) return;
+
+        const currentLink = existingTopic.notionLink || '';
+        const newLink = prompt('Insira o link do Notion para este bloco:', currentLink);
+        
+        if (newLink !== null) {
+            onUpdateTopic({ ...existingTopic, notionLink: newLink });
+        }
+    };
+
     return (
         <div className="mb-4 last:mb-0">
             <div className={`p-4 rounded-2xl border bg-slate-50/50 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5`}>
@@ -172,18 +186,31 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                         <span className="text-[10px] font-bold text-slate-400">{completedCount}/{totalCount}</span>
                     </div>
                     
-                    {/* Create/Update Topic Button */}
-                    <button 
-                        onClick={handleCreateClick}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm 
-                            ${topicStatus === 'created' 
-                                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' 
-                                : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-blue-400'
-                            }`}
-                    >
-                        {topicStatus === 'created' ? <Check size={12}/> : <Plus size={12}/>}
-                        {topicStatus === 'created' ? 'Matéria Criada' : 'Criar Matéria'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Notion Link Button */}
+                        {existingTopic && (
+                            <button 
+                                onClick={handleNotionClick}
+                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all shadow-sm ${existingTopic.notionLink ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'bg-white dark:bg-zinc-800 text-slate-400 border border-slate-200 dark:border-white/10 hover:border-blue-400'}`}
+                                title={existingTopic.notionLink ? "Editar Link Notion" : "Adicionar Link Notion"}
+                            >
+                                <LinkIcon size={14}/>
+                            </button>
+                        )}
+
+                        {/* Create/Update Topic Button */}
+                        <button 
+                            onClick={handleCreateClick}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm 
+                                ${topicStatus === 'created' 
+                                    ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' 
+                                    : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-blue-400'
+                                }`}
+                        >
+                            {topicStatus === 'created' ? <Check size={12}/> : <Plus size={12}/>}
+                            {topicStatus === 'created' ? 'Matéria Criada' : 'Criar Matéria'}
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="flex flex-col gap-2">
@@ -208,7 +235,8 @@ export const CronogramaView = ({
     searchTerm, 
     onScheduleChange,
     onCreateAggregatedTopic,
-    existingTopics
+    existingTopics,
+    onUpdateTopic
 }: { 
     scheduleProgress: ScheduleProgress, 
     setScheduleProgress: React.Dispatch<React.SetStateAction<ScheduleProgress>>, 
@@ -216,10 +244,12 @@ export const CronogramaView = ({
     searchTerm?: string, 
     onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA') => void,
     onCreateAggregatedTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void,
-    existingTopics: Topic[]
+    existingTopics: Topic[],
+    onUpdateTopic?: (topic: Topic) => void
 }) => {
     const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
     const [searchLocal, setSearchLocal] = useState('');
+    const [scheduleMenuOpen, setScheduleMenuOpen] = useState(false);
     const activeScheduleCode = config.activeSchedule || 'MEDCOF';
 
     const finalSearch = searchTerm || searchLocal;
@@ -227,6 +257,8 @@ export const CronogramaView = ({
     const currentScheduleData = useMemo(() => {
         return activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
     }, [activeScheduleCode]);
+
+    // ... (groupedData and useEffect remain the same)
 
     const groupedData = useMemo(() => {
         const blocks: Record<string, Record<string, any[]>> = {};
@@ -301,20 +333,34 @@ export const CronogramaView = ({
 
     return (
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            <div className="glass-panel p-2 rounded-2xl mb-6 flex flex-col sm:flex-row gap-2 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-white/40 dark:border-white/10">
-                <div className="flex bg-slate-100 dark:bg-black/40 rounded-xl p-1 shrink-0">
+            <div className="glass-panel p-2 rounded-2xl mb-6 flex flex-row gap-2 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-white/40 dark:border-white/10 items-center">
+                <div className="relative shrink-0">
                     <button 
-                        onClick={() => onScheduleChange('MEDCOF')}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeScheduleCode === 'MEDCOF' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setScheduleMenuOpen(!scheduleMenuOpen)}
+                        className="flex items-center gap-2 px-3 py-2.5 bg-slate-100 dark:bg-black/40 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                     >
-                        MedCof
+                        {activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
+                        <ChevronDown size={14} className={`transition-transform ${scheduleMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    <button 
-                        onClick={() => onScheduleChange('ESTRATEGIA')}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeScheduleCode === 'ESTRATEGIA' ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        Estratégia
-                    </button>
+                    
+                    {scheduleMenuOpen && (
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-scale-in">
+                            <button 
+                                onClick={() => { onScheduleChange('MEDCOF'); setScheduleMenuOpen(false); }} 
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-700 dark:text-slate-300'}`}
+                            >
+                                MedCof Extensivo
+                                {activeScheduleCode === 'MEDCOF' && <Check size={14}/>}
+                            </button>
+                            <button 
+                                onClick={() => { onScheduleChange('ESTRATEGIA'); setScheduleMenuOpen(false); }} 
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'ESTRATEGIA' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-700 dark:text-slate-300'}`}
+                            >
+                                Estratégia MED
+                                {activeScheduleCode === 'ESTRATEGIA' && <Check size={14}/>}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="flex-1 relative">
@@ -324,8 +370,13 @@ export const CronogramaView = ({
                         placeholder="Filtrar cronograma..." 
                         value={searchLocal}
                         onChange={(e) => setSearchLocal(e.target.value)}
-                        className="w-full h-full bg-slate-50 dark:bg-black/20 rounded-xl pl-9 pr-4 text-xs font-bold outline-none border border-transparent focus:border-blue-500/30 transition-all"
+                        className="w-full h-full bg-slate-50 dark:bg-black/20 rounded-xl pl-9 pr-4 text-xs font-bold outline-none border border-transparent focus:border-blue-500/30 transition-all py-2.5"
                     />
+                    {searchLocal && (
+                        <button onClick={() => setSearchLocal('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X size={14}/>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -389,6 +440,7 @@ export const CronogramaView = ({
                                                     onBulkComplete={handleBulkComplete}
                                                     onCreateTopic={onCreateAggregatedTopic}
                                                     existingTopic={existing}
+                                                    onUpdateTopic={onUpdateTopic}
                                                 />
                                             );
                                         })}

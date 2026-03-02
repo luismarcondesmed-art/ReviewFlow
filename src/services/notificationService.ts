@@ -81,16 +81,16 @@ export class NotificationService {
     }
 
     private isTimeToNotify(current: string, scheduled: string): boolean {
-        if (current === scheduled) return true;
-        
-        // Simple check: if current time is within 5 minutes after scheduled time
         const [currH, currM] = current.split(':').map(Number);
         const [schH, schM] = scheduled.split(':').map(Number);
         
         const currMinutes = currH * 60 + currM;
         const schMinutes = schH * 60 + schM;
         
-        return currMinutes >= schMinutes && currMinutes <= schMinutes + 5;
+        // Notify if current time is equal or past scheduled time
+        // This ensures that if the user opens the app at 10:00 but scheduled for 08:00,
+        // they still get the notification for today.
+        return currMinutes >= schMinutes;
     }
 
     private async showNotification(config: UserConfig) {

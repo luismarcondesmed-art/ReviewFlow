@@ -34,6 +34,8 @@ export interface Topic {
   
   // New: Linked Lessons from Schedule
   linkedLessons?: string[]; 
+  notionLink?: string; // Link to Notion page
+  source?: string; // e.g. "BLOCO 1 - Medcof"
 
   deleted?: boolean;
   deletedAt?: any; // Firestore Timestamp ou null antes da sync
