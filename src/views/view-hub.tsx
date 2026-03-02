@@ -24,6 +24,23 @@ export const HubView = ({
     const [popoverPosition, setPopoverPosition] = useState<{rect: DOMRect, position: 'above' | 'below'} | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     
+    // Custom hook for media query
+    const useMediaQuery = (query: string) => {
+        const [matches, setMatches] = useState(false);
+        React.useEffect(() => {
+            const media = window.matchMedia(query);
+            if (media.matches !== matches) {
+                setMatches(media.matches);
+            }
+            const listener = () => setMatches(media.matches);
+            media.addEventListener('change', listener);
+            return () => media.removeEventListener('change', listener);
+        }, [matches, query]);
+        return matches;
+    };
+
+    const isDesktop = useMediaQuery('(min-width: 1024px)');
+    
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
     const activeSimulados = simulados.filter(s => !s.deleted);
@@ -121,108 +138,112 @@ export const HubView = ({
                 <>
                     <div className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-[2px] md:bg-transparent md:backdrop-blur-0" onClick={() => setPopoverPosition(null)}></div>
                     
-                    {/* Mobile: Centered Modal */}
-                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[90%] max-w-sm bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in md:hidden">
-                         <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
-                            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
-                            <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
-                        </div>
-                        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar space-y-1">
-                            {dueItems.length === 0 ? (
-                                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                                    <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
-                                    <p className="font-bold text-xs">Tudo feito!</p>
-                                </div>
-                            ) : (
-                                dueItems.map((item: any) => {
-                                    const theme = getAreaTheme(item.topic.area);
-                                    const isOverdue = item.date < today;
-                                    
-                                    return (
-                                        <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group active:scale-[0.98] transition-all" onClick={() => { setPopoverPosition(null); onReview(item.topic.id, item.idx); }}>
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
-                                                    {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
-                                                            {isOverdue ? 'Atrasado' : 'Hoje'}
-                                                        </span>
-                                                        <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                    {/* Mobile: Modal on the Left */}
+                    {!isDesktop && (
+                        <div className="fixed left-4 top-1/2 -translate-y-1/2 z-[10000] w-[calc(100%-2rem)] max-w-sm bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in">
+                             <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
+                                <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
+                                <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
+                            </div>
+                            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar space-y-1">
+                                {dueItems.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                                        <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
+                                        <p className="font-bold text-xs">Tudo feito!</p>
+                                    </div>
+                                ) : (
+                                    dueItems.map((item: any) => {
+                                        const theme = getAreaTheme(item.topic.area);
+                                        const isOverdue = item.date < today;
+                                        
+                                        return (
+                                            <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group active:scale-[0.98] transition-all" onClick={() => { setPopoverPosition(null); onReview(item.topic.id, item.idx); }}>
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
+                                                        {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                                                {isOverdue ? 'Atrasado' : 'Hoje'}
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <div className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm">
+                                                    <PlayCircle size={16}/>
+                                                </div>
                                             </div>
-                                            <div className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm">
-                                                <PlayCircle size={16}/>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
+                                        );
+                                    })
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Desktop: Fixed Popover */}
-                    <div 
-                        className={`hidden md:block fixed z-[10000] w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
-                        style={{ 
-                            top: popoverPosition.position === 'above' ? popoverPosition.rect.top : popoverPosition.rect.bottom,
-                            left: popoverPosition.rect.left + popoverPosition.rect.width / 2,
-                            transform: popoverPosition.position === 'above' 
-                                ? 'translate(-50%, calc(-100% - 6px))' 
-                                : 'translate(-50%, 6px)' 
-                        }}
-                    >
-                        <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
-                            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
-                            <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
-                        </div>
-                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1">
-                            {dueItems.length === 0 ? (
-                                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                                    <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
-                                    <p className="font-bold text-xs">Tudo feito!</p>
-                                </div>
-                            ) : (
-                                dueItems.map((item: any) => {
-                                    const theme = getAreaTheme(item.topic.area);
-                                    const isOverdue = item.date < today;
-                                    
-                                    return (
-                                        <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
-                                                    {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
-                                                            {isOverdue ? 'Atrasado' : 'Hoje'}
-                                                        </span>
-                                                        <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                    {isDesktop && (
+                        <div 
+                            className={`fixed z-[10000] w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
+                            style={{ 
+                                top: popoverPosition.position === 'above' ? popoverPosition.rect.top : popoverPosition.rect.bottom,
+                                left: popoverPosition.rect.left + popoverPosition.rect.width / 2,
+                                transform: popoverPosition.position === 'above' 
+                                    ? 'translate(-50%, calc(-100% - 6px))' 
+                                    : 'translate(-50%, 6px)' 
+                            }}
+                        >
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
+                                <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
+                                <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-1">
+                                {dueItems.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                                        <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
+                                        <p className="font-bold text-xs">Tudo feito!</p>
+                                    </div>
+                                ) : (
+                                    dueItems.map((item: any) => {
+                                        const theme = getAreaTheme(item.topic.area);
+                                        const isOverdue = item.date < today;
+                                        
+                                        return (
+                                            <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
+                                                        {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                                                {isOverdue ? 'Atrasado' : 'Hoje'}
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        setPopoverPosition(null);
+                                                        onReview(item.topic.id, item.idx);
+                                                    }} 
+                                                    className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    <PlayCircle size={16}/>
+                                                </button>
                                             </div>
-                                            <button 
-                                                onClick={() => {
-                                                    setPopoverPosition(null);
-                                                    onReview(item.topic.id, item.idx);
-                                                }} 
-                                                className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                                            >
-                                                <PlayCircle size={16}/>
-                                            </button>
-                                        </div>
-                                    );
-                                })
-                            )}
+                                        );
+                                    })
+                                )}
+                            </div>
+                            {/* Arrow */}
+                            <div className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-white/10 rotate-45 ${popoverPosition.position === 'above' ? 'bottom-[-6px] border-b border-r' : 'top-[-6px] border-t border-l'}`}></div>
                         </div>
-                        {/* Arrow */}
-                        <div className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-white/10 rotate-45 ${popoverPosition.position === 'above' ? 'bottom-[-6px] border-b border-r' : 'top-[-6px] border-t border-l'}`}></div>
-                    </div>
+                    )}
                 </>,
                 document.body
             )}
