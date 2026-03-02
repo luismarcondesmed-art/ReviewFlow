@@ -777,33 +777,19 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                         </span>
                         <span className="text-xs text-slate-400 font-medium">{currentReview?.label}</span>
                     </div>
+                    {topic.linkedLessons && topic.linkedLessons.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-1 mt-2">
+                            {topic.linkedLessons.map((lesson: string, idx: number) => (
+                                <span key={idx} className="text-[9px] font-bold bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                    {lesson}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 
-                {/* History Section */}
-                {previousReviews.length > 0 && (
-                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5">
-                        <h5 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><History size={10}/> Histórico</h5>
-                        <div className="space-y-1.5">
-                            {previousReviews.map((r: any, i: number) => {
-                                const rScore = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
-                                return (
-                                    <div key={i} className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 last:border-0 pb-1 last:pb-0">
-                                        <span className="font-bold text-slate-600 dark:text-slate-300">{r.label}</span>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-slate-500 text-[10px]">{r.correct}/{r.total} questões</span>
-                                            <span className={`font-bold ${getPerformanceColor(rScore, targetAccuracy, 'text')}`}>
-                                                {rScore}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-emerald-500/50 focus-within:bg-emerald-50/50 dark:focus-within:bg-emerald-900/10">
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-2 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-emerald-500/50 focus-within:bg-emerald-50/50 dark:focus-within:bg-emerald-900/10">
                         <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Acertos</label>
                         <input 
                             type="number" 
@@ -811,13 +797,13 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             value={formState.correct} 
                             onChange={(e) => setFormState(s => ({...s, correct: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-3xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                            className="w-full text-center text-xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="0"
                             autoFocus
                         />
                     </div>
                     
-                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-2 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
                         <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Total</label>
                         <input 
                             type="number" 
@@ -825,27 +811,27 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             value={formState.total} 
                             onChange={(e) => setFormState(s => ({...s, total: e.target.value}))} 
                             onFocus={(e) => e.target.select()}
-                            className="w-full text-center text-3xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                            className="w-full text-center text-xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="20"
                         />
                     </div>
 
-                    <div className="col-span-2 bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between px-5 relative overflow-hidden transition-all focus-within:border-purple-500/50 focus-within:bg-purple-50/50 dark:focus-within:bg-purple-900/10">
-                        <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tempo (min)</label>
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-2 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center relative overflow-hidden transition-all focus-within:border-purple-500/50 focus-within:bg-purple-50/50 dark:focus-within:bg-purple-900/10">
+                        <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Tempo (m)</label>
                         <input 
                             type="number" 
                             inputMode="numeric"
                             value={formState.timeSpent} 
                             onChange={(e) => setFormState(s => ({...s, timeSpent: e.target.value}))} 
-                            className="w-24 text-right text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                            className="w-full text-center text-xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
                             placeholder="--"
                         />
                     </div>
                 </div>
                 
-                <div className="flex items-center justify-between px-4 py-2 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200/50 dark:border-white/5">
+                <div className="flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200/50 dark:border-white/5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aproveitamento</span>
-                    <span className={`text-2xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
+                    <span className={`text-lg font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
                         {scorePercentage}%
                     </span>
                 </div>
@@ -870,8 +856,31 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                         ))}
                     </div>
                 </div>
+
+                {/* History Section */}
+                {previousReviews.length > 0 && (
+                    <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-slate-100 dark:border-white/5 mt-2">
+                        <h5 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><History size={10}/> Histórico</h5>
+                        <div className="space-y-1.5">
+                            {previousReviews.map((r: any, i: number) => {
+                                const rScore = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
+                                return (
+                                    <div key={i} className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 last:border-0 pb-1 last:pb-0">
+                                        <span className="font-bold text-slate-600 dark:text-slate-300">{r.label}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-slate-500 text-[10px]">{r.correct}/{r.total} questões</span>
+                                            <span className={`font-bold ${getPerformanceColor(rScore, targetAccuracy, 'text')}`}>
+                                                {rScore}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
                 
-                <button type="submit" className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide">
+                <button type="submit" className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide mt-2">
                     Concluir Revisão
                 </button>
             </form>
