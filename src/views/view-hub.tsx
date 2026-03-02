@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { 
     Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X
 } from 'lucide-react';
@@ -21,6 +21,7 @@ export const HubView = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'temas' | 'stats' | 'simulados'>('temas');
     const [popoverPosition, setPopoverPosition] = useState<{x: number, y: number, position: 'above' | 'below'} | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
@@ -74,17 +75,26 @@ export const HubView = ({
     };
 
     const handlePendingClick = (e: React.MouseEvent) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const showAbove = rect.top > 320;
+        if (!containerRef.current) return;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const targetRect = e.currentTarget.getBoundingClientRect();
+        
+        const showAbove = targetRect.top > 320;
+        
+        // Calculate position relative to the container
+        const relX = targetRect.left - containerRect.left + targetRect.width / 2;
+        // For 'above', we position at the top of the element. For 'below', at the bottom.
+        const relY = showAbove ? (targetRect.top - containerRect.top) : (targetRect.bottom - containerRect.top);
+
         setPopoverPosition({ 
-            x: rect.left + rect.width / 2, 
-            y: showAbove ? rect.top : rect.bottom,
+            x: relX, 
+            y: relY,
             position: showAbove ? 'above' : 'below'
         });
     };
 
     return (
-        <div className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
+        <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
             
             {/* HERO: Para fazer hoje */}
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
@@ -119,12 +129,13 @@ export const HubView = ({
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setPopoverPosition(null)}></div>
                     <div 
-                        className={`fixed z-50 w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
+                        className={`absolute z-50 w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
                         style={{ 
-                            top: popoverPosition.position === 'below' ? popoverPosition.y + 10 : undefined,
-                            bottom: popoverPosition.position === 'above' ? window.innerHeight - popoverPosition.y + 10 : undefined,
+                            top: popoverPosition.y, 
                             left: popoverPosition.x, 
-                            transform: 'translateX(-50%)' 
+                            transform: popoverPosition.position === 'above' 
+                                ? 'translate(-50%, calc(-100% - 6px))' 
+                                : 'translate(-50%, 6px)' 
                         }}
                     >
                         <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
