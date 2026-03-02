@@ -380,7 +380,7 @@ export function App() {
 
     return (
         <div 
-            className="min-h-screen bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-blue-500/30"
+            className="min-h-screen bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-blue-500/30 touch-manipulation"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEndHandler}
@@ -405,7 +405,7 @@ export function App() {
                                 <button 
                                     key={item.id}
                                     onClick={() => setView(item.id as any)}
-                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-50 dark:lg:hover:bg-white/5'}`}
                                 >
                                     <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
                                     {item.label}
@@ -420,7 +420,7 @@ export function App() {
                         <div className="relative">
                             <button 
                                 onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md hover:scale-105 active:scale-90 transition-all duration-300"
+                                className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md lg:hover:scale-105 active:scale-90 transition-all duration-300"
                             >
                                 <Plus size={18} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
                             </button>
@@ -437,7 +437,7 @@ export function App() {
                                 </div>
                             )}
                         </div>
-                        <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-white/10 transition-all">
+                        <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white rounded-full lg:hover:bg-slate-100 dark:lg:hover:bg-white/10 transition-all">
                             <Settings size={18} />
                         </button>
                     </div>
@@ -592,7 +592,7 @@ export function App() {
                                 {installPrompt && (
                                     <button 
                                         onClick={() => { handleInstallApp(); setIsActionMenuOpen(false); }}
-                                        className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                     >
                                         <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Download size={16}/></div>
                                         Instalar App
@@ -600,14 +600,14 @@ export function App() {
                                 )}
                                 <button 
                                     onClick={() => { setAddModalOpen(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg"><BookOpen size={16}/></div>
                                     Nova Matéria
                                 </button>
                                 <button 
                                     onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 rounded-lg"><ClipboardList size={16}/></div>
                                     Novo Simulado
@@ -618,14 +618,14 @@ export function App() {
                                         setIsSearchActive(true);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }}
-                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 rounded-lg"><Search size={16}/></div>
                                     Pesquisar
                                 </button>
                                 <button 
                                     onClick={() => { setSettingsOpen(true); setIsActionMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
+                                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
                                     <div className="p-1.5 bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400 rounded-lg"><Settings size={16}/></div>
                                     Ajustes
@@ -636,7 +636,7 @@ export function App() {
 
                     <button 
                         onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} 
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:shadow-black/50 border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent rotate-90 scale-90' : 'bg-white dark:bg-zinc-800 border-white/20 dark:border-white/10 text-slate-800 dark:text-white hover:scale-105'}`}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:shadow-black/50 border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent rotate-90 scale-90' : 'bg-white dark:bg-zinc-800 border-white/20 dark:border-white/10 text-slate-800 dark:text-white lg:hover:scale-105'}`}
                     >
                         {isActionMenuOpen ? <X size={24} /> : <MoreHorizontal size={24} />}
                     </button>

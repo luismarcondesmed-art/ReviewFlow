@@ -106,7 +106,7 @@ export const HubView = ({
                     </h2>
                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base">
                         {dueItems.length > 0 ? (
-                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
+                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
                         ) : (
                             <>Você não tem revisões pendentes para hoje. Aproveite para descansar ou adiantar temas.</>
                         )}
@@ -116,7 +116,7 @@ export const HubView = ({
                 {dueItems.length > 0 && (
                     <button 
                         onClick={startQuickSession} 
-                        className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black hover:scale-105 px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-slate-900/10 w-full md:w-auto justify-center"
+                        className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-slate-900/10 w-full md:w-auto justify-center"
                     >
                         <PlayCircle size={20} fill="currentColor" className="text-white dark:text-black" />
                         Começar Revisões
