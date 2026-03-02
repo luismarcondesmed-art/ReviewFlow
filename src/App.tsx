@@ -408,7 +408,7 @@ export function App() {
             </header>
 
             {/* Mobile Top Navigation (Floating & Dynamic) */}
-            <div className="lg:hidden fixed top-4 left-4 right-4 z-[80] animate-slide-down">
+            <div className="lg:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 right-4 z-[80] animate-slide-down">
                 <nav className="bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 rounded-2xl p-1.5 grid grid-cols-6 gap-1">
                     {NAV_ITEMS.map((item) => {
                         const isActive = view === item.id;
@@ -433,11 +433,11 @@ export function App() {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-24 lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-[calc(6rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 
                 {/* Search Overlay (When active) */}
                 {isSearchActive && (
-                    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 backdrop-blur-xl animate-fade-in flex flex-col p-4">
+                    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 backdrop-blur-xl animate-fade-in flex flex-col p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="flex-1 bg-slate-100 dark:bg-white/10 rounded-2xl flex items-center px-4 py-3">
                                 <Search className="text-slate-400 mr-3" size={20} />
