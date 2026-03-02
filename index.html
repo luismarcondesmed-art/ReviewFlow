@@ -29,7 +29,6 @@
     <!-- PWA Configuration -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f4f7">
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
-    <link rel="manifest" href="/manifest.json">
     
     <!-- iOS Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -99,22 +98,10 @@
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
-
-        /* Optimization for rendering */
-        main { content-visibility: auto; contain-intrinsic-size: 1000px; }
     </style>
 </head>
 <body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden selection:bg-blue-500/30">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered'))
-            .catch(err => console.log('SW failed', err));
-        });
-      }
-    </script>
 </body>
 </html>
