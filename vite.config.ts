@@ -58,9 +58,17 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         input: {
           main: resolve(__dirname, 'index.html')
+        },
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+            'vendor-ui': ['framer-motion', 'lucide-react', 'canvas-confetti']
+          }
         }
       }
     },

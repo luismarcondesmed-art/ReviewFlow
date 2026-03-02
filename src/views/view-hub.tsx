@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X
 } from 'lucide-react';
@@ -20,7 +21,7 @@ export const HubView = ({
     onAddSimulado?: () => void
 }) => {
     const [activeTab, setActiveTab] = useState<'temas' | 'stats' | 'simulados'>('temas');
-    const [popoverPosition, setPopoverPosition] = useState<{x: number, y: number, position: 'above' | 'below'} | null>(null);
+    const [popoverPosition, setPopoverPosition] = useState<{rect: DOMRect, position: 'above' | 'below'} | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     
     const today = getTodayStr();
@@ -75,20 +76,11 @@ export const HubView = ({
     };
 
     const handlePendingClick = (e: React.MouseEvent) => {
-        if (!containerRef.current) return;
-        const containerRect = containerRef.current.getBoundingClientRect();
         const targetRect = e.currentTarget.getBoundingClientRect();
+        const showAbove = targetRect.top > window.innerHeight / 2;
         
-        const showAbove = targetRect.top > 320;
-        
-        // Calculate position relative to the container
-        const relX = targetRect.left - containerRect.left + targetRect.width / 2;
-        // For 'above', we position at the top of the element. For 'below', at the bottom.
-        const relY = showAbove ? (targetRect.top - containerRect.top) : (targetRect.bottom - containerRect.top);
-
         setPopoverPosition({ 
-            x: relX, 
-            y: relY,
+            rect: targetRect,
             position: showAbove ? 'above' : 'below'
         });
     };
@@ -124,15 +116,60 @@ export const HubView = ({
                 )}
             </div>
 
-            {/* Pending Reviews Popover (Context Aware) */}
-            {popoverPosition && (
+            {/* Pending Reviews Popover (Portal) */}
+            {popoverPosition && createPortal(
                 <>
-                    <div className="fixed inset-0 z-40" onClick={() => setPopoverPosition(null)}></div>
+                    <div className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-[2px] md:bg-transparent md:backdrop-blur-0" onClick={() => setPopoverPosition(null)}></div>
+                    
+                    {/* Mobile: Centered Modal */}
+                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[90%] max-w-sm bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in md:hidden">
+                         <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
+                            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wide">Pendentes</h3>
+                            <button onClick={() => setPopoverPosition(null)} className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full"><X size={14} className="text-slate-400"/></button>
+                        </div>
+                        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar space-y-1">
+                            {dueItems.length === 0 ? (
+                                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                                    <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-50" />
+                                    <p className="font-bold text-xs">Tudo feito!</p>
+                                </div>
+                            ) : (
+                                dueItems.map((item: any) => {
+                                    const theme = getAreaTheme(item.topic.area);
+                                    const isOverdue = item.date < today;
+                                    
+                                    return (
+                                        <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group active:scale-[0.98] transition-all" onClick={() => { setPopoverPosition(null); onReview(item.topic.id, item.idx); }}>
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
+                                                    {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                                            {isOverdue ? 'Atrasado' : 'Hoje'}
+                                                        </span>
+                                                        <span className="text-[9px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm">
+                                                <PlayCircle size={16}/>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Desktop: Fixed Popover */}
                     <div 
-                        className={`absolute z-50 w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
+                        className={`hidden md:block fixed z-[10000] w-80 bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 p-2 animate-scale-in ${popoverPosition.position === 'above' ? 'origin-bottom' : 'origin-top'}`}
                         style={{ 
-                            top: popoverPosition.y, 
-                            left: popoverPosition.x, 
+                            top: popoverPosition.position === 'above' ? popoverPosition.rect.top : popoverPosition.rect.bottom,
+                            left: popoverPosition.rect.left + popoverPosition.rect.width / 2,
                             transform: popoverPosition.position === 'above' 
                                 ? 'translate(-50%, calc(-100% - 6px))' 
                                 : 'translate(-50%, 6px)' 
@@ -152,7 +189,6 @@ export const HubView = ({
                                 dueItems.map((item: any) => {
                                     const theme = getAreaTheme(item.topic.area);
                                     const isOverdue = item.date < today;
-                                    const priority = getPriorityInfo(item.topic.importance);
                                     
                                     return (
                                         <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-blue-500/30 transition-all">
@@ -187,41 +223,39 @@ export const HubView = ({
                         {/* Arrow */}
                         <div className={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-[#1c1c1e] border-slate-200 dark:border-white/10 rotate-45 ${popoverPosition.position === 'above' ? 'bottom-[-6px] border-b border-r' : 'top-[-6px] border-t border-l'}`}></div>
                     </div>
-                </>
+                </>,
+                document.body
             )}
 
             {/* TABS */}
-            <div className="flex gap-6 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar" role="tablist" aria-label="Seções do Hub">
-                <button 
-                    role="tab"
-                    aria-selected={activeTab === 'temas'}
-                    aria-controls="panel-temas"
-                    id="tab-temas"
-                    className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'temas' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
-                    onClick={() => setActiveTab('temas')}
-                >
-                    <BookOpen size={16} /> Banco de Temas
-                </button>
-                <button 
-                    role="tab"
-                    aria-selected={activeTab === 'stats'}
-                    aria-controls="panel-stats"
-                    id="tab-stats"
-                    className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'stats' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
-                    onClick={() => setActiveTab('stats')}
-                >
-                    <BarChart2 size={16} /> Estatísticas
-                </button>
-                <button 
-                    role="tab"
-                    aria-selected={activeTab === 'simulados'}
-                    aria-controls="panel-simulados"
-                    id="tab-simulados"
-                    className={`pb-4 px-2 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'simulados' ? 'border-purple-500 text-purple-600 dark:text-purple-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-white'}`} 
-                    onClick={() => setActiveTab('simulados')}
-                >
-                    <ClipboardList size={16} /> Simulados
-                </button>
+            <div className="flex gap-2 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar pb-2" role="tablist" aria-label="Seções do Hub">
+                {[
+                    { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
+                    { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
+                    { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
+                ].map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const colorClass = isActive 
+                        ? (tab.color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 
+                           tab.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 
+                           'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400')
+                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
+                        
+                    return (
+                        <button 
+                            key={tab.id}
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-controls={`panel-${tab.id}`}
+                            id={`tab-${tab.id}`}
+                            className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${isActive ? `px-4 ${colorClass}` : 'px-0 w-10 justify-center'}`} 
+                            onClick={() => setActiveTab(tab.id as any)}
+                        >
+                            <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} /> 
+                            {isActive && <span>{tab.label}</span>}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* TAB CONTENT */}

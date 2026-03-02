@@ -407,9 +407,9 @@ export function App() {
                 </div>
             </header>
 
-            {/* Mobile Top Navigation (Fixed) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/70 dark:bg-black/70 backdrop-blur-2xl border-b border-black/5 dark:border-white/5 safe-top">
-                <nav className="flex items-center justify-between px-4 py-3 overflow-x-auto no-scrollbar">
+            {/* Mobile Top Navigation (Floating & Dynamic) */}
+            <div className="lg:hidden fixed top-4 left-4 right-4 z-[80] animate-slide-down">
+                <nav className="bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 rounded-2xl p-1.5 grid grid-cols-6 gap-1">
                     {NAV_ITEMS.map((item) => {
                         const isActive = view === item.id;
                         return (
@@ -418,14 +418,14 @@ export function App() {
                                 onClick={() => { 
                                     vibration.tick(); 
                                     setView(item.id as any);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }} 
-                                className={`flex flex-col items-center justify-center min-w-[60px] gap-1 transition-all duration-300 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}
+                                className={`h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-md' : 'text-slate-400 dark:text-slate-500 active:bg-slate-100 dark:active:bg-white/5'}`}
                             >
                                 <item.icon 
-                                    size={22} 
+                                    size={20} 
                                     strokeWidth={isActive ? 2.5 : 2} 
                                 />
-                                <span className={`text-[10px] font-medium whitespace-nowrap transition-opacity ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
                             </button>
                         );
                     })}
@@ -433,58 +433,43 @@ export function App() {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-[calc(80px+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-24 lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 
-                {/* Floating Sticky Header (Mobile Only) */}
-                <header className="sticky top-0 z-[60] px-0 pt-4 pb-2 pointer-events-none safe-top lg:hidden">
-                    <div className="mx-auto w-full flex justify-center">
-                        <div className="glass-panel pointer-events-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-black/40 rounded-full px-5 py-2 flex items-center justify-between gap-4 w-full animate-slide-up backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/60 transition-all duration-300">
-                            
-                            <div className="flex-1 flex items-center">
-                                {isSearchActive ? (
-                                    <div className="flex items-center w-full animate-fade-in">
-                                        <Search className="text-blue-500 mr-2 shrink-0" size={16} />
-                                        <input 
-                                            ref={searchInputRef}
-                                            type="text" 
-                                            placeholder={`Buscar em ${currentViewTitle}...`}
-                                            className="w-full bg-transparent outline-none text-sm font-semibold text-slate-800 dark:text-white placeholder-slate-400 min-w-0"
-                                            value={searchTerm}
-                                            onChange={e => setSearchTerm(e.target.value)}
-                                            onBlur={() => !searchTerm && setIsSearchActive(false)}
-                                        />
-                                        <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="p-1 rounded-full bg-slate-100 dark:bg-white/10 ml-2 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
-                                            <X size={14} className="text-slate-500"/>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-left w-full group py-1">
-                                        <h2 className="text-sm font-black text-slate-800 dark:text-white tracking-tight pl-2">{currentViewTitle}</h2>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                {/* Install App Button */}
-                                {installPrompt && (
-                                    <button 
-                                        onClick={handleInstallApp}
-                                        className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full text-[10px] font-bold shadow-md active:scale-95 transition-all"
-                                    >
-                                        <Download size={12} strokeWidth={2.5}/> Instalar App
+                {/* Search Overlay (When active) */}
+                {isSearchActive && (
+                    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 backdrop-blur-xl animate-fade-in flex flex-col p-4">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="flex-1 bg-slate-100 dark:bg-white/10 rounded-2xl flex items-center px-4 py-3">
+                                <Search className="text-slate-400 mr-3" size={20} />
+                                <input 
+                                    ref={searchInputRef}
+                                    type="text" 
+                                    placeholder="O que você procura?"
+                                    className="w-full bg-transparent outline-none text-base font-semibold text-slate-800 dark:text-white placeholder-slate-400"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} className="p-1 rounded-full bg-slate-200 dark:bg-white/20">
+                                        <X size={14} className="text-slate-500 dark:text-slate-300"/>
                                     </button>
                                 )}
-
-                                {/* Sync Status */}
-                                {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>}
-                                {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
-                                {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>}
-                                
-                                <div className="w-px h-3 bg-slate-200 dark:bg-white/10"></div>
+                            </div>
+                            <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="font-bold text-slate-500 dark:text-slate-400">
+                                Cancelar
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {/* Search results would go here if we wanted a dedicated search UI, 
+                                but currently search filters the views. 
+                                So we just show a hint or recent searches. */}
+                            <div className="text-center text-slate-400 text-sm mt-10">
+                                <Search size={48} className="mx-auto mb-4 opacity-20"/>
+                                <p>Digite para buscar em {currentViewTitle}</p>
                             </div>
                         </div>
                     </div>
-                </header>
+                )}
 
                 <div className="flex-1 w-full">
                     <Suspense fallback={<LoadingSpinner />}>
