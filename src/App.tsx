@@ -336,7 +336,6 @@ export function App() {
     const NAV_ITEMS = [
         { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
         { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
-        { id: 'simulados', label: 'Simulados', icon: ClipboardList, title: 'Simulados' },
         { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
         { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
         { id: 'stats', label: 'Estatísticas', icon: PieChart, title: 'Estatísticas ENAMED' },
@@ -409,7 +408,7 @@ export function App() {
 
             {/* Mobile Top Navigation (Floating & Dynamic) */}
             <div className="lg:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 right-4 z-[80] animate-slide-down">
-                <nav className="bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 rounded-2xl p-1.5 grid grid-cols-6 gap-1">
+                <nav className="bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 rounded-2xl p-1.5 grid grid-cols-5 gap-1">
                     {NAV_ITEMS.map((item) => {
                         const isActive = view === item.id;
                         return (

@@ -250,6 +250,7 @@ export const CronogramaView = ({
     const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
     const [searchLocal, setSearchLocal] = useState('');
     const [scheduleMenuOpen, setScheduleMenuOpen] = useState(false);
+    const [infoOpen, setInfoOpen] = useState(false);
     const activeScheduleCode = config.activeSchedule || 'MEDCOF';
 
     const finalSearch = searchTerm || searchLocal;
@@ -378,7 +379,50 @@ export const CronogramaView = ({
                         </button>
                     )}
                 </div>
+                
+                <button 
+                    onClick={() => setInfoOpen(!infoOpen)}
+                    className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                    title="Informações do Cronograma"
+                >
+                    <Info size={16} />
+                </button>
             </div>
+
+            {infoOpen && (
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 mb-6 border border-slate-200 dark:border-white/10 shadow-sm animate-slide-down">
+                    <div className="flex justify-between items-start mb-4">
+                        <h3 className="font-bold text-slate-800 dark:text-white">Modo Cronograma</h3>
+                        <button onClick={() => setInfoOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={16}/></button>
+                    </div>
+                    <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                        <p>O modo Cronograma ajuda você a acompanhar o progresso das suas aulas de acordo com o cursinho escolhido.</p>
+                        <h4 className="font-bold text-slate-800 dark:text-white mt-4 mb-2">Prioridade das Aulas (MedCof)</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full bg-blue-500 shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-white">Ver primeiro (Azul)</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full bg-emerald-500 shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-white">Alta prioridade (Verde)</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full bg-amber-500 shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-white">Média prioridade (Amarelo)</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full bg-red-500 shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-white">Baixa prioridade (Vermelho)</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-4 h-4 rounded-full bg-purple-500 shrink-0"></div>
+                                <span className="font-bold text-slate-800 dark:text-white">Aula opcional (Roxo)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
                 {groupedData.length === 0 ? (

@@ -33,9 +33,11 @@ export const SUB_AREAS: Record<AreaType, string[]> = {
 };
 
 export const IMPORTANCE_LEVELS: { id: ImportanceType; label: string; baseQ: number }[] = [
+  { id: 'extreme', label: 'Extrema', baseQ: 40 },
   { id: 'high', label: 'Alta', baseQ: 30 },
   { id: 'medium', label: 'Média', baseQ: 25 },
   { id: 'low', label: 'Baixa', baseQ: 20 },
+  { id: 'optional', label: 'Opcional', baseQ: 10 },
 ];
 
 const SYSTEM_PARAMS = {
@@ -129,9 +131,23 @@ export const formatFullDate = (d: string) => {
 
 export const getPriorityInfo = (imp: ImportanceType) => {
     switch(imp) {
-        case 'high': return { label: 'Alta', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' };
+        case 'extreme': return { label: 'Extrema', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' };
+        case 'high': return { label: 'Alta', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' };
         case 'medium': return { label: 'Média', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' };
-        default: return { label: 'Baixa', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' };
+        case 'low': return { label: 'Baixa', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' };
+        case 'optional': return { label: 'Opcional', bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' };
+        default: return { label: 'Média', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' };
+    }
+};
+
+export const getImportanceWeight = (imp: ImportanceType): number => {
+    switch(imp) {
+        case 'extreme': return 5;
+        case 'high': return 4;
+        case 'medium': return 3;
+        case 'low': return 2;
+        case 'optional': return 1;
+        default: return 3;
     }
 };
 
@@ -548,13 +564,11 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
                     const daysOverdue = Math.floor((todayDate.getTime() - new Date(r.date + 'T12:00:00').getTime()) / ONE_DAY_MS);
                     score += daysOverdue * 10;
                 }
-                if (t.importance === 'high') score += 100;
-                else if (t.importance === 'medium') score += 50;
-                else score += 10;
+                score += getImportanceWeight(t.importance) * 25;
                 if (r.type === 'R0') score += 200;
                 if (r.type === 'R1') score += 150;
 
-                const isHighR1 = t.importance === 'high' && r.type === 'R1';
+                const isHighR1 = (t.importance === 'high' || t.importance === 'extreme') && r.type === 'R1';
 
                 pendingItems.push({
                     topicId: t.id,

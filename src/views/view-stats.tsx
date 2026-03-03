@@ -1,22 +1,61 @@
 import React, { useState } from 'react';
-import { BarChart2, PieChart, TrendingUp, BookOpen, ChevronRight, Activity } from 'lucide-react';
+import { BarChart2, PieChart, TrendingUp, BookOpen, ChevronRight, Activity, Info, X } from 'lucide-react';
 import { especialidadesData, temasData, assuntosData } from '../data/enamedStats';
 
 export const StatsView = () => {
   const [selectedEspecialidade, setSelectedEspecialidade] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-20 lg:pb-0">
       <div className="bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl rounded-[32px] p-6 lg:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
-        <div className="hidden lg:flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
-            <BarChart2 size={24} />
+        <div className="hidden lg:flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
+              <BarChart2 size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas ENAMED</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Guia Estatístico INEP 2011-2026</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas ENAMED</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Guia Estatístico INEP 2011-2026</p>
-          </div>
+          <button 
+            onClick={() => setInfoOpen(!infoOpen)}
+            className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+            title="Informações das Estatísticas"
+          >
+            <Info size={16} />
+          </button>
         </div>
+
+        <div className="lg:hidden flex items-center justify-between mb-6">
+            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas ENAMED</h1>
+            <button 
+                onClick={() => setInfoOpen(!infoOpen)}
+                className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                title="Informações das Estatísticas"
+            >
+                <Info size={16} />
+            </button>
+        </div>
+
+        {infoOpen && (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 mb-6 border border-slate-200 dark:border-white/10 shadow-sm animate-slide-down">
+                <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-slate-800 dark:text-white">Modo Estatísticas</h3>
+                    <button onClick={() => setInfoOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={16}/></button>
+                </div>
+                <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                    <p>O modo de Estatísticas permite que você analise seu desempenho geral e por áreas específicas.</p>
+                    <ul className="list-disc list-inside space-y-2">
+                        <li>Acompanhe seu progresso em relação às metas estabelecidas.</li>
+                        <li>Identifique seus pontos fortes e fracos por especialidade.</li>
+                        <li>Analise o volume de questões respondidas ao longo do tempo.</li>
+                        <li>Visualize a evolução do seu desempenho em simulados.</li>
+                    </ul>
+                </div>
+            </div>
+        )}
 
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-5 mb-8">
           <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">

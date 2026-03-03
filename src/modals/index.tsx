@@ -7,7 +7,7 @@ import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
 import { ESTRATEGIA_SCHEDULE } from '../services/estrategiaSchedule';
 
 // --- Modern Glass Modal ---
-export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode; headerContent?: React.ReactNode }) => {
+export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTopOnMobile }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode; headerContent?: React.ReactNode; alignTopOnMobile?: boolean }) => {
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -18,7 +18,7 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent }: { isO
 
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 p-0" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div className={`fixed inset-0 z-[100] flex ${alignTopOnMobile ? 'items-start pt-12 sm:pt-0 sm:items-center' : 'items-end sm:items-center'} justify-center sm:p-4 p-0`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
             {/* Backdrop with stronger blur for depth */}
             <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-out" onClick={onClose} aria-hidden="true" />
             
@@ -767,7 +767,7 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado">
+        <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado" alignTopOnMobile={true}>
             <form onSubmit={handleFormSubmit} className="p-5 space-y-5">
                 <div className="text-center">
                     <h4 className="font-black text-lg text-slate-800 dark:text-white leading-tight mb-1">{topic.title}</h4>

@@ -249,7 +249,7 @@ export const HubView = ({
             )}
 
             {/* TABS */}
-            <div className="flex gap-2 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar pb-2" role="tablist" aria-label="Seções do Hub">
+            <div className="flex justify-center gap-2 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar pb-2" role="tablist" aria-label="Seções do Hub">
                 {[
                     { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
                     { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
@@ -314,7 +314,7 @@ export const HubView = ({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredActiveTopics.length === 0 ? (
                                 <div className="col-span-full py-12 text-center bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
                                     <p className="text-slate-500 dark:text-slate-400 font-bold">Nenhum tema encontrado.</p>

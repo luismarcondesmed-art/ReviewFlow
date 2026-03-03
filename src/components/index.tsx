@@ -3,7 +3,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION } from '../utils';
+import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
 
 export const getAreaIcon = (area: AreaType) => {
     switch (area) {
@@ -444,9 +444,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
         .filter(r => !r.done && r.date <= today)
         .sort((a,b) => {
             if (a.date !== b.date) return a.date.localeCompare(b.date);
-            if (a.topic.importance === 'high' && b.topic.importance !== 'high') return -1;
-            if (a.topic.importance !== 'high' && b.topic.importance === 'high') return 1;
-            return 0;
+            return getImportanceWeight(b.topic.importance) - getImportanceWeight(a.topic.importance);
         })
         .slice(0, 3), [topics, today]);
 
@@ -798,7 +796,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
     const errorRate = prevReview && prevReview.total > 0 ? Math.round(((prevReview.total - prevReview.correct) / prevReview.total) * 100) : null;
     const today = getTodayStr();
     const priority = getPriorityInfo(topic.importance);
-    const isPico = topic.importance === 'high';
+    const isPico = topic.importance === 'high' || topic.importance === 'extreme';
 
     // Calculate days since last review
     let lastReviewText = "Não iniciado";

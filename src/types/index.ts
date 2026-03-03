@@ -1,6 +1,6 @@
 
 export type AreaType = 'clinica' | 'cirurgia' | 'pediatria' | 'go' | 'preventiva';
-export type ImportanceType = 'high' | 'medium' | 'low';
+export type ImportanceType = 'extreme' | 'high' | 'medium' | 'low' | 'optional';
 export type ReviewType = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R_FINAL' | 'extra';
 
 declare global {
