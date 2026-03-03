@@ -7,6 +7,7 @@ import { UserConfig, ScheduleProgress, AreaType, Topic, ImportanceType } from '.
 import { getAreaTheme, getTodayStr } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
 import { ESTRATEGIA_SCHEDULE } from '../services/estrategiaSchedule';
+import { calculateEnamedStats } from '../utils/enamedUtils';
 
 // --- Helpers ---
 const formatProfessorName = (name: string | undefined) => {
@@ -115,44 +116,15 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
     const handleCreateClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         
-        let maxWeight = 0;
-        let finalPriority: ImportanceType = 'medium';
-        let totalQuestions = 0;
-
-        items.forEach(i => {
-            const w = getPriorityWeight(i.importancia);
-            if (w > maxWeight) {
-                maxWeight = w;
-                if (w >= 5) finalPriority = 'high';
-                else if (w >= 4) finalPriority = 'high';
-                else if (w <= 2) finalPriority = 'low';
-                else finalPriority = 'medium';
-            }
-            
-            // Calculate questions per lesson based on priority
-            if (w >= 4) totalQuestions += 15; // High priority
-            else if (w === 3) totalQuestions += 10; // Medium priority
-            else totalQuestions += 5; // Low priority
-        });
-
-        const hasBlue = items.some(i => (i.importancia || '').toLowerCase().includes('azul'));
-        if (hasBlue) finalPriority = 'high';
-        else {
-             const hasGreen = items.some(i => (i.importancia || '').toLowerCase().includes('verde'));
-             if (!hasBlue && hasGreen) finalPriority = 'medium';
-        }
-
-        // Dynamic limit based on the number of lessons and their priority
-        const baseQuestions = totalQuestions;
-
         const topicTitle = `Bloco ${blockId} - ${areaName}`;
+        const rawLessonNames = items.map(i => i.aula);
         
-        // Append estimated questions to lesson names
-        const lessonNames = items.map(i => {
-            const w = getPriorityWeight(i.importancia);
-            let q = 5;
-            if (w >= 4) q = 15;
-            else if (w === 3) q = 10;
+        // Use ENAMED stats to calculate priority and questions
+        const { priority: finalPriority, questions: baseQuestions, lessonQuestions } = calculateEnamedStats(areaName, rawLessonNames);
+        
+        // Append estimated questions to lesson names based on ENAMED stats
+        const lessonNames = items.map((i, idx) => {
+            const q = lessonQuestions[idx] || 5;
             return `${i.aula} (~${q}q)`;
         });
         

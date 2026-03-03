@@ -74,12 +74,29 @@ export const StatsView = () => {
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
               <PieChart size={18} className="text-indigo-500" /> 1º Nível: Especialidades
             </h2>
-            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:max-h-[600px] pb-4 lg:pb-0 pr-2 custom-scrollbar snap-x">
+            
+            {/* Mobile Select */}
+            <div className="lg:hidden mb-6 relative">
+                <select 
+                    className="w-full appearance-none bg-white dark:bg-zinc-800/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold rounded-xl pl-4 pr-10 py-3 outline-none focus:border-indigo-500 shadow-sm"
+                    value={selectedEspecialidade || ''}
+                    onChange={(e) => setSelectedEspecialidade(e.target.value)}
+                >
+                    <option value="" disabled>Selecione uma Especialidade</option>
+                    {especialidadesData.map((esp) => (
+                        <option key={esp.name} value={esp.name}>{esp.name} ({esp.percentage}%)</option>
+                    ))}
+                </select>
+                <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90"/>
+            </div>
+
+            {/* Desktop List */}
+            <div className="hidden lg:flex lg:flex-col gap-2 overflow-y-auto lg:max-h-[600px] pr-2 custom-scrollbar">
               {especialidadesData.map((esp, idx) => (
                 <button
                   key={esp.name}
                   onClick={() => setSelectedEspecialidade(esp.name)}
-                  className={`shrink-0 w-[240px] lg:w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group snap-start ${
+                  className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group ${
                     selectedEspecialidade === esp.name 
                       ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/30' 
                       : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30'

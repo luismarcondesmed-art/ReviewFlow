@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
-import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget } from '../components';
+import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget, getAreaIcon } from '../components';
 import { Modal } from '../modals';
 
 export const HubView = ({ 
@@ -114,18 +114,16 @@ export const HubView = ({
         <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
             
             {/* HERO: Para fazer hoje */}
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent dark:from-blue-900/10 rounded-bl-[100px] pointer-events-none -z-0"></div>
-                
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight mb-2">
-                        {dueItems.length > 0 ? 'Olá, pronto para estudar?' : 'Tudo em dia!'}
+                    <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
+                        {dueItems.length > 0 ? 'Pronto para estudar?' : 'Tudo em dia!'}
                     </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm md:text-base">
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
                         {dueItems.length > 0 ? (
-                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes para hoje.</>
+                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes hoje.</>
                         ) : (
-                            <>Você não tem revisões pendentes para hoje. Aproveite para descansar ou adiantar temas.</>
+                            <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
                         )}
                     </p>
                 </div>
@@ -133,10 +131,10 @@ export const HubView = ({
                 {dueItems.length > 0 && (
                     <button 
                         onClick={startQuickSession} 
-                        className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all active:scale-95 shadow-xl shadow-slate-900/10 w-full md:w-auto justify-center"
+                        className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md w-full md:w-auto justify-center"
                     >
-                        <PlayCircle size={20} fill="currentColor" className="text-white dark:text-black" />
-                        Começar Revisões
+                        <PlayCircle size={18} fill="currentColor" className="text-white dark:text-black" />
+                        Começar
                     </button>
                 )}
             </div>
@@ -257,8 +255,8 @@ export const HubView = ({
             )}
 
             {/* TABS & FILTERS */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2">
-                <div className="flex justify-center lg:justify-start gap-2 px-2 overflow-x-auto custom-scrollbar" role="tablist" aria-label="Seções do Hub">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2 overflow-x-auto custom-scrollbar">
+                <div className="flex items-center gap-2 px-2 shrink-0" role="tablist" aria-label="Seções do Hub">
                     {[
                         { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
                         { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
@@ -289,24 +287,27 @@ export const HubView = ({
                 </div>
 
                 {activeTab === 'temas' && (
-                    <div className="flex items-center gap-2 overflow-x-auto px-2 lg:px-0 pb-2 lg:pb-0 custom-scrollbar w-full lg:w-auto">
-                        <div className="relative flex-1 lg:flex-none">
+                    <div className="flex items-center gap-2 px-2 shrink-0">
+                        <div className="relative">
                             <select 
                                 aria-label="Filtrar por área"
-                                className="w-full lg:w-auto appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-8 lg:pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer lg:static lg:opacity-100 lg:w-auto lg:appearance-none lg:bg-white dark:lg:bg-zinc-900 lg:border lg:border-slate-200 dark:lg:border-white/10 lg:text-slate-700 dark:lg:text-slate-300 lg:text-xs lg:font-bold lg:rounded-xl lg:pl-8 lg:pr-8 lg:py-2.5 lg:outline-none lg:focus:border-blue-500"
                                 value={filterArea}
                                 onChange={(e) => setFilterArea(e.target.value)}
                             >
                                 <option value="all">Todas Áreas</option>
                                 {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
-                            <Filter size={14} className="absolute left-3 lg:right-3 lg:left-auto top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                            <div className="lg:hidden w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl text-slate-500 pointer-events-none">
+                                <Filter size={16} />
+                            </div>
+                            <Filter size={14} className="hidden lg:block absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
                         </div>
                         
-                        <div className="relative flex-1 lg:flex-none">
+                        <div className="relative">
                             <select 
                                 aria-label="Ordenar por"
-                                className="w-full lg:w-auto appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-8 lg:pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer lg:static lg:opacity-100 lg:w-auto lg:appearance-none lg:bg-white dark:lg:bg-zinc-900 lg:border lg:border-slate-200 dark:lg:border-white/10 lg:text-slate-700 dark:lg:text-slate-300 lg:text-xs lg:font-bold lg:rounded-xl lg:pl-8 lg:pr-8 lg:py-2.5 lg:outline-none lg:focus:border-blue-500"
                                 value={sortOrder}
                                 onChange={(e) => setSortOrder(e.target.value)}
                             >
@@ -314,15 +315,18 @@ export const HubView = ({
                                 <option value="priority">Prioridade</option>
                                 <option value="name">Nome (A-Z)</option>
                             </select>
-                            <ArrowUpDown size={14} className="absolute left-3 lg:right-3 lg:left-auto top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                            <div className="lg:hidden w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl text-slate-500 pointer-events-none">
+                                <ArrowUpDown size={16} />
+                            </div>
+                            <ArrowUpDown size={14} className="hidden lg:block absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
                         </div>
 
                         <button 
                             onClick={() => setSortOrder(sortOrder === 'area' ? 'date' : 'area')}
-                            className={`h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
+                            className={`h-10 w-10 lg:w-auto lg:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
                             title="Agrupar por Área"
                         >
-                            <LayoutGrid size={14} />
+                            <LayoutGrid size={16} className="lg:w-3.5 lg:h-3.5" />
                             <span className="hidden lg:inline">Agrupar por Área</span>
                         </button>
                     </div>
@@ -333,13 +337,48 @@ export const HubView = ({
             <div className="pt-2">
                 {activeTab === 'temas' && (
                     <div role="tabpanel" id="panel-temas" aria-labelledby="tab-temas" className="flex flex-col gap-6 animate-fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredActiveTopics.length === 0 ? (
-                                <div className="col-span-full py-12 text-center bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
-                                    <p className="text-slate-500 dark:text-slate-400 font-bold">Nenhum tema encontrado.</p>
-                                </div>
-                            ) : (
-                                filteredActiveTopics.map(topic => (
+                        {filteredActiveTopics.length === 0 ? (
+                            <div className="py-12 text-center bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
+                                <p className="text-slate-500 dark:text-slate-400 font-bold">Nenhum tema encontrado.</p>
+                            </div>
+                        ) : sortOrder === 'area' ? (
+                            <div className="flex flex-col gap-8">
+                                {Object.entries(
+                                    filteredActiveTopics.reduce((acc, topic) => {
+                                        if (!acc[topic.area]) acc[topic.area] = [];
+                                        acc[topic.area].push(topic);
+                                        return acc;
+                                    }, {} as Record<string, Topic[]>)
+                                ).map(([areaId, topicsInArea]) => {
+                                    const areaInfo = AREAS.find(a => a.id === areaId);
+                                    const theme = getAreaTheme(areaId as any);
+                                    return (
+                                        <div key={areaId} className="flex flex-col gap-4">
+                                            <div className="flex items-center gap-3 pb-2 border-b border-slate-200 dark:border-white/10">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme.bg} ${theme.text}`}>
+                                                    {React.createElement(getAreaIcon(areaId as any), { size: 16 })}
+                                                </div>
+                                                <h3 className="text-lg font-black text-slate-800 dark:text-white">{areaInfo?.name || areaId}</h3>
+                                                <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md">{topicsInArea.length}</span>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {topicsInArea.map(topic => (
+                                                    <TopicCard 
+                                                        key={topic.id} 
+                                                        topic={topic} 
+                                                        onReview={onReview} 
+                                                        onEdit={() => onEditTopic(topic.id)} 
+                                                        onDelete={onDeleteTopic}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {filteredActiveTopics.map(topic => (
                                     <TopicCard 
                                         key={topic.id} 
                                         topic={topic} 
@@ -347,9 +386,9 @@ export const HubView = ({
                                         onEdit={() => onEditTopic(topic.id)} 
                                         onDelete={onDeleteTopic}
                                     />
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
