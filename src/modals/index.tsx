@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell } from 'lucide-react';
+import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from '../types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
@@ -737,11 +737,13 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
 
 export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: any) => {
     const [formState, setFormState] = useState({ correct: '', total: '20', difficulty: 'medium', timeSpent: '' });
+    const [showLessons, setShowLessons] = useState(false);
     
     useEffect(() => { 
         if (isOpen && topic && reviewIdx !== null) { 
             const target = topic.reviews[reviewIdx]?.targetQ || 20; 
             setFormState({ correct: '', total: String(target), difficulty: 'medium', timeSpent: '' }); 
+            setShowLessons(false);
         } 
     }, [isOpen, topic, reviewIdx]);
     
@@ -778,83 +780,98 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                         <span className="text-xs text-slate-400 font-medium">{currentReview?.label}</span>
                     </div>
                     {topic.linkedLessons && topic.linkedLessons.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-1 mt-2">
-                            {topic.linkedLessons.map((lesson: string, idx: number) => (
-                                <span key={idx} className="text-[9px] font-bold bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                    {lesson}
-                                </span>
-                            ))}
+                        <div className="mt-3">
+                            <button 
+                                type="button" 
+                                onClick={() => setShowLessons(!showLessons)}
+                                className="text-[10px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center gap-1 mx-auto transition-colors"
+                            >
+                                {showLessons ? 'Ocultar Aulas' : 'Ver Aulas Anexadas'}
+                                <ChevronDown size={12} className={`transition-transform ${showLessons ? 'rotate-180' : ''}`} />
+                            </button>
+                            {showLessons && (
+                                <div className="mt-2 flex flex-col gap-1 max-h-24 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-white/5 p-2 rounded-xl border border-slate-100 dark:border-white/5 text-left">
+                                    {topic.linkedLessons.map((lesson: string, idx: number) => (
+                                        <div key={idx} className="text-[10px] font-medium text-slate-600 dark:text-slate-300 truncate">
+                                            • {lesson}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
                 
-                <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
-                            <div className="flex items-center gap-2">
-                                <input 
-                                    type="number" 
-                                    inputMode="numeric"
-                                    value={formState.correct} 
-                                    onChange={(e) => setFormState(s => ({...s, correct: e.target.value}))} 
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-12 text-right text-2xl font-black bg-transparent outline-none text-emerald-600 dark:text-emerald-400 p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
-                                    placeholder="0"
-                                    autoFocus
-                                />
-                                <span className="text-2xl font-black text-slate-300 dark:text-slate-600">/</span>
-                                <input 
-                                    type="number" 
-                                    inputMode="numeric"
-                                    value={formState.total} 
-                                    onChange={(e) => setFormState(s => ({...s, total: e.target.value}))} 
-                                    onFocus={(e) => e.target.select()}
-                                    className="w-12 text-left text-2xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
-                                    placeholder="20"
-                                />
-                            </div>
-                            <div className="text-right">
-                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Aproveitamento</div>
-                                <div className={`text-lg font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
-                                    {scorePercentage}%
-                                </div>
+                <div className="flex flex-col gap-4">
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="number" 
+                                inputMode="numeric"
+                                value={formState.correct} 
+                                onChange={(e) => setFormState(s => ({...s, correct: e.target.value}))} 
+                                onFocus={(e) => e.target.select()}
+                                className="w-16 text-right text-4xl font-black bg-transparent outline-none text-emerald-600 dark:text-emerald-400 p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                                placeholder="0"
+                                autoFocus
+                            />
+                            <span className="text-3xl font-black text-slate-300 dark:text-slate-600">/</span>
+                            <input 
+                                type="number" 
+                                inputMode="numeric"
+                                value={formState.total} 
+                                onChange={(e) => setFormState(s => ({...s, total: e.target.value}))} 
+                                onFocus={(e) => e.target.select()}
+                                className="w-16 text-left text-4xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                                placeholder="20"
+                            />
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Aproveitamento</div>
+                            <div className={`text-2xl font-black tracking-tight ${getPerformanceColor(scorePercentage, targetAccuracy, 'text')}`}>
+                                {scorePercentage}%
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between transition-all focus-within:border-purple-500/50 focus-within:bg-purple-50/50 dark:focus-within:bg-purple-900/10">
-                            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tempo (min)</label>
-                            <input 
-                                type="number" 
-                                inputMode="numeric"
-                                value={formState.timeSpent} 
-                                onChange={(e) => setFormState(s => ({...s, timeSpent: e.target.value}))} 
-                                className="w-16 text-right text-lg font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
-                                placeholder="--"
-                            />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center justify-center gap-2 transition-all focus-within:border-purple-500/50 focus-within:bg-purple-50/50 dark:focus-within:bg-purple-900/10">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                <Clock size={10} /> Tempo Gasto
+                            </label>
+                            <div className="flex items-center gap-1">
+                                <input 
+                                    type="number" 
+                                    inputMode="numeric"
+                                    value={formState.timeSpent} 
+                                    onChange={(e) => setFormState(s => ({...s, timeSpent: e.target.value}))} 
+                                    className="w-10 text-center text-xl font-black bg-transparent outline-none text-slate-800 dark:text-white p-0 appearance-none placeholder-slate-300 dark:placeholder-slate-600" 
+                                    placeholder="--"
+                                />
+                                <span className="text-xs font-bold text-slate-400">min</span>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 block px-1 text-center">Dificuldade Sentida</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        {[
-                            { id: 'easy', label: 'Fácil', emoji: '😄', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-500/30' }, 
-                            { id: 'medium', label: 'Médio', emoji: '😐', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-500/30' }, 
-                            { id: 'hard', label: 'Difícil', emoji: '😓', color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-500/30' }
-                        ].map(lvl => (
-                            <button 
-                                key={lvl.id} 
-                                type="button" 
-                                onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))} 
-                                className={`py-2 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all border ${formState.difficulty === lvl.id ? `shadow-sm scale-105 ${lvl.color}` : 'border-slate-200/60 dark:border-white/5 bg-slate-50 dark:bg-zinc-800/50 opacity-60 grayscale hover:opacity-100 hover:grayscale-0'}`}
-                            >
-                                <span className="text-lg leading-none mb-0.5">{lvl.emoji}</span>
-                                <span className="text-[9px] font-bold uppercase tracking-wide">{lvl.label}</span>
-                            </button>
-                        ))}
+
+                        <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-2xl border border-slate-200/60 dark:border-white/5 flex flex-col items-center justify-center gap-2">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dificuldade</label>
+                            <div className="flex items-center gap-1 w-full justify-between px-1">
+                                {[
+                                    { id: 'easy', emoji: '😄', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' }, 
+                                    { id: 'medium', emoji: '😐', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' }, 
+                                    { id: 'hard', emoji: '😓', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' }
+                                ].map(lvl => (
+                                    <button 
+                                        key={lvl.id} 
+                                        type="button" 
+                                        onClick={() => setFormState(prev => ({ ...prev, difficulty: lvl.id }))} 
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${formState.difficulty === lvl.id ? `scale-110 shadow-sm ${lvl.color}` : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                                        title={lvl.id === 'easy' ? 'Fácil' : lvl.id === 'medium' ? 'Médio' : 'Difícil'}
+                                    >
+                                        {lvl.emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 

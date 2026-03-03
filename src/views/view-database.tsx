@@ -83,7 +83,7 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
 
 export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimulado, onDeleteSimulado, config, searchTerm }: { topics: Topic[], onEdit: (t: Topic) => void, onDelete: (id: string) => void, simulados?: Simulado[], onEditSimulado?: (s: Simulado) => void, onDeleteSimulado?: (id: string) => void, config?: UserConfig, searchTerm?: string }) => {
     const [filterArea, setFilterArea] = useState('all');
-    const [groupBy, setGroupBy] = useState<'none' | 'area' | 'block'>('none');
+    const [groupBy, setGroupBy] = useState<'none' | 'area' | 'block'>('area');
     const [activeTab, setActiveTab] = useState<'topics' | 'simulados'>('topics');
     const [expandedId, setExpandedId] = useState<string | null>(null);
 

@@ -797,6 +797,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
     const today = getTodayStr();
     const priority = getPriorityInfo(topic.importance);
     const isPico = topic.importance === 'high' || topic.importance === 'extreme';
+    const isOverdue = nextReview && nextReview.date < today;
 
     // Calculate days since last review
     let lastReviewText = "Não iniciado";
@@ -850,12 +851,15 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                 : 'border-black/5 dark:border-white/5 hover:border-blue-500/30'
             }
         `}>
+            {isOverdue && (
+                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" title="Revisão Atrasada"></div>
+            )}
             <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${theme.bg} ${theme.text}`}>
                         <AreaIcon size={16}/>
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 pr-4"> {/* Added padding right to avoid overlapping with the dot */}
                         <div className="flex items-center gap-2">
                             <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate">{topic.title}</h4>
                             {heatIcon}

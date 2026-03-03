@@ -64,7 +64,7 @@ export function App() {
     const searchInputRef = useRef<HTMLInputElement>(null);
     
     // Filter & Sort State for HubView
-    const [sortOrder, setSortOrder] = useState<string>('date');
+    const [sortOrder, setSortOrder] = useState<string>('area');
     const [filterArea, setFilterArea] = useState<string>('all');
     
     // Mobile Navigation
@@ -350,7 +350,7 @@ export function App() {
             
             {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
             <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
-                <div className="flex items-center gap-12">
+                <div className="flex items-center gap-12 w-1/3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
                         <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
                              <Activity size={16} strokeWidth={2.5}/>
@@ -360,6 +360,8 @@ export function App() {
                             <UserStatsDropdown totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} />
                         </div>
                     </div>
+                </div>
+                <div className="flex-1 flex justify-center">
                     <nav className="flex items-center gap-2">
                         {NAV_ITEMS.map(item => {
                             const isActive = view === item.id;
@@ -376,7 +378,7 @@ export function App() {
                         })}
                     </nav>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center justify-end gap-6 w-1/3">
                     <div className="flex items-center gap-2">
                         {/* Add Button (Desktop) */}
                         <div className="relative">

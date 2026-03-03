@@ -54,19 +54,19 @@ export const StatsView = () => {
                         <li>Visualize a evolução do seu desempenho em simulados.</li>
                     </ul>
                 </div>
+                
+                <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                    <BookOpen size={16} /> Como usar estes dados?
+                  </h4>
+                  <ul className="text-xs text-blue-700 dark:text-blue-400/80 space-y-2 list-disc list-inside">
+                    <li><strong>Por Especialidade:</strong> Direcione seu tempo de estudo proporcionalmente às disciplinas mais cobradas.</li>
+                    <li><strong>Por Tema:</strong> Foque seu estudo nos temas mais prevalentes de cada especialidade.</li>
+                    <li><strong>Por Assunto:</strong> Estude de maneira objetiva os assuntos mais cobrados pelo INEP.</li>
+                  </ul>
+                </div>
             </div>
         )}
-
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-5 mb-8">
-          <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-            <BookOpen size={16} /> Como usar estes dados?
-          </h3>
-          <ul className="text-xs text-blue-700 dark:text-blue-400/80 space-y-2 list-disc list-inside">
-            <li><strong>Por Especialidade:</strong> Direcione seu tempo de estudo proporcionalmente às disciplinas mais cobradas.</li>
-            <li><strong>Por Tema:</strong> Foque seu estudo nos temas mais prevalentes de cada especialidade.</li>
-            <li><strong>Por Assunto:</strong> Estude de maneira objetiva os assuntos mais cobrados pelo INEP.</li>
-          </ul>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Coluna 1: Especialidades */}

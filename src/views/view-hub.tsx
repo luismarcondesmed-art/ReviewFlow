@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X
+    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X, LayoutGrid
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
@@ -60,6 +60,11 @@ export const HubView = ({
         }
 
         result.sort((a, b) => {
+             if (sortOrder === 'area') {
+                 const areaCompare = a.area.localeCompare(b.area);
+                 if (areaCompare !== 0) return areaCompare;
+                 return (b.updatedAt || 0) - (a.updatedAt || 0);
+             }
              if (sortOrder === 'date') return (b.updatedAt || 0) - (a.updatedAt || 0);
              if (sortOrder === 'priority') {
                  const pMap: any = { high: 3, medium: 2, low: 1 };
@@ -68,6 +73,9 @@ export const HubView = ({
              if (sortOrder === 'questions') {
                  const getQ = (t: Topic) => t.reviews.filter(r => r.done).reduce((acc, r) => acc + r.total, 0);
                  return getQ(b) - getQ(a);
+             }
+             if (sortOrder === 'name') {
+                 return a.title.localeCompare(b.title);
              }
              return 0;
         });
@@ -248,72 +256,83 @@ export const HubView = ({
                 document.body
             )}
 
-            {/* TABS */}
-            <div className="flex justify-center gap-2 border-b border-slate-200 dark:border-white/10 px-2 overflow-x-auto custom-scrollbar pb-2" role="tablist" aria-label="Seções do Hub">
-                {[
-                    { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
-                    { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
-                    { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
-                ].map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    const colorClass = isActive 
-                        ? (tab.color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 
-                           tab.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 
-                           'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400')
-                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
+            {/* TABS & FILTERS */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2">
+                <div className="flex justify-center lg:justify-start gap-2 px-2 overflow-x-auto custom-scrollbar" role="tablist" aria-label="Seções do Hub">
+                    {[
+                        { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
+                        { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
+                        { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
+                    ].map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        const colorClass = isActive 
+                            ? (tab.color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 
+                               tab.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 
+                               'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400')
+                            : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
+                            
+                        return (
+                            <button 
+                                key={tab.id}
+                                role="tab"
+                                aria-selected={isActive}
+                                aria-controls={`panel-${tab.id}`}
+                                id={`tab-${tab.id}`}
+                                className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${isActive ? `px-4 ${colorClass}` : 'px-0 w-10 justify-center'}`} 
+                                onClick={() => setActiveTab(tab.id as any)}
+                            >
+                                <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} /> 
+                                {isActive && <span>{tab.label}</span>}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {activeTab === 'temas' && (
+                    <div className="flex items-center gap-2 overflow-x-auto px-2 lg:px-0 pb-2 lg:pb-0 custom-scrollbar w-full lg:w-auto">
+                        <div className="relative flex-1 lg:flex-none">
+                            <select 
+                                aria-label="Filtrar por área"
+                                className="w-full lg:w-auto appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-8 lg:pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
+                                value={filterArea}
+                                onChange={(e) => setFilterArea(e.target.value)}
+                            >
+                                <option value="all">Todas Áreas</option>
+                                {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                            </select>
+                            <Filter size={14} className="absolute left-3 lg:right-3 lg:left-auto top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                        </div>
                         
-                    return (
+                        <div className="relative flex-1 lg:flex-none">
+                            <select 
+                                aria-label="Ordenar por"
+                                className="w-full lg:w-auto appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-8 lg:pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
+                                value={sortOrder}
+                                onChange={(e) => setSortOrder(e.target.value)}
+                            >
+                                <option value="date">Data (Próximos)</option>
+                                <option value="priority">Prioridade</option>
+                                <option value="name">Nome (A-Z)</option>
+                            </select>
+                            <ArrowUpDown size={14} className="absolute left-3 lg:right-3 lg:left-auto top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                        </div>
+
                         <button 
-                            key={tab.id}
-                            role="tab"
-                            aria-selected={isActive}
-                            aria-controls={`panel-${tab.id}`}
-                            id={`tab-${tab.id}`}
-                            className={`h-10 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${isActive ? `px-4 ${colorClass}` : 'px-0 w-10 justify-center'}`} 
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setSortOrder(sortOrder === 'area' ? 'date' : 'area')}
+                            className={`h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
+                            title="Agrupar por Área"
                         >
-                            <tab.icon size={18} strokeWidth={isActive ? 2.5 : 2} /> 
-                            {isActive && <span>{tab.label}</span>}
+                            <LayoutGrid size={14} />
+                            <span className="hidden lg:inline">Agrupar por Área</span>
                         </button>
-                    );
-                })}
+                    </div>
+                )}
             </div>
 
             {/* TAB CONTENT */}
             <div className="pt-2">
                 {activeTab === 'temas' && (
                     <div role="tabpanel" id="panel-temas" aria-labelledby="tab-temas" className="flex flex-col gap-6 animate-fade-in">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar w-full sm:w-auto">
-                                <div className="relative flex-1 sm:flex-none">
-                                    <select 
-                                        aria-label="Filtrar por área"
-                                        className="w-full appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
-                                        value={filterArea}
-                                        onChange={(e) => setFilterArea(e.target.value)}
-                                    >
-                                        <option value="all">Todas Áreas</option>
-                                        {AREAS.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                                    </select>
-                                    <Filter size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
-                                </div>
-                                
-                                <div className="relative flex-1 sm:flex-none">
-                                    <select 
-                                        aria-label="Ordenar por"
-                                        className="w-full appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl pl-3 pr-8 py-2.5 outline-none focus:border-blue-500"
-                                        value={sortOrder}
-                                        onChange={(e) => setSortOrder(e.target.value)}
-                                    >
-                                        <option value="date">Data (Próximos)</option>
-                                        <option value="priority">Prioridade</option>
-                                        <option value="name">Nome (A-Z)</option>
-                                    </select>
-                                    <ArrowUpDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {filteredActiveTopics.length === 0 ? (
                                 <div className="col-span-full py-12 text-center bg-white/50 dark:bg-white/5 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
