@@ -1,5 +1,6 @@
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
@@ -493,6 +494,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
 export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
     const [range, setRange] = useState<7 | 14 | 30 | 60>(30);
     const [offsetDays, setOffsetDays] = useState(0);
+    const [tooltipData, setTooltipData] = useState<{ day: any, rect: DOMRect } | null>(null);
 
     const calendarData = useMemo(() => {
         const today = new Date();
@@ -612,22 +614,18 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         if (day.count > 60) colorClass = 'bg-blue-500 dark:bg-blue-500 border-blue-600 dark:border-blue-400';
 
                         return (
-                            <div key={day.date} className="relative group">
+                            <div 
+                                key={day.date} 
+                                className="relative group cursor-pointer"
+                                onMouseEnter={(e) => {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setTooltipData({ day, rect });
+                                }}
+                                onMouseLeave={() => setTooltipData(null)}
+                            >
                                 <div 
                                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-[4px] transition-all ${colorClass} ${day.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                                 />
-                                {/* Tooltip */}
-                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                    <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 z-50 flex flex-col items-center min-w-[80px]">
-                                        <span className="text-slate-400 mb-0.5">{day.dayObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                                        {day.count > 0 ? (
-                                            <span className="text-blue-400">{day.correct}/{day.total} ({Math.round(day.correct/day.total*100)}%)</span>
-                                        ) : (
-                                            <span className="opacity-50">Sem atividade</span>
-                                        )}
-                                    </div>
-                                    <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
-                                </div>
                             </div>
                         );
                     })}
@@ -649,6 +647,28 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                     <span>Mais</span>
                 </div>
             </div>
+
+            {tooltipData && createPortal(
+                <div 
+                    className="fixed z-[9999] pointer-events-none animate-fade-in"
+                    style={{
+                        top: tooltipData.rect.top - 8,
+                        left: tooltipData.rect.left + tooltipData.rect.width / 2,
+                        transform: 'translate(-50%, -100%)'
+                    }}
+                >
+                    <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 flex flex-col items-center min-w-[80px]">
+                        <span className="text-slate-400 mb-0.5">{tooltipData.day.dayObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                        {tooltipData.day.count > 0 ? (
+                            <span className="text-blue-400">{tooltipData.day.correct}/{tooltipData.day.total} ({Math.round(tooltipData.day.correct/tooltipData.day.total*100)}%)</span>
+                        ) : (
+                            <span className="opacity-50">Sem atividade</span>
+                        )}
+                    </div>
+                    <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
+                </div>,
+                document.body
+            )}
         </div>
     )
 });
