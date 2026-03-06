@@ -36,6 +36,7 @@ export interface Topic {
   linkedLessons?: string[]; 
   notionLink?: string; // Link to Notion page
   source?: string; // e.g. "BLOCO 1 - Medcof"
+  tags?: string[]; // e.g. ["hematologia", "ginecologia geral"]
 
   deleted?: boolean;
   deletedAt?: any; // Firestore Timestamp ou null antes da sync

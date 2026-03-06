@@ -82,6 +82,10 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
     const [newLessonInput, setNewLessonInput] = useState('');
     const [suggestions, setSuggestions] = useState<string[]>([]);
 
+    // Tags State
+    const [tags, setTags] = useState<string[]>([]);
+    const [newTagInput, setNewTagInput] = useState('');
+
     useEffect(() => {
         if (isOpen) {
             setActiveTab('details');
@@ -96,14 +100,17 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                     setShowAdvanced(false);
                 }
                 setLinkedLessons(topic.linkedLessons || []);
+                setTags(topic.tags || []);
             } else {
                 setIntervalsStr(''); 
                 setBaseQuestions('');
                 setShowAdvanced(false);
                 setLinkedLessons([]);
+                setTags([]);
             }
             setNewLessonInput('');
             setSuggestions([]);
+            setNewTagInput('');
         }
     }, [isOpen, topic]);
 
@@ -139,6 +146,23 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
 
     const handleRemoveLesson = (index: number) => {
         setLinkedLessons(linkedLessons.filter((_, i) => i !== index));
+    };
+
+    const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (newTagInput.trim()) {
+                const newTag = newTagInput.trim();
+                if (!tags.includes(newTag)) {
+                    setTags([...tags, newTag]);
+                }
+                setNewTagInput('');
+            }
+        }
+    };
+
+    const handleRemoveTag = (index: number) => {
+        setTags(tags.filter((_, i) => i !== index));
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -193,6 +217,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
             ...safeTopic,
             title,
             subarea: subarea || '', 
+            tags,
             area,
             importance,
             studyDate,
@@ -245,6 +270,29 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Disciplina</label>
                                 <input name="subarea" type="text" defaultValue={safeTopic.subarea || ''} placeholder="Ex: Cardio" className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 appearance-none" />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Disciplinas (Tags)</label>
+                            {tags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    {tags.map((tag, idx) => (
+                                        <span key={idx} className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wide">
+                                            {tag}
+                                            <button type="button" onClick={() => handleRemoveTag(idx)} className="hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+                                                <X size={12} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                            <input 
+                                type="text" 
+                                value={newTagInput}
+                                onChange={(e) => setNewTagInput(e.target.value)}
+                                onKeyDown={handleAddTag}
+                                placeholder="Digite uma disciplina e aperte Enter" 
+                                className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 appearance-none" 
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Início</label>

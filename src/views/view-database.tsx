@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from '../utils';
 
-// --- Mini Chart Component (CSS Bar Chart for Robustness) ---
+// --- Mini Chart Component (SVG Line Chart for Better Visuals) ---
 export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
     const doneReviews = useMemo(() => {
          return reviews.filter(r => r.done).sort((a,b) => a.date.localeCompare(b.date));
@@ -15,6 +16,13 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
         </div>
     );
 
+    const points = doneReviews.map((r, i) => {
+        const acc = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
+        return { x: i, y: acc, label: r.label.split(':')[0].replace('R', 'R'), date: r.date, acc, correct: r.correct, total: r.total };
+    });
+
+    const maxPoints = Math.max(points.length - 1, 1);
+    
     return (
         <div className="w-full h-full flex flex-col justify-end relative px-2 pb-2">
             {/* Background Grid Lines */}
@@ -24,58 +32,66 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
                 <div className="w-full h-px bg-slate-200 dark:bg-white/10 border-t border-dashed border-slate-300 dark:border-white/20"></div>
             </div>
 
-            {/* Bars Container */}
-            <div className="flex items-end justify-around h-full gap-2 sm:gap-4 z-10 w-full pb-1">
-                {doneReviews.map((r, i) => {
-                    const acc = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
+            <div className="flex-1 relative w-full mt-4 mb-6">
+                <svg className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                    {/* Line */}
+                    <polyline
+                        points={points.map(p => `${(p.x / maxPoints) * 100}%,${100 - p.y}%`).join(' ')}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="text-blue-500 dark:text-blue-400 drop-shadow-sm"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
                     
-                    // Determine Color based on performance
-                    let barColor = 'bg-red-500';
-                    let textColor = 'text-red-500';
-                    
-                    if (acc >= 80) { 
-                        barColor = 'bg-emerald-500'; 
-                        textColor = 'text-emerald-600 dark:text-emerald-400';
-                    } else if (acc >= 60) { 
-                        barColor = 'bg-amber-500'; 
-                        textColor = 'text-amber-600 dark:text-amber-400';
-                    }
+                    {/* Points */}
+                    {points.map((p, i) => {
+                        let dotColor = 'text-red-500';
+                        if (p.acc >= 80) dotColor = 'text-emerald-500';
+                        else if (p.acc >= 60) dotColor = 'text-amber-500';
 
-                    return (
-                        <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group max-w-[60px] min-w-[20px] relative">
-                            
-                            {/* Floating Tooltip */}
-                            <div className="absolute bottom-[calc(100%+8px)] opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-20 pointer-events-none">
-                                <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl whitespace-nowrap flex flex-col items-center">
-                                    <span>{formatDate(r.date)}</span>
-                                    <span className="opacity-80 font-medium">{r.correct}/{r.total}</span>
-                                </div>
-                                <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1"></div>
-                            </div>
-                            
-                            {/* Percentage Label */}
-                            <span className={`text-[10px] sm:text-xs font-black mb-1 transition-all ${textColor}`}>
-                                {acc}%
-                            </span>
-                            
-                            {/* The Bar */}
-                            <div 
-                                className={`w-full ${barColor} rounded-t-md opacity-90 group-hover:opacity-100 transition-all duration-500 relative shadow-sm`}
-                                style={{ height: `${Math.max(acc, 10)}%` }}
-                            >
-                                {/* Gradient Overlay for depth */}
-                                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-md"></div>
-                            </div>
-                            
-                            {/* X-Axis Label */}
-                            <div className="h-5 flex items-center justify-center w-full mt-2 border-t border-slate-200 dark:border-white/10 pt-1">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase truncate w-full text-center tracking-tight">
-                                    {r.label.split(':')[0].replace('R', 'R')}
-                                </span>
-                            </div>
-                        </div>
-                    );
-                })}
+                        return (
+                            <g key={i} className="group cursor-pointer">
+                                <circle
+                                    cx={`${(p.x / maxPoints) * 100}%`}
+                                    cy={`${100 - p.y}%`}
+                                    r="4"
+                                    fill="currentColor"
+                                    className={`${dotColor} transition-all group-hover:r-6`}
+                                    strokeWidth="2"
+                                    stroke="white"
+                                />
+                                {/* Tooltip */}
+                                <foreignObject 
+                                    x={`${(p.x / maxPoints) * 100 - 15}%`} 
+                                    y={`${100 - p.y - 30}%`} 
+                                    width="100" 
+                                    height="40" 
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity overflow-visible pointer-events-none"
+                                >
+                                    <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl whitespace-nowrap flex flex-col items-center w-max -translate-x-1/2">
+                                        <span>{formatDate(p.date)}</span>
+                                        <span className="opacity-80 font-medium">{p.correct}/{p.total} ({p.acc}%)</span>
+                                    </div>
+                                </foreignObject>
+                            </g>
+                        );
+                    })}
+                </svg>
+            </div>
+
+            {/* X-Axis Labels */}
+            <div className="h-5 flex justify-between w-full border-t border-slate-200 dark:border-white/10 pt-1 relative">
+                {points.map((p, i) => (
+                    <div 
+                        key={i} 
+                        className="absolute text-[9px] font-bold text-slate-400 uppercase tracking-tight -translate-x-1/2"
+                        style={{ left: `${(p.x / maxPoints) * 100}%` }}
+                    >
+                        {p.label}
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -83,9 +99,10 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
 
 export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimulado, onDeleteSimulado, config, searchTerm }: { topics: Topic[], onEdit: (t: Topic) => void, onDelete: (id: string) => void, simulados?: Simulado[], onEditSimulado?: (s: Simulado) => void, onDeleteSimulado?: (id: string) => void, config?: UserConfig, searchTerm?: string }) => {
     const [filterArea, setFilterArea] = useState('all');
-    const [groupBy, setGroupBy] = useState<'none' | 'area' | 'block'>('area');
+    const [groupBy, setGroupBy] = useState<'none' | 'area' | 'block' | 'tag'>('area');
     const [activeTab, setActiveTab] = useState<'topics' | 'simulados'>('topics');
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [showLinkedLessons, setShowLinkedLessons] = useState(false);
 
     // Dropdown states
     const [viewMenuOpen, setViewMenuOpen] = useState(false);
@@ -106,16 +123,28 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
         const groups: Record<string, Topic[]> = {};
         
         filteredTopics.forEach(t => {
-            let key = 'Outros';
-            if (groupBy === 'area') {
-                const areaObj = AREAS.find(a => a.id === t.area);
-                key = areaObj ? areaObj.name : 'Outros';
-            } else if (groupBy === 'block') {
-                key = t.source || 'Sem Bloco';
+            if (groupBy === 'tag') {
+                if (!t.tags || t.tags.length === 0) {
+                    if (!groups['Sem Disciplina']) groups['Sem Disciplina'] = [];
+                    groups['Sem Disciplina'].push(t);
+                } else {
+                    t.tags.forEach(tag => {
+                        if (!groups[tag]) groups[tag] = [];
+                        groups[tag].push(t);
+                    });
+                }
+            } else {
+                let key = 'Outros';
+                if (groupBy === 'area') {
+                    const areaObj = AREAS.find(a => a.id === t.area);
+                    key = areaObj ? areaObj.full : 'Outros';
+                } else if (groupBy === 'block') {
+                    key = t.source || 'Sem Bloco';
+                }
+                
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(t);
             }
-            
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(t);
         });
         
         const sortedKeys = Object.keys(groups).sort();
@@ -188,12 +217,28 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                         <span>Por Área</span>
                                         {groupBy === 'area' && <Check size={14} className="text-blue-500"/>}
                                     </button>
+                                    <button onClick={() => { setGroupBy('tag'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                        <span>Por Disciplina</span>
+                                        {groupBy === 'tag' && <Check size={14} className="text-blue-500"/>}
+                                    </button>
                                     <button onClick={() => { setGroupBy('block'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Por Bloco</span>
                                         {groupBy === 'block' && <Check size={14} className="text-blue-500"/>}
                                     </button>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Show Lessons Toggle */}
+                        <div className="relative flex-1 sm:flex-none">
+                            <button 
+                                onClick={() => setShowLinkedLessons(!showLinkedLessons)}
+                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${showLinkedLessons ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 border-purple-200 dark:border-purple-500/30' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                title="Mostrar Aulas Vinculadas"
+                            >
+                                <List size={16}/>
+                                <span className="hidden sm:inline">Aulas</span>
+                            </button>
                         </div>
 
                         {/* Filter Area */}
@@ -224,32 +269,45 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                 )}
             </div>
 
-            <div className="flex-1 bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
-                            <tr>
-                                <th className="p-4 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activeTab === 'topics' ? 'Matéria' : 'Instituição'}</th>
-                                <th className="p-4 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell">{activeTab === 'topics' ? 'Área' : 'Ano'}</th>
-                                <th className="p-4 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">{activeTab === 'topics' ? 'Prog.' : 'Data'}</th>
-                                <th className="p-4 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Nota</th>
-                                <th className="p-4 sm:p-4 text-right"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                            {activeTab === 'topics' ? (
-                                Object.keys(groupedTopics).length === 0 ? (
-                                    <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-bold">Nenhum registro encontrado.</td></tr>
-                                ) : (
-                                    Object.entries(groupedTopics).map(([groupName, groupTopics]) => (
-                                        <React.Fragment key={groupName}>
-                                            {groupBy !== 'none' && (
-                                                <tr className="bg-slate-100/50 dark:bg-white/5">
-                                                    <td colSpan={5} className="p-3 text-xs font-black text-slate-500 uppercase tracking-wider pl-4 border-y border-slate-200/50 dark:border-white/5">
-                                                        {groupName} <span className="opacity-50 ml-2">({groupTopics.length})</span>
-                                                    </td>
-                                                </tr>
-                                            )}
+            <motion.div 
+                className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-6"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, { offset, velocity }) => {
+                    const swipe = offset.x;
+                    if (swipe < -50 && activeTab === 'topics') {
+                        setActiveTab('simulados');
+                    } else if (swipe > 50 && activeTab === 'simulados') {
+                        setActiveTab('topics');
+                    }
+                }}
+            >
+                {activeTab === 'topics' ? (
+                    Object.keys(groupedTopics).length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs font-bold bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5">Nenhum registro encontrado.</div>
+                    ) : (
+                        Object.entries(groupedTopics).map(([groupName, groupTopics]) => (
+                            <div key={groupName} className="bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
+                                {groupBy !== 'none' && (
+                                    <div className="bg-slate-50/50 dark:bg-black/20 p-4 border-b border-slate-100 dark:border-white/5 flex items-center gap-3">
+                                        <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
+                                        <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{groupName}</h3>
+                                        <span className="text-xs font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-2 py-0.5 rounded-md">{groupTopics.length}</span>
+                                    </div>
+                                )}
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
+                                        <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
+                                            <tr>
+                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Matéria</th>
+                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-32">Área</th>
+                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-32">Prog.</th>
+                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-24">Nota</th>
+                                                <th className="p-4 text-right w-16"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                                             {groupTopics.map(t => {
                                                 const completed = t.reviews.filter(r => r.done).length;
                                                 const totalReviews = t.reviews.length;
@@ -268,6 +326,24 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                             <td className="p-3 sm:p-4">
                                                                 <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 line-clamp-2 sm:line-clamp-1">{t.title}</div>
                                                                 {t.source && <div className="text-[10px] text-slate-400 font-medium mt-0.5">{t.source}</div>}
+                                                                {t.tags && t.tags.length > 0 && (
+                                                                    <div className="mt-1 flex flex-wrap gap-1">
+                                                                        {t.tags.map((tag, idx) => (
+                                                                            <span key={idx} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded text-[9px] font-bold uppercase tracking-wide">
+                                                                                {tag}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                {showLinkedLessons && t.linkedLessons && t.linkedLessons.length > 0 && (
+                                                                    <div className="mt-2 flex flex-wrap gap-1">
+                                                                        {t.linkedLessons.map((lesson, idx) => (
+                                                                            <span key={idx} className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 rounded text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                                                                                {lesson}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </td>
                                                             <td className="p-3 sm:p-4 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase hidden sm:table-cell">{t.area}</td>
                                                             <td className="p-3 sm:p-4">
@@ -382,13 +458,29 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                     </React.Fragment>
                                                 );
                                             })}
-                                        </React.Fragment>
-                                    ))
-                                )
-                            ) : (
-                                filteredSimulados.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-bold">Nenhum simulado registrado.</td></tr>
-                                ) : filteredSimulados.map(s => {
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ))
+                    )
+                ) : (
+                    <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
+                                <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
+                                    <tr>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Simulado</th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-32">Ano</th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-32">Data</th>
+                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-24">Nota</th>
+                                        <th className="p-4 text-right w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                                    {filteredSimulados.length === 0 ? (
+                                        <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-bold">Nenhum simulado registrado.</td></tr>
+                                    ) : filteredSimulados.map(s => {
                                     const acc = s.totalQuestions > 0 ? Math.round((s.correctCount / s.totalQuestions) * 100) : 0;
                                     const performanceBg = getPerformanceBgLight(acc, config?.targetAccuracy || 80);
                                     const isExpanded = expandedId === s.id;
@@ -437,13 +529,14 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                 </tr>
                                             )}
                                         </React.Fragment>
-                                    )
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+                )}
+            </motion.div>
         </div>
     );
 };

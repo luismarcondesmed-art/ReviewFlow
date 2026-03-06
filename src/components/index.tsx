@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
 
@@ -491,16 +491,24 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
 
 // --- Heatmap Widget - GitHub Style Calendar ---
 export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[], simulados: Simulado[] }) => {
+    const [range, setRange] = useState<7 | 14 | 30 | 60>(30);
+    const [offsetDays, setOffsetDays] = useState(0);
+
     const calendarData = useMemo(() => {
         const today = new Date();
         const endDate = new Date(today);
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 364); // Last 365 days
+        endDate.setDate(today.getDate() - offsetDays);
+        
+        const startDate = new Date(endDate);
+        startDate.setDate(endDate.getDate() - (range - 1));
 
-        // Align start date to Sunday
-        while (startDate.getDay() !== 0) {
-            startDate.setDate(startDate.getDate() - 1);
-        }
+        // Align to Sunday
+        const alignedStartDate = new Date(startDate);
+        alignedStartDate.setDate(startDate.getDate() - startDate.getDay());
+
+        // Align to Saturday
+        const alignedEndDate = new Date(endDate);
+        alignedEndDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
 
         const dataMap = new Map<string, { count: number, correct: number, total: number }>();
         topics.forEach(t => { 
@@ -526,88 +534,120 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
             }); 
         });
 
-        const weeks = [];
-        let currentWeek = [];
-        const currentDate = new Date(startDate);
+        const days = [];
+        const currentDate = new Date(alignedStartDate);
+        const todayStr = today.toISOString().split('T')[0];
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
 
-        // Generate weeks until we pass today
-        while (currentDate <= endDate || currentWeek.length > 0) {
+        while (currentDate <= alignedEndDate) {
             const dateStr = currentDate.toISOString().split('T')[0];
             const data = dataMap.get(dateStr) || { count: 0, correct: 0, total: 0 };
             
-            currentWeek.push({
+            days.push({
                 date: dateStr,
                 count: data.count,
                 correct: data.correct,
                 total: data.total,
-                dayObj: new Date(currentDate)
+                dayObj: new Date(currentDate),
+                isToday: dateStr === todayStr,
+                isHidden: dateStr < startStr || dateStr > endStr
             });
-
-            if (currentWeek.length === 7) {
-                weeks.push(currentWeek);
-                currentWeek = [];
-            }
             
             currentDate.setDate(currentDate.getDate() + 1);
-            if (currentDate > endDate && currentWeek.length === 0) break;
-        }
-        
-        // Fill last week if incomplete (shouldn't happen with Sunday alignment but good safety)
-        if (currentWeek.length > 0) {
-            while (currentWeek.length < 7) {
-                currentWeek.push({ date: '', count: 0, correct: 0, total: 0, dayObj: null as any });
-            }
-            weeks.push(currentWeek);
         }
 
-        return weeks;
-    }, [topics, simulados]);
+        return days;
+    }, [topics, simulados, range, offsetDays]);
+
+    const handlePrev = () => setOffsetDays(prev => prev + range);
+    const handleNext = () => setOffsetDays(prev => Math.max(0, prev - range));
+    const handleReset = () => setOffsetDays(0);
+
+    const displayedStart = new Date();
+    displayedStart.setDate(displayedStart.getDate() - offsetDays - (range - 1));
+    const displayedEnd = new Date();
+    displayedEnd.setDate(displayedEnd.getDate() - offsetDays);
 
     return (
-        <div className="w-full overflow-x-auto custom-scrollbar pb-2">
-            <div className="flex gap-1 min-w-max">
-                {calendarData.map((week, wIdx) => (
-                    <div key={wIdx} className="flex flex-col gap-1">
-                        {week.map((day, dIdx) => {
-                            if (!day.dayObj) return <div key={dIdx} className="w-2.5 h-2.5"></div>;
-                            
-                            let colorClass = 'bg-slate-100 dark:bg-white/5 border border-transparent';
-                            if (day.count > 0) colorClass = 'bg-emerald-200 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-800';
-                            if (day.count > 10) colorClass = 'bg-emerald-300 dark:bg-emerald-700/60 border-emerald-400 dark:border-emerald-600';
-                            if (day.count > 30) colorClass = 'bg-emerald-400 dark:bg-emerald-600/80 border-emerald-500 dark:border-emerald-500';
-                            if (day.count > 60) colorClass = 'bg-emerald-500 dark:bg-emerald-500 border-emerald-600 dark:border-emerald-400';
-
-                            return (
-                                <div key={day.date} className="relative group">
-                                    <div 
-                                        className={`w-2.5 h-2.5 rounded-[2px] transition-all ${colorClass}`}
-                                    />
-                                    {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10 z-50 flex flex-col items-center">
-                                            <span>{day.dayObj.getDate()}/{day.dayObj.getMonth()+1}</span>
-                                            {day.count > 0 ? (
-                                                <span className="text-emerald-400">{day.correct}/{day.total} ({Math.round(day.correct/day.total*100)}%)</span>
-                                            ) : (
-                                                <span className="opacity-50">Sem atividade</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-            <div className="flex justify-end items-center gap-2 mt-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                <span>Menos</span>
-                <div className="flex gap-1">
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-slate-100 dark:bg-white/5"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-200 dark:bg-emerald-900/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-400 dark:bg-emerald-600/80"></div>
-                    <div className="w-2.5 h-2.5 rounded-[2px] bg-emerald-500 dark:bg-emerald-500"></div>
+        <div className="w-full flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+                <div className="flex gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
+                    {[7, 14, 30, 60].map(r => (
+                        <button
+                            key={r}
+                            onClick={() => { setRange(r as any); setOffsetDays(0); }}
+                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-white dark:bg-zinc-800 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                        >
+                            {r}D
+                        </button>
+                    ))}
                 </div>
-                <span>Mais</span>
+                <div className="flex items-center gap-2">
+                    <button onClick={handlePrev} className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                        <ChevronLeft size={14} />
+                    </button>
+                    {offsetDays > 0 && (
+                        <button onClick={handleReset} className="px-2 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+                            Hoje
+                        </button>
+                    )}
+                    <button onClick={handleNext} disabled={offsetDays === 0} className={`p-1.5 rounded-lg transition-colors ${offsetDays === 0 ? 'bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex justify-center w-full overflow-x-auto custom-scrollbar pb-2">
+                <div className="grid grid-rows-7 grid-flow-col gap-1 sm:gap-1.5">
+                    {calendarData.map((day, i) => {
+                        if (day.isHidden) {
+                            return <div key={`hidden-${i}`} className="w-3 h-3 sm:w-4 sm:h-4 rounded-[4px]" />;
+                        }
+
+                        let colorClass = 'bg-slate-100 dark:bg-white/5 border border-transparent';
+                        if (day.count > 0) colorClass = 'bg-blue-200 dark:bg-blue-900/50 border-blue-300 dark:border-blue-800';
+                        if (day.count > 10) colorClass = 'bg-blue-300 dark:bg-blue-700/60 border-blue-400 dark:border-blue-600';
+                        if (day.count > 30) colorClass = 'bg-blue-400 dark:bg-blue-600/80 border-blue-500 dark:border-blue-500';
+                        if (day.count > 60) colorClass = 'bg-blue-500 dark:bg-blue-500 border-blue-600 dark:border-blue-400';
+
+                        return (
+                            <div key={day.date} className="relative group">
+                                <div 
+                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-[4px] transition-all ${colorClass} ${day.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                                />
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                    <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 z-50 flex flex-col items-center min-w-[80px]">
+                                        <span className="text-slate-400 mb-0.5">{day.dayObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                        {day.count > 0 ? (
+                                            <span className="text-blue-400">{day.correct}/{day.total} ({Math.round(day.correct/day.total*100)}%)</span>
+                                        ) : (
+                                            <span className="opacity-50">Sem atividade</span>
+                                        )}
+                                    </div>
+                                    <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            
+            <div className="flex justify-between items-center mt-2">
+                <div className="text-[10px] font-bold text-slate-400">
+                    {displayedStart.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {displayedEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                </div>
+                <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                    <span>Menos</span>
+                    <div className="flex gap-1">
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-slate-100 dark:bg-white/5"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-200 dark:bg-blue-900/50"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-400 dark:bg-blue-600/80"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-500 dark:bg-blue-500"></div>
+                    </div>
+                    <span>Mais</span>
+                </div>
             </div>
         </div>
     )

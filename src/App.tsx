@@ -190,13 +190,15 @@ export function App() {
         vibration.success();
     };
 
-    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => {
+    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number, blockId?: string, tags?: string[]) => {
         const existing = topics.find(t => t.title === title && !t.deleted);
         
         if (existing) {
             const updated: Topic = {
                 ...existing,
                 linkedLessons: lessons,
+                source: blockId || existing.source,
+                tags: tags || existing.tags,
                 updatedAt: Date.now()
             };
             setTopics(prev => prev.map(t => t.id === existing.id ? updated : t));
@@ -210,11 +212,13 @@ export function App() {
                 id: newTopicId,
                 title,
                 area,
-                subarea: 'Cronograma',
+                subarea: tags && tags.length > 0 ? tags[0] : 'Cronograma',
                 importance: priority,
                 studyDate: getTodayStr(),
                 reviews,
                 linkedLessons: lessons,
+                source: blockId,
+                tags: tags,
                 deleted: false,
                 updatedAt: Date.now()
             };

@@ -1,6 +1,7 @@
 
 import React, { useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X, LayoutGrid
 } from 'lucide-react';
@@ -20,7 +21,7 @@ export const HubView = ({
     sortOrder: string, filterArea: string, searchTerm?: string,
     onAddSimulado?: () => void
 }) => {
-    const [activeTab, setActiveTab] = useState<'temas' | 'stats' | 'simulados'>('temas');
+    const [activeTab, setActiveTab] = useState<'overview' | 'temas' | 'stats' | 'simulados'>('overview');
     const [popoverPosition, setPopoverPosition] = useState<{rect: DOMRect, position: 'above' | 'below'} | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     
@@ -113,32 +114,6 @@ export const HubView = ({
     return (
         <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
             
-            {/* HERO: Para fazer hoje */}
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
-                <div className="relative z-10">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
-                        {dueItems.length > 0 ? 'Pronto para estudar?' : 'Tudo em dia!'}
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
-                        {dueItems.length > 0 ? (
-                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes hoje.</>
-                        ) : (
-                            <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
-                        )}
-                    </p>
-                </div>
-                
-                {dueItems.length > 0 && (
-                    <button 
-                        onClick={startQuickSession} 
-                        className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md w-full md:w-auto justify-center"
-                    >
-                        <PlayCircle size={18} fill="currentColor" className="text-white dark:text-black" />
-                        Começar
-                    </button>
-                )}
-            </div>
-
             {/* Pending Reviews Popover (Portal) */}
             {popoverPosition && createPortal(
                 <>
@@ -258,6 +233,7 @@ export const HubView = ({
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2 overflow-x-auto custom-scrollbar">
                 <div className="flex items-center gap-2 px-2 shrink-0" role="tablist" aria-label="Seções do Hub">
                     {[
+                        { id: 'overview', label: 'Visão Geral', icon: LayoutGrid, color: 'indigo' },
                         { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
                         { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
                         { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
@@ -266,6 +242,7 @@ export const HubView = ({
                         const colorClass = isActive 
                             ? (tab.color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 
                                tab.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 
+                               tab.color === 'indigo' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' :
                                'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400')
                             : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
                             
@@ -334,7 +311,77 @@ export const HubView = ({
             </div>
 
             {/* TAB CONTENT */}
-            <div className="pt-2">
+            <motion.div 
+                className="pt-2"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, { offset, velocity }) => {
+                    const swipe = offset.x;
+                    const tabs = ['overview', 'temas', 'stats', 'simulados'];
+                    const currentIndex = tabs.indexOf(activeTab);
+                    
+                    if (swipe < -50 && currentIndex < tabs.length - 1) {
+                        setActiveTab(tabs[currentIndex + 1] as any);
+                    } else if (swipe > 50 && currentIndex > 0) {
+                        setActiveTab(tabs[currentIndex - 1] as any);
+                    }
+                }}
+            >
+                {activeTab === 'overview' && (
+                    <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="flex flex-col gap-6 animate-fade-in">
+                        {/* HERO: Para fazer hoje */}
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+                            <div className="relative z-10">
+                                <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
+                                    {dueItems.length > 0 ? 'Pronto para estudar?' : 'Tudo em dia!'}
+                                </h2>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
+                                    {dueItems.length > 0 ? (
+                                        <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes hoje.</>
+                                    ) : (
+                                        <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
+                                    )}
+                                </p>
+                            </div>
+                            
+                            {dueItems.length > 0 && (
+                                <button 
+                                    onClick={startQuickSession} 
+                                    className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md w-full md:w-auto justify-center"
+                                >
+                                    <PlayCircle size={18} fill="currentColor" className="text-white dark:text-black" />
+                                    Começar
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Smart Suggestions */}
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                            <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Sugestões Inteligentes</h4>
+                            <SmartSuggestions topics={activeTopics} onReview={onReview} />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Constância */}
+                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
+                                <div className="flex justify-center overflow-x-auto">
+                                    <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
+                                </div>
+                            </div>
+
+                            {/* Previsão de Carga */}
+                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
+                                <div className="h-48">
+                                    <FutureLoadWidget topics={activeTopics} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {activeTab === 'temas' && (
                     <div role="tabpanel" id="panel-temas" aria-labelledby="tab-temas" className="flex flex-col gap-6 animate-fade-in">
                         {filteredActiveTopics.length === 0 ? (
@@ -406,27 +453,9 @@ export const HubView = ({
                              <AreaStatsWidget topics={activeTopics} simulados={activeSimulados} />
                         </div>
 
-                        {/* Constância */}
-                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
-                             <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
-                             <div className="flex justify-center overflow-x-auto">
-                                <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
-                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Retenção */}
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                                <RetentionWidget topics={activeTopics} />
-                            </div>
-
-                            {/* Previsão de Carga */}
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
-                                <div className="h-48">
-                                    <FutureLoadWidget topics={activeTopics} />
-                                </div>
-                            </div>
+                        {/* Retenção */}
+                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                            <RetentionWidget topics={activeTopics} />
                         </div>
                     </div>
                 )}
@@ -436,7 +465,7 @@ export const HubView = ({
                         <SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config.targetAccuracy} onAdd={onAddSimulado || (() => {})} />
                     </div>
                 )}
-            </div>
+            </motion.div>
         </div>
     );
 };
