@@ -366,7 +366,10 @@ export const HubView = ({
                             {/* Constância */}
                             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
                                 <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
-                                <div className="flex justify-center overflow-x-auto">
+                                <div 
+                                    className="flex justify-center overflow-x-auto"
+                                    onPointerDownCapture={(e) => e.stopPropagation()}
+                                >
                                     <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
                                 </div>
                             </div>

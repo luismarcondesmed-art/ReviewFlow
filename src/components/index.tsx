@@ -600,7 +600,10 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                 </div>
             </div>
 
-            <div className="flex justify-center w-full overflow-x-auto custom-scrollbar pb-2">
+            <div 
+                className="flex justify-center w-full overflow-x-auto custom-scrollbar pb-2"
+                onPointerDownCapture={(e) => e.stopPropagation()}
+            >
                 <div className="grid grid-rows-7 grid-flow-col gap-1 sm:gap-1.5">
                     {calendarData.map((day, i) => {
                         if (day.isHidden) {

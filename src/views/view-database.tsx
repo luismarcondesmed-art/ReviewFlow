@@ -296,7 +296,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                         <span className="text-xs font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-2 py-0.5 rounded-md">{groupTopics.length}</span>
                                     </div>
                                 )}
-                                <div className="overflow-x-auto custom-scrollbar">
+                                <div 
+                                    className="overflow-x-auto custom-scrollbar"
+                                    onPointerDownCapture={(e) => e.stopPropagation()}
+                                >
                                     <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
                                         <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
                                             <tr>
@@ -466,7 +469,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                     )
                 ) : (
                     <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-                        <div className="overflow-x-auto custom-scrollbar">
+                        <div 
+                            className="overflow-x-auto custom-scrollbar"
+                            onPointerDownCapture={(e) => e.stopPropagation()}
+                        >
                             <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
                                 <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
                                     <tr>

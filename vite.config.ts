@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
           short_name: 'ReviewFlow',
           description: 'Estude medicina com inteligência. Repetição espaçada automática e métricas de desempenho.',
           theme_color: '#f2f4f7',
+          background_color: '#f2f4f7',
+          display: 'standalone',
+          start_url: '/',
           icons: [
             {
               src: 'icon-192.png',
