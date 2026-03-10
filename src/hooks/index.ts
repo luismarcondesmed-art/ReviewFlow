@@ -18,6 +18,7 @@ export const useSync = () => {
   
   const dbRef = useRef<any>(null);
   const stateRef = useRef({ topics, simulados, config, scheduleProgress });
+  const lastSyncedState = useRef({ topics: '', simulados: '', config: '', scheduleProgress: '' });
   const appId = APP_ID;
 
   const setSyncKey = (newKey: string) => {
@@ -83,26 +84,41 @@ export const useSync = () => {
                             const d = snap.data();
                             
                             if (d.topics) {
+                                lastSyncedState.current.topics = JSON.stringify(d.topics);
                                 const merged = mergeItems(stateRef.current.topics, d.topics);
                                 if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.topics)) {
                                     setTopics(merged);
                                 }
+                            } else {
+                                lastSyncedState.current.topics = JSON.stringify([]);
                             }
+                            
                             if (d.simulados) {
+                                lastSyncedState.current.simulados = JSON.stringify(d.simulados);
                                 const merged = mergeItems(stateRef.current.simulados, d.simulados);
                                 if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.simulados)) {
                                     setSimulados(merged);
                                 }
+                            } else {
+                                lastSyncedState.current.simulados = JSON.stringify([]);
                             }
+                            
                             if (d.config) {
+                                lastSyncedState.current.config = JSON.stringify(d.config);
                                 if (JSON.stringify(d.config) !== JSON.stringify(stateRef.current.config)) {
                                     setConfig(d.config);
                                 }
+                            } else {
+                                lastSyncedState.current.config = JSON.stringify({ examDate: '', targetAccuracy: 80 });
                             }
+                            
                             if (d.scheduleProgress) {
+                                lastSyncedState.current.scheduleProgress = JSON.stringify(d.scheduleProgress);
                                 if (JSON.stringify(d.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
                                     setScheduleProgress(d.scheduleProgress);
                                 }
+                            } else {
+                                lastSyncedState.current.scheduleProgress = JSON.stringify({});
                             }
                         }
                         setStatus('online');
@@ -131,15 +147,30 @@ export const useSync = () => {
   useEffect(() => {
     if (!loaded) return;
     
+    const currentTopicsStr = JSON.stringify(topics);
+    const currentSimuladosStr = JSON.stringify(simulados);
+    const currentConfigStr = JSON.stringify(config);
+    const currentScheduleProgressStr = JSON.stringify(scheduleProgress);
+
     // Local Save
-    localStorage.setItem('reviewflow_v3_data', JSON.stringify(topics));
-    localStorage.setItem('reviewflow_simulados', JSON.stringify(simulados));
-    localStorage.setItem('reviewflow_config', JSON.stringify(config));
-    localStorage.setItem('reviewflow_schedule_progress', JSON.stringify(scheduleProgress));
+    localStorage.setItem('reviewflow_v3_data', currentTopicsStr);
+    localStorage.setItem('reviewflow_simulados', currentSimuladosStr);
+    localStorage.setItem('reviewflow_config', currentConfigStr);
+    localStorage.setItem('reviewflow_schedule_progress', currentScheduleProgressStr);
     localStorage.setItem('reviewflow_sync_key', syncKey);
 
-    // Cloud Save (Debounced 2s)
+    // Cloud Save (Debounced 5s to save costs)
     if (status === 'online' && dbRef.current && syncKey) {
+        // Check if there are actual local changes compared to last synced state
+        if (
+            currentTopicsStr === lastSyncedState.current.topics &&
+            currentSimuladosStr === lastSyncedState.current.simulados &&
+            currentConfigStr === lastSyncedState.current.config &&
+            currentScheduleProgressStr === lastSyncedState.current.scheduleProgress
+        ) {
+            return; // No local changes to save
+        }
+
         const timeout = setTimeout(async () => {
             try {
                 // Dynamically import firestore functions needed for saving
@@ -174,12 +205,20 @@ export const useSync = () => {
                     });
                 }
 
+                // Update lastSyncedState BEFORE saving to prevent race conditions
+                lastSyncedState.current = {
+                    topics: currentTopicsStr,
+                    simulados: currentSimuladosStr,
+                    config: currentConfigStr,
+                    scheduleProgress: currentScheduleProgressStr
+                };
+
                 await setDoc(docRef, payload, { merge: true });
             } catch (e) {
                 console.error("Save Error:", e);
                 setStatus('error');
             }
-        }, 2000);
+        }, 5000);
         return () => clearTimeout(timeout);
     }
   }, [topics, simulados, config, scheduleProgress, syncKey, status, loaded, appId]);
