@@ -469,13 +469,46 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                             </div>
                             <div>
                                 <h4 className="font-bold text-sm text-slate-800 dark:text-white line-clamp-1">{item.topic.title}</h4>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
-                                        {isOverdue ? 'Atrasado' : 'Hoje'}
-                                    </span>
+                                <div className="flex flex-col gap-1.5 mt-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10'}`}>
+                                            {isOverdue ? 'Atrasado' : 'Hoje'}
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></div>
+                                            <span className="text-[10px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                        </div>
+                                    </div>
+                                    {/* Timeline Dots */}
                                     <div className="flex items-center gap-1">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${priority.dot}`}></div>
-                                        <span className="text-[10px] text-slate-400 font-bold">{item.label.split(':')[0]}</span>
+                                        {item.topic.reviews.map((r, i) => {
+                                            const isDone = r.done;
+                                            const isToday = r.date === today;
+                                            const isNext = !isDone && i === item.idx;
+                                            
+                                            let dotColor = 'bg-slate-200 dark:bg-zinc-700'; // Future
+                                            if (isDone) dotColor = 'bg-emerald-500';
+                                            else if (isToday || isNext) dotColor = 'bg-blue-500';
+
+                                            return (
+                                                <div key={i} className="relative group/dot flex items-center">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-blue-500/30' : ''}`} />
+                                                    {i < item.topic.reviews.length - 1 && (
+                                                        <div className={`w-2 h-px ${isDone ? 'bg-emerald-500/50' : 'bg-slate-200 dark:bg-zinc-700'}`} />
+                                                    )}
+                                                    
+                                                    {/* Tooltip */}
+                                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none z-10">
+                                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
+                                                            {r.label} ({formatDate(r.date)})
+                                                            <div className="text-[8px] text-slate-400 font-normal mt-0.5">
+                                                                {r.done ? `${r.correct}/${r.total} acertos (${r.total > 0 ? Math.round((r.correct/r.total)*100) : 0}%)` : `${r.targetQ} questões`}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -994,7 +1027,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                                         {r.label} ({formatDate(r.date)})
                                         {/* Show questions count */}
                                         <div className="text-[8px] text-slate-400 font-normal mt-0.5">
-                                            {r.done ? `${r.total} questões feitas` : `${r.targetQ} questões`}
+                                            {r.done ? `${r.correct}/${r.total} acertos (${r.total > 0 ? Math.round((r.correct/r.total)*100) : 0}%)` : `${r.targetQ} questões`}
                                         </div>
                                     </div>
                                 </div>
