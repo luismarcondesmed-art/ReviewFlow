@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CalendarCheck, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Flag, BookOpen, CheckCircle2, Calendar as CalendarIcon, Clock, Link as LinkIcon, ExternalLink, Plus, List, Grid } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
-import { getTodayStr, getAreaTheme } from '../utils';
+import { getTodayStr, getAreaTheme, formatDate } from '../utils';
 import { useCalendar } from '../hooks';
 
 export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdateTopic, onEditTopic }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig, onUpdateTopic?: (topic: Topic) => void, onEditTopic?: (topic: Topic) => void }) => {
@@ -138,7 +138,9 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                                         const accuracy = prevRev.total > 0 ? Math.round((prevRev.correct / prevRev.total) * 100) : 0;
                                         return (
                                             <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-white/5 p-2.5 rounded-xl text-xs">
-                                                <span className="font-bold text-slate-600 dark:text-slate-300">{prevRev.label}</span>
+                                                <span className="font-bold text-slate-600 dark:text-slate-300">
+                                                    {prevRev.label} <span className="text-[10px] text-slate-400 font-normal ml-1">({formatDate(prevRev.date)})</span>
+                                                </span>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-slate-500 dark:text-slate-400 font-bold">{prevRev.correct}/{prevRev.total}</span>
                                                     <span className={`font-black ${accuracy >= (config.targetAccuracy || 80) ? 'text-emerald-500' : accuracy >= 60 ? 'text-amber-500' : 'text-red-500'}`}>

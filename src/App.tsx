@@ -650,6 +650,10 @@ export function App() {
                 reviewIdx={reviewData?.rIdx ?? null} 
                 onSubmit={handleReviewSubmit}
                 targetAccuracy={config.targetAccuracy}
+                onEditTopic={() => {
+                    setReviewData(null);
+                    if (currentReviewTopic) setEditTopic(currentReviewTopic);
+                }}
             />
 
             <EditReviewHistoryModal

@@ -783,7 +783,7 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
     );
 };
 
-export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy }: any) => {
+export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targetAccuracy, onEditTopic }: any) => {
     const [formState, setFormState] = useState({ correct: '', total: '20', difficulty: 'medium', timeSpent: '' });
     const [showLessons, setShowLessons] = useState(false);
     
@@ -820,7 +820,19 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
         <Modal isOpen={isOpen} onClose={onClose} title="Registrar Resultado" alignTopOnMobile={true}>
             <form onSubmit={handleFormSubmit} className="p-5 space-y-5">
                 <div className="text-center">
-                    <h4 className="font-black text-lg text-slate-800 dark:text-white leading-tight mb-1">{topic.title}</h4>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                        <h4 className="font-black text-lg text-slate-800 dark:text-white leading-tight">{topic.title}</h4>
+                        {onEditTopic && (
+                            <button 
+                                type="button"
+                                onClick={onEditTopic} 
+                                className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                                title="Editar Disciplina/Matéria"
+                            >
+                                <Edit2 size={14} />
+                            </button>
+                        )}
+                    </div>
                     <div className="flex items-center justify-center gap-2">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getAreaTheme(topic.area).bg} ${getAreaTheme(topic.area).text}`}>
                             {topic.area}
@@ -932,7 +944,9 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                                 const rScore = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
                                 return (
                                     <div key={i} className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-white/5 last:border-0 pb-1.5 last:pb-0">
-                                        <span className="font-bold text-slate-600 dark:text-slate-300">{r.label}</span>
+                                        <span className="font-bold text-slate-600 dark:text-slate-300">
+                                            {r.label} <span className="text-[10px] text-slate-400 font-normal ml-1">({formatDate(r.date)})</span>
+                                        </span>
                                         <div className="flex items-center gap-3">
                                             <span className="text-slate-500 text-[10px]">{r.correct}/{r.total} questões</span>
                                             <span className={`font-bold ${getPerformanceColor(rScore, targetAccuracy, 'text')}`}>
@@ -946,9 +960,21 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                     </div>
                 )}
                 
-                <button type="submit" className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide">
-                    Concluir Revisão
-                </button>
+                <div className="flex flex-col gap-2 pt-2">
+                    {onEditTopic && (
+                        <button 
+                            type="button" 
+                            onClick={onEditTopic}
+                            className="w-full py-3.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-bold text-sm rounded-2xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Edit2 size={16} />
+                            Editar Disciplina/Matéria
+                        </button>
+                    )}
+                    <button type="submit" className="w-full py-3.5 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-2xl shadow-xl shadow-slate-900/10 active:scale-[0.98] transition-all uppercase tracking-wide">
+                        Concluir Revisão
+                    </button>
+                </div>
             </form>
         </Modal>
     );
