@@ -8,14 +8,15 @@ import {
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
 import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget, getAreaIcon } from '../components';
-import { Modal } from '../modals';
+import { Modal, TodoModal, DailyTodoContent } from '../modals';
 
 export const HubView = ({ 
-    topics, simulados, config, onReview, onEditTopic, onDeleteTopic,
+    topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
     setSortOrder, setFilterArea, sortOrder, filterArea, searchTerm,
     onAddSimulado
 }: { 
     topics: Topic[], simulados: Simulado[], config: UserConfig, 
+    dailyNotes: Record<string, string>, setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>,
     onReview: (id: string, idx: number) => void, onEditTopic: (id: string) => void, onDeleteTopic?: (id: string) => void,
     setSortOrder: any, setFilterArea: any, 
     sortOrder: string, filterArea: string, searchTerm?: string,
@@ -23,6 +24,7 @@ export const HubView = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'temas' | 'stats' | 'simulados'>('overview');
     const [popoverPosition, setPopoverPosition] = useState<{rect: DOMRect, position: 'above' | 'below'} | null>(null);
+    const [todoModalOpen, setTodoModalOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     
     // Custom hook for media query
@@ -229,11 +231,21 @@ export const HubView = ({
                 document.body
             )}
 
+            {/* To Do Modal (Mobile Only) */}
+            {!isDesktop && (
+                <TodoModal 
+                    isOpen={todoModalOpen} 
+                    onClose={() => setTodoModalOpen(false)} 
+                    dailyNotes={dailyNotes}
+                    setDailyNotes={setDailyNotes}
+                />
+            )}
+
             {/* TABS & FILTERS */}
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2 overflow-x-auto custom-scrollbar">
                 <div className="flex items-center gap-2 px-2 shrink-0" role="tablist" aria-label="Seções do Hub">
                     {[
-                        { id: 'overview', label: 'Visão Geral', icon: LayoutGrid, color: 'indigo' },
+                        { id: 'overview', label: 'Atividades de Hoje', icon: LayoutGrid, color: 'indigo' },
                         { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
                         { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
                         { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
@@ -330,6 +342,25 @@ export const HubView = ({
             >
                 {activeTab === 'overview' && (
                     <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="flex flex-col gap-6 animate-fade-in">
+                        {/* Mobile: Toggle Checklist Button */}
+                        {!isDesktop && (
+                            <button 
+                                onClick={() => setTodoModalOpen(true)}
+                                className="w-full p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] flex items-center justify-between text-left shadow-sm active:scale-[0.98] transition-all"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center">
+                                        <ClipboardList size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800 dark:text-white text-base">Checklist do Dia</h3>
+                                        <p className="text-xs text-slate-500">Toque para ver suas atividades</p>
+                                    </div>
+                                </div>
+                                <ChevronRight size={20} className="text-slate-400" />
+                            </button>
+                        )}
+
                         {/* HERO: Para fazer hoje */}
                         <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
                             <div className="relative z-10">
@@ -356,29 +387,40 @@ export const HubView = ({
                             )}
                         </div>
 
-                        {/* Smart Suggestions */}
-                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                            <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Sugestões Inteligentes</h4>
-                            <SmartSuggestions topics={activeTopics} onReview={onReview} />
-                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="lg:col-span-2 space-y-6">
+                                {/* Smart Suggestions */}
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Sugestões Inteligentes</h4>
+                                    <SmartSuggestions topics={activeTopics} onReview={onReview} />
+                                </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Constância */}
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
-                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
-                                <div 
-                                    className="flex justify-center overflow-x-auto"
-                                    onPointerDownCapture={(e) => e.stopPropagation()}
-                                >
-                                    <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
+                                {/* Constância */}
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Constância</h4>
+                                    <div 
+                                        className="flex justify-center overflow-x-auto"
+                                        onPointerDownCapture={(e) => e.stopPropagation()}
+                                    >
+                                        <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />
+                                    </div>
                                 </div>
                             </div>
+                            
+                            <div className="space-y-6">
+                                {/* Desktop Checklist */}
+                                {isDesktop && (
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] shadow-sm overflow-hidden flex flex-col h-[400px]">
+                                        <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} />
+                                    </div>
+                                )}
 
-                            {/* Previsão de Carga */}
-                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                                <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
-                                <div className="h-48">
-                                    <FutureLoadWidget topics={activeTopics} />
+                                {/* Previsão de Carga */}
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-blue-500"/> Previsão de Carga</h4>
+                                    <div className="h-48">
+                                        <FutureLoadWidget topics={activeTopics} />
+                                    </div>
                                 </div>
                             </div>
                         </div>

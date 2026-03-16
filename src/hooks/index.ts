@@ -10,6 +10,7 @@ export const useSync = () => {
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [config, setConfig] = useState<UserConfig>({ examDate: '', targetAccuracy: 80 });
   const [scheduleProgress, setScheduleProgress] = useState<ScheduleProgress>({});
+  const [dailyNotes, setDailyNotes] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
   
   // Sync States
@@ -17,8 +18,8 @@ export const useSync = () => {
   const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('reviewflow_sync_key') || '');
   
   const dbRef = useRef<any>(null);
-  const stateRef = useRef({ topics, simulados, config, scheduleProgress });
-  const lastSyncedState = useRef({ topics: '', simulados: '', config: '', scheduleProgress: '' });
+  const stateRef = useRef({ topics, simulados, config, scheduleProgress, dailyNotes });
+  const lastSyncedState = useRef({ topics: '', simulados: '', config: '', scheduleProgress: '', dailyNotes: '' });
   const appId = APP_ID;
 
   const setSyncKey = (newKey: string) => {
@@ -26,6 +27,7 @@ export const useSync = () => {
           setTopics([]);
           setSimulados([]);
           setScheduleProgress({});
+          setDailyNotes({});
       }
 
       setStatus('syncing'); 
@@ -33,7 +35,7 @@ export const useSync = () => {
       localStorage.setItem('reviewflow_sync_key', newKey);
   };
 
-  useEffect(() => { stateRef.current = { topics, simulados, config, scheduleProgress }; }, [topics, simulados, config, scheduleProgress]);
+  useEffect(() => { stateRef.current = { topics, simulados, config, scheduleProgress, dailyNotes }; }, [topics, simulados, config, scheduleProgress, dailyNotes]);
 
   // 1. Initial Local Load
   useEffect(() => {
@@ -46,6 +48,8 @@ export const useSync = () => {
       if (c) setConfig(JSON.parse(c));
       const p = localStorage.getItem('reviewflow_schedule_progress');
       if (p) setScheduleProgress(JSON.parse(p));
+      const n = localStorage.getItem('reviewflow_daily_notes');
+      if (n) setDailyNotes(JSON.parse(n));
     } catch (e) { console.error(e); }
     setLoaded(true);
   }, []);
@@ -104,21 +108,48 @@ export const useSync = () => {
                             }
                             
                             if (d.config) {
-                                lastSyncedState.current.config = JSON.stringify(d.config);
-                                if (JSON.stringify(d.config) !== JSON.stringify(stateRef.current.config)) {
-                                    setConfig(d.config);
+                                const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.config = JSON.stringify(d.config);
+                                    if (JSON.stringify(d.config) !== JSON.stringify(stateRef.current.config)) {
+                                        setConfig(d.config);
+                                    }
                                 }
                             } else {
-                                lastSyncedState.current.config = JSON.stringify({ examDate: '', targetAccuracy: 80 });
+                                const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.config = JSON.stringify({ examDate: '', targetAccuracy: 80 });
+                                }
                             }
                             
                             if (d.scheduleProgress) {
-                                lastSyncedState.current.scheduleProgress = JSON.stringify(d.scheduleProgress);
-                                if (JSON.stringify(d.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
-                                    setScheduleProgress(d.scheduleProgress);
+                                const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.scheduleProgress = JSON.stringify(d.scheduleProgress);
+                                    if (JSON.stringify(d.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
+                                        setScheduleProgress(d.scheduleProgress);
+                                    }
                                 }
                             } else {
-                                lastSyncedState.current.scheduleProgress = JSON.stringify({});
+                                const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.scheduleProgress = JSON.stringify({});
+                                }
+                            }
+                            
+                            if (d.dailyNotes) {
+                                const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.dailyNotes = JSON.stringify(d.dailyNotes);
+                                    if (JSON.stringify(d.dailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
+                                        setDailyNotes(d.dailyNotes);
+                                    }
+                                }
+                            } else {
+                                const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
+                                if (!hasLocalChanges) {
+                                    lastSyncedState.current.dailyNotes = JSON.stringify({});
+                                }
                             }
                         }
                         setStatus('online');
@@ -151,22 +182,25 @@ export const useSync = () => {
     const currentSimuladosStr = JSON.stringify(simulados);
     const currentConfigStr = JSON.stringify(config);
     const currentScheduleProgressStr = JSON.stringify(scheduleProgress);
+    const currentDailyNotesStr = JSON.stringify(dailyNotes);
 
     // Local Save
     localStorage.setItem('reviewflow_v3_data', currentTopicsStr);
     localStorage.setItem('reviewflow_simulados', currentSimuladosStr);
     localStorage.setItem('reviewflow_config', currentConfigStr);
     localStorage.setItem('reviewflow_schedule_progress', currentScheduleProgressStr);
+    localStorage.setItem('reviewflow_daily_notes', currentDailyNotesStr);
     localStorage.setItem('reviewflow_sync_key', syncKey);
 
-    // Cloud Save (Debounced 5s to save costs)
+    // Cloud Save (Debounced 2s to save costs but remain responsive)
     if (status === 'online' && dbRef.current && syncKey) {
         // Check if there are actual local changes compared to last synced state
         if (
             currentTopicsStr === lastSyncedState.current.topics &&
             currentSimuladosStr === lastSyncedState.current.simulados &&
             currentConfigStr === lastSyncedState.current.config &&
-            currentScheduleProgressStr === lastSyncedState.current.scheduleProgress
+            currentScheduleProgressStr === lastSyncedState.current.scheduleProgress &&
+            currentDailyNotesStr === lastSyncedState.current.dailyNotes
         ) {
             return; // No local changes to save
         }
@@ -184,12 +218,11 @@ export const useSync = () => {
                     simulados,
                     config,
                     scheduleProgress,
+                    dailyNotes,
                     updatedAt: new Date().toISOString()
                 }));
 
                 // Fill in deletedAt timestamps for deleted items if missing
-                // Using new Date().toISOString() instead of serverTimestamp() because
-                // serverTimestamp() is not supported inside arrays in Firestore
                 if (payload.topics) {
                     payload.topics.forEach((t: any) => {
                         if (t.deleted && !t.deletedAt) {
@@ -210,7 +243,8 @@ export const useSync = () => {
                     topics: currentTopicsStr,
                     simulados: currentSimuladosStr,
                     config: currentConfigStr,
-                    scheduleProgress: currentScheduleProgressStr
+                    scheduleProgress: currentScheduleProgressStr,
+                    dailyNotes: currentDailyNotesStr
                 };
 
                 await setDoc(docRef, payload, { merge: true });
@@ -218,16 +252,17 @@ export const useSync = () => {
                 console.error("Save Error:", e);
                 setStatus('error');
             }
-        }, 5000);
+        }, 2000);
         return () => clearTimeout(timeout);
     }
-  }, [topics, simulados, config, scheduleProgress, syncKey, status, loaded, appId]);
+  }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, status, loaded, appId]);
 
   return { 
     topics, setTopics, 
     simulados, setSimulados, 
     config, setConfig,
     scheduleProgress, setScheduleProgress,
+    dailyNotes, setDailyNotes,
     loaded,
     status,
     syncKey,

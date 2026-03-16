@@ -37,7 +37,7 @@ const LoadingSpinner = () => (
 );
 
 export function App() {
-    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, loaded, status, syncKey, setSyncKey } = useSync();
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey } = useSync();
     const vibration = useVibration();
     
     // UI State
@@ -284,7 +284,7 @@ export function App() {
     };
 
     const handleSaveSimulado = (newS: Simulado) => {
-        const sWithId = { ...newS, id: newS.id || generateId() };
+        const sWithId = { ...newS, id: newS.id || generateId(), updatedAt: Date.now() };
         if (editingSimulado) {
             setSimulados(prev => prev.map(s => s.id === editingSimulado.id ? sWithId : s));
         } else {
@@ -483,6 +483,8 @@ export function App() {
                                 topics={activeTopics} 
                                 simulados={activeSimulados}
                                 config={config}
+                                dailyNotes={dailyNotes}
+                                setDailyNotes={setDailyNotes}
                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
                                 onEditTopic={(id) => {
                                     const t = topics.find(topic => topic.id === id);

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock, Circle, CheckCircle2 } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from '../types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
@@ -42,6 +42,188 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTo
                 </div>
             </div>
         </div>
+    );
+};
+
+export const DailyTodoContent = ({ 
+    dailyNotes, 
+    setDailyNotes, 
+    onClose,
+    hideHeader = false
+}: { 
+    dailyNotes: Record<string, string>, 
+    setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>,
+    onClose?: () => void,
+    hideHeader?: boolean
+}) => {
+    const todayStr = getTodayStr();
+    const [selectedDate, setSelectedDate] = useState(todayStr);
+    const [note, setNote] = useState(dailyNotes[selectedDate] || '');
+
+    useEffect(() => {
+        setNote(dailyNotes[selectedDate] || '');
+    }, [dailyNotes, selectedDate]);
+
+    // Auto-save when note changes
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (note !== (dailyNotes[selectedDate] || '')) {
+                setDailyNotes(prev => ({ ...prev, [selectedDate]: note }));
+            }
+        }, 500);
+        return () => clearTimeout(timeout);
+    }, [note, dailyNotes, selectedDate, setDailyNotes]);
+
+    const handlePrevDay = () => {
+        const d = new Date(selectedDate + 'T12:00:00');
+        d.setDate(d.getDate() - 1);
+        setSelectedDate(d.toISOString().split('T')[0]);
+    };
+
+    const handleNextDay = () => {
+        const d = new Date(selectedDate + 'T12:00:00');
+        d.setDate(d.getDate() + 1);
+        setSelectedDate(d.toISOString().split('T')[0]);
+    };
+
+    const displayDate = selectedDate === todayStr 
+        ? 'Hoje' 
+        : new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+
+    const lines = note.split('\n');
+
+    const toggleLine = (index: number) => {
+        const newLines = [...lines];
+        const line = newLines[index];
+        if (line.startsWith('- [ ] ')) {
+            newLines[index] = '- [x] ' + line.slice(6);
+        } else if (line.startsWith('- [x] ') || line.startsWith('- [X] ')) {
+            newLines[index] = '- [ ] ' + line.slice(6);
+        }
+        setNote(newLines.join('\n'));
+    };
+
+    const updateLine = (index: number, newText: string) => {
+        const newLines = [...lines];
+        const line = newLines[index];
+        const prefixMatch = line.match(/^- \[( |x|X)\] /);
+        if (prefixMatch) {
+            newLines[index] = prefixMatch[0] + newText;
+        } else {
+            newLines[index] = newText;
+        }
+        setNote(newLines.join('\n'));
+    };
+
+    const deleteLine = (index: number) => {
+        const newLines = [...lines];
+        newLines.splice(index, 1);
+        setNote(newLines.join('\n'));
+    };
+
+    const addLine = () => {
+        const newLines = [...lines];
+        if (newLines.length === 1 && newLines[0].trim() === '') {
+            newLines[0] = '- [ ] ';
+        } else {
+            newLines.push('- [ ] ');
+        }
+        setNote(newLines.join('\n'));
+    };
+
+    const hasContent = lines.some(l => l.trim() !== '');
+
+    return (
+        <div className="flex flex-col h-full max-h-[60vh] lg:max-h-[400px]">
+            {!hideHeader && (
+                <div className="p-4 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-white/[0.02]">
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-white">Atividades de Hoje</h3>
+                    {onClose && (
+                        <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
+                            <X size={16} className="text-slate-500" />
+                        </button>
+                    )}
+                </div>
+            )}
+            
+            <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-[#1c1c1e]">
+                <button onClick={handlePrevDay} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500">
+                    <ChevronLeft size={16} />
+                </button>
+                <div className="flex items-center gap-2">
+                    <Calendar size={14} className="text-blue-500" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 capitalize">{displayDate}</span>
+                    {selectedDate !== todayStr && (
+                        <button onClick={() => setSelectedDate(todayStr)} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 ml-1">
+                            (Voltar para Hoje)
+                        </button>
+                    )}
+                </div>
+                <button onClick={handleNextDay} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500">
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-2">
+                {!hasContent && (
+                    <div className="text-center py-6 text-slate-400">
+                        <p className="text-xs mb-2">Nenhuma atividade para este dia.</p>
+                    </div>
+                )}
+                
+                {lines.map((line, i) => {
+                    const isChecklist = line.startsWith('- [ ] ') || line.startsWith('- [x] ') || line.startsWith('- [X] ');
+                    const isChecked = line.startsWith('- [x] ') || line.startsWith('- [X] ');
+                    const text = isChecklist ? line.slice(6) : line;
+
+                    if (!isChecklist && line.trim() === '' && lines.length === 1) {
+                        return null;
+                    }
+
+                    return (
+                        <div key={i} className="flex items-start gap-2 group">
+                            <button 
+                                onClick={() => isChecklist ? toggleLine(i) : null} 
+                                className={`mt-0.5 shrink-0 transition-colors ${isChecklist ? 'text-slate-400 hover:text-blue-500 cursor-pointer' : 'text-transparent cursor-default'}`}
+                            >
+                                {isChecked ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Circle size={16} />}
+                            </button>
+                            
+                            <input 
+                                value={text}
+                                onChange={(e) => updateLine(i, e.target.value)}
+                                className={`flex-1 bg-transparent border-none focus:outline-none text-sm py-0.5 ${isChecked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}
+                                placeholder="Nova atividade..."
+                            />
+                            
+                            <button 
+                                onClick={() => deleteLine(i)} 
+                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-1"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    );
+                })}
+                
+                <button 
+                    onClick={addLine} 
+                    className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-500 mt-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-fit"
+                >
+                    <Plus size={14} /> Adicionar atividade
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export const TodoModal = ({ isOpen, onClose, dailyNotes, setDailyNotes }: { isOpen: boolean; onClose: () => void; dailyNotes: Record<string, string>; setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>> }) => {
+    if (!isOpen) return null;
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Atividades" alignTopOnMobile={true}>
+            <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} onClose={onClose} hideHeader={true} />
+        </Modal>
     );
 };
 
@@ -584,6 +766,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
     };
 
     const handleSave = () => { 
+        onSaveKey(tempKey);
         onSaveConfig(tempConfig); 
         onClose(); 
     };
@@ -693,7 +876,6 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Chave Firebase (Sync Key)</label>
                         <input type="text" value={tempKey} onChange={e => setTempKey(e.target.value)} placeholder="Cole sua chave aqui..." className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white appearance-none" />
                     </div>
-                    <button onClick={() => { onSaveKey(tempKey); }} className="w-full p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center gap-2 active:scale-95 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 font-bold text-xs uppercase hover:bg-blue-100 dark:hover:bg-blue-500/30 transition-all"><Cloud size={16}/> Salvar & Sincronizar</button>
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="flex-1 p-4 bg-white dark:bg-white/5 rounded-2xl flex flex-col items-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-100 dark:border-white/5 shadow-sm hover:scale-105 active:scale-95">
@@ -705,7 +887,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         <button onClick={runOptimization} className="flex-1 p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex flex-col items-center gap-2 active:scale-95 shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"><Zap size={24} className="text-white"/><span className="text-[10px] font-bold uppercase text-white">Otimizar</span></button>
                     </div>
                 </div>
-                <button onClick={handleSave} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-[20px] shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide">Salvar Tudo</button>
+                <button onClick={handleSave} className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-black font-bold text-sm rounded-[20px] shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide flex justify-center items-center gap-2"><Cloud size={18}/> Salvar e Sincronizar</button>
             </div>
         </Modal>
     );
