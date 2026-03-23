@@ -334,7 +334,7 @@ export function App() {
         reader.readAsText(file);
     };
 
-    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f2f4f7] dark:bg-black"><Activity size={40} className="animate-spin text-slate-600"/></div>;
+    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f5f5f5] dark:bg-[#121212]"><Activity size={40} className="animate-spin text-slate-500"/></div>;
 
     const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
@@ -351,7 +351,7 @@ export function App() {
 
     return (
         <div 
-            className="min-h-[100dvh] bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
+            className="min-h-[100dvh] bg-[#f5f5f5] dark:bg-[#121212] text-slate-800 dark:text-slate-300 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
         >
             
             {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}

@@ -30,7 +30,7 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
         <div className="w-full h-full flex flex-col justify-end relative px-2 pb-2">
             {/* Background Grid Lines */}
             <div className="absolute inset-x-0 top-0 bottom-8 flex flex-col justify-between pointer-events-none z-0 px-2 opacity-30">
-                <div className="w-full h-px bg-slate-200 dark:bg-white/10 border-t border-dashed border-slate-300 dark:border-white/20"></div>
+                <div className="w-full h-px bg-slate-200 dark:bg-slate-200/10 border-t border-dashed border-slate-300 dark:border-white/20"></div>
                 <div className="w-full h-px bg-slate-200 dark:bg-white/10 border-t border-dashed border-slate-300 dark:border-white/20"></div>
                 <div className="w-full h-px bg-slate-200 dark:bg-white/10 border-t border-dashed border-slate-300 dark:border-white/20"></div>
             </div>
@@ -86,7 +86,7 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
                             transform: 'translate(-50%, -100%)'
                         }}
                     >
-                        <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl whitespace-nowrap flex flex-col items-center">
+                        <div className="bg-slate-800 text-slate-100 text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl whitespace-nowrap flex flex-col items-center">
                             <span>{formatDate(tooltipData.p.date)}</span>
                             <span className="opacity-80 font-medium">{tooltipData.p.correct}/{tooltipData.p.total} ({tooltipData.p.acc}%)</span>
                         </div>
@@ -188,7 +188,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                     >
                         <div className="flex items-center gap-2">
                             <Database size={16} className="text-slate-500"/>
-                            <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wide">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
                                 {activeTab === 'topics' ? 'Matérias' : 'Simulados'}
                             </span>
                         </div>
@@ -199,7 +199,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
                             <button onClick={() => { setActiveTab('topics'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
                                 <span>Matérias</span>
-                                {activeTab === 'topics' && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                {activeTab === 'topics' && <Check size={14} className="text-slate-800 dark:text-white"/>}
                             </button>
                             <button onClick={() => { setActiveTab('simulados'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
                                 <span>Simulados</span>

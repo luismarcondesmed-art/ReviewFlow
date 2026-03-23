@@ -11,11 +11,11 @@ export const StatsView = () => {
       <div className="bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl rounded-[32px] p-6 lg:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-black shadow-lg shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-slate-800 dark:bg-slate-200 flex items-center justify-center text-slate-100 dark:text-black shadow-lg shrink-0">
               <BarChart2 size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas ENAMED</h1>
+              <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-200">Estatísticas ENAMED</h1>
               <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Guia Estatístico INEP 2011-2026</p>
             </div>
           </div>

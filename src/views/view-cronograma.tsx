@@ -34,7 +34,7 @@ const getPriorityColor = (priority: string | undefined) => {
     if (p.includes('amarelo')) return { dot: 'bg-amber-500', text: 'text-amber-500', bg: 'bg-amber-500/10' };
     if (p.includes('vermelho')) return { dot: 'bg-red-500', text: 'text-red-500', bg: 'bg-red-500/10' };
     if (p.includes('roxo')) return { dot: 'bg-purple-500', text: 'text-purple-500', bg: 'bg-purple-500/10' };
-    return { dot: 'bg-slate-300', text: 'text-slate-400', bg: 'bg-slate-100 dark:bg-white/5' };
+    return { dot: 'bg-slate-300', text: 'text-slate-400', bg: 'bg-slate-100 dark:bg-slate-200/5' };
 };
 
 const mapArea = (area: string): AreaType => {
@@ -57,10 +57,10 @@ const LessonItem = React.memo(({ item, isChecked, onToggle }: { item: any, isChe
             className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${isChecked ? 'bg-slate-50 dark:bg-black/20 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'}`}
         >
             <div className={`mt-1 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-slate-500'}`}>
-                {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
+                {isChecked && <Check size={12} className="text-slate-100" strokeWidth={3}/>}
             </div>
             <div className="flex-1 min-w-0">
-                <div className={`text-sm font-bold text-slate-800 dark:text-white leading-snug ${isChecked ? 'line-through text-slate-400' : ''}`}>
+                <div className={`text-sm font-bold text-slate-800 dark:text-slate-200 leading-snug ${isChecked ? 'line-through text-slate-400' : ''}`}>
                     {item.aula}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -165,7 +165,7 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                         {existingTopic && (
                             <button 
                                 onClick={handleNotionClick}
-                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all shadow-sm ${existingTopic.notionLink ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'bg-white dark:bg-zinc-800 text-slate-400 border border-slate-200 dark:border-white/10 hover:border-slate-400'}`}
+                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all shadow-sm ${existingTopic.notionLink ? 'bg-slate-800 dark:bg-white text-white dark:text-black' : 'bg-white dark:bg-zinc-800 text-slate-400 border border-slate-200 dark:border-white/10 hover:border-slate-400'}`}
                                 title={existingTopic.notionLink ? "Editar Link Notion" : "Adicionar Link Notion"}
                             >
                                 <LinkIcon size={14}/>
@@ -322,7 +322,7 @@ export const CronogramaView = ({
                         <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-scale-in">
                             <button 
                                 onClick={() => { onScheduleChange('MEDCOF'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-slate-800 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
                             >
                                 MedCof Extensivo
                                 {activeScheduleCode === 'MEDCOF' && <Check size={14}/>}

@@ -71,9 +71,9 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label="Perfil do Usuário"
-                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-slate-200/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
             >
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-sm`}>
+                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-slate-100 shadow-sm`}>
                     <User size={16} fill="currentColor" className="opacity-90"/>
                 </div>
             </button>
@@ -87,7 +87,7 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
                         </div>
                         <div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{rank.label}</div>
-                            <div className="text-lg font-black text-slate-800 dark:text-white">Nível {level}</div>
+                            <div className="text-lg font-black text-slate-800 dark:text-slate-200">Nível {level}</div>
                         </div>
                     </div>
                     
@@ -445,7 +445,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy, limit }: 
                             <div className={`absolute rounded-full border-2 border-white dark:border-zinc-900 transition-all duration-300 ease-out shadow-sm ${isHovered ? 'w-4 h-4 bg-purple-600 shadow-[0_0_15px_rgba(139,92,246,0.5)] scale-110' : 'w-2 h-2 bg-purple-500'}`}></div>
                             {isHovered && (
                                 <div className={`absolute ${isHigh ? 'top-full mt-3' : 'bottom-full mb-3'} flex flex-col items-center animate-scale-in z-[60]`}>
-                                    <div className="bg-slate-900/95 dark:bg-black/95 backdrop-blur-xl text-white p-3 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 min-w-[140px] text-center transform transition-transform">
+                                    <div className="bg-slate-800/95 dark:bg-black/95 backdrop-blur-xl text-white p-3 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 min-w-[140px] text-center transform transition-transform">
                                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{point.formattedDate}</div>
                                         <div className="font-bold text-xs text-white mb-1 whitespace-nowrap">{point.name}</div>
                                         <div className="flex items-center justify-center gap-2 mt-1">
@@ -791,7 +791,7 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
                     Total: <span className="text-slate-500">{chartData.totalLoad}q</span>
                 </div>
                 <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
-                    <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
+                    <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
                     <button onClick={() => setPeriod('week')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'week' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
                     <button onClick={() => setPeriod('month')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'month' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Mês</button>
                     <button onClick={() => setPeriod('total')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'total' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Total</button>

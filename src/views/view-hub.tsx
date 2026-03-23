@@ -24,7 +24,7 @@ export const HubView = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'temas' | 'stats' | 'simulados'>('overview');
     const [isPendingExpanded, setIsPendingExpanded] = useState(false);
-    const [todoModalOpen, setTodoModalOpen] = useState(false);
+    const [isChecklistExpanded, setIsChecklistExpanded] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     
     // Custom hook for media query
@@ -112,16 +112,6 @@ export const HubView = ({
             
 
 
-            {/* To Do Modal (Mobile Only) */}
-            {!isDesktop && (
-                <TodoModal 
-                    isOpen={todoModalOpen} 
-                    onClose={() => setTodoModalOpen(false)} 
-                    dailyNotes={dailyNotes}
-                    setDailyNotes={setDailyNotes}
-                />
-            )}
-
             {/* TABS & FILTERS */}
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2 overflow-x-auto custom-scrollbar">
                 <div className="flex items-center gap-2 px-2 shrink-0" role="tablist" aria-label="Seções do Hub">
@@ -133,7 +123,7 @@ export const HubView = ({
                     ].map((tab) => {
                         const isActive = activeTab === tab.id;
                         const colorClass = isActive 
-                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                            ? 'bg-slate-800 text-slate-100 dark:bg-slate-200 dark:text-slate-800 shadow-sm'
                             : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
                             
                         return (
@@ -220,35 +210,16 @@ export const HubView = ({
             >
                 {activeTab === 'overview' && (
                     <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="flex flex-col gap-6 animate-fade-in">
-                        {/* Mobile: Toggle Checklist Button */}
-                        {!isDesktop && (
-                            <button 
-                                onClick={() => setTodoModalOpen(true)}
-                                className="w-full p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] flex items-center justify-between text-left shadow-sm active:scale-[0.98] transition-all"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white flex items-center justify-center">
-                                        <ClipboardList size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-800 dark:text-white text-base">Checklist do Dia</h3>
-                                        <p className="text-xs text-slate-500">Toque para ver suas atividades</p>
-                                    </div>
-                                </div>
-                                <ChevronRight size={20} className="text-slate-400" />
-                            </button>
-                        )}
-
                         {/* HERO: Para fazer hoje */}
                         <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm relative overflow-hidden">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="relative z-10">
-                                    <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
+                                    <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-1">
                                         {dueItems.length > 0 ? 'Pronto para estudar?' : 'Tudo em dia!'}
                                     </h2>
                                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
                                         {dueItems.length > 0 ? (
-                                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-slate-900 dark:text-white lg:hover:text-slate-600 dark:lg:hover:text-slate-300 active:text-slate-600 dark:active:text-slate-300 underline decoration-slate-900/30 dark:decoration-white/30 underline-offset-4 transition-colors flex items-center gap-1 inline-flex">{dueItems.length} revisões ({dueItems.reduce((acc, item) => acc + (item.targetQ || 0), 0)} questões) <ChevronDown size={14} className={`transition-transform ${isPendingExpanded ? 'rotate-180' : ''}`} /></button> pendentes hoje.</>
+                                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-slate-800 dark:text-slate-200 lg:hover:text-slate-600 dark:lg:hover:text-slate-300 active:text-slate-600 dark:active:text-slate-300 underline decoration-slate-800/30 dark:decoration-white/30 underline-offset-4 transition-colors flex items-center gap-1 inline-flex">{dueItems.length} revisões ({dueItems.reduce((acc, item) => acc + (item.targetQ || 0), 0)} questões) <ChevronDown size={14} className={`transition-transform ${isPendingExpanded ? 'rotate-180' : ''}`} /></button> pendentes hoje.</>
                                         ) : (
                                             <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
                                         )}
@@ -258,9 +229,9 @@ export const HubView = ({
                                 {dueItems.length > 0 && (
                                     <button 
                                         onClick={startQuickSession} 
-                                        className="relative z-10 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white lg:hover:bg-slate-200 dark:lg:hover:bg-white/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
+                                        className="relative z-10 bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 lg:hover:bg-slate-200 dark:lg:hover:bg-white/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
                                     >
-                                        <PlayCircle size={18} fill="currentColor" className="text-slate-900 dark:text-white" />
+                                        <PlayCircle size={18} fill="currentColor" className="text-slate-800 dark:text-slate-200" />
                                         Começar
                                     </button>
                                 )}
@@ -283,7 +254,7 @@ export const HubView = ({
                                                             {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{item.topic.title}</h4>
+                                                            <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">{item.topic.title}</h4>
                                                             <div className="flex items-center gap-2 mt-0.5">
                                                                 <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded leading-none ${isOverdue ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-slate-200 text-slate-600 dark:bg-white/10 dark:text-slate-300'}`}>
                                                                     {isOverdue ? 'Atrasado' : 'Hoje'}
@@ -305,6 +276,38 @@ export const HubView = ({
                                 </div>
                             )}
                         </div>
+
+                        {/* Mobile: Toggle Checklist Dropdown */}
+                        {!isDesktop && (
+                            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] shadow-sm overflow-hidden">
+                                <button 
+                                    onClick={() => setIsChecklistExpanded(!isChecklistExpanded)}
+                                    className="w-full p-4 flex items-center justify-between text-left active:bg-slate-50 dark:active:bg-white/5 transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-200 flex items-center justify-center">
+                                            <ClipboardList size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Checklist do Dia</h3>
+                                            <p className="text-xs text-slate-500">Toque para ver suas atividades</p>
+                                        </div>
+                                    </div>
+                                    <ChevronDown size={20} className={`text-slate-400 transition-transform ${isChecklistExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                                
+                                {isChecklistExpanded && (
+                                    <div className="border-t border-slate-100 dark:border-white/5 animate-scale-in">
+                                        <DailyTodoContent 
+                                            dailyNotes={dailyNotes} 
+                                            setDailyNotes={setDailyNotes} 
+                                            onClose={() => setIsChecklistExpanded(false)} 
+                                            hideHeader={true} 
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2 space-y-6">
@@ -369,7 +372,7 @@ export const HubView = ({
                                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme.bg} ${theme.text}`}>
                                                     {React.createElement(getAreaIcon(areaId as any), { size: 16 })}
                                                 </div>
-                                                <h3 className="text-lg font-black text-slate-800 dark:text-white">{areaInfo?.name || areaId}</h3>
+                                                <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">{areaInfo?.name || areaId}</h3>
                                                 <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md">{topicsInArea.length}</span>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

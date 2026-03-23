@@ -21,7 +21,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in gap-6">
              <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                    <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3"><ClipboardList size={28} className="text-purple-500"/> Simulados</h3>
+                    <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-3"><ClipboardList size={28} className="text-purple-500"/> Simulados</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Provas</p>
                 </div>
             </div>
@@ -30,8 +30,8 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
             <div className="glass-panel p-6 rounded-[32px] shadow-sm flex flex-col h-64 relative overflow-hidden mt-2 lg:mt-0">
                 <div className="w-full flex items-center justify-between mb-4 z-10">
                     <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><BarChart2 size={16} className="text-purple-500"/> Desempenho Recente</h4>
-                    <div className="flex bg-slate-100 dark:bg-white/10 p-1 rounded-lg">
-                        <button onClick={() => setChartLimit(5)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartLimit === 5 ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Últimos 5</button>
+                    <div className="flex bg-slate-100 dark:bg-slate-200/10 p-1 rounded-lg">
+                        <button onClick={() => setChartLimit(5)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartLimit === 5 ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-800 dark:text-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Últimos 5</button>
                         <button onClick={() => setChartLimit(10)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartLimit === 10 ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Últimos 10</button>
                     </div>
                 </div>

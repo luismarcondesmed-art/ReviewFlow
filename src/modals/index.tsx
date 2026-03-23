@@ -20,7 +20,7 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTo
     return (
         <div className={`fixed inset-0 z-[100] flex ${alignTopOnMobile ? 'items-start pt-12 px-4 sm:pt-0 sm:items-center' : 'items-end sm:items-center'} justify-center sm:p-4 p-0`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
             {/* Backdrop with stronger blur for depth */}
-            <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-out" onClick={onClose} aria-hidden="true" />
+            <div className="absolute inset-0 bg-slate-800/40 dark:bg-black/70 backdrop-blur-md transition-opacity duration-300 ease-out" onClick={onClose} aria-hidden="true" />
             
             {/* Modal Container: Floating Glass Panel */}
             <div className={`relative w-full max-w-md bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${alignTopOnMobile ? 'rounded-[32px]' : 'rounded-t-[32px]'} sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}>
@@ -28,10 +28,10 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTo
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-black/5 dark:border-white/5 flex justify-between items-center z-10 sticky top-0 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-xl">
                     <div className="flex items-center gap-3">
-                        <h3 id="modal-title" className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
+                        <h3 id="modal-title" className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight">{title}</h3>
                         {headerContent}
                     </div>
-                    <button onClick={onClose} aria-label="Fechar" className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90">
+                    <button onClick={onClose} aria-label="Fechar" className="p-2 bg-black/5 dark:bg-slate-200/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90">
                         <X size={20} className="text-slate-500 dark:text-slate-300"/>
                     </button>
                 </div>
@@ -137,7 +137,7 @@ export const DailyTodoContent = ({
         <div className="flex flex-col h-full max-h-[60vh] lg:max-h-[400px]">
             {!hideHeader && (
                 <div className="p-4 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-white/[0.02]">
-                    <h3 className="font-bold text-sm text-slate-800 dark:text-white">Atividades de Hoje</h3>
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">Atividades de Hoje</h3>
                     {onClose && (
                         <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
                             <X size={16} className="text-slate-500" />
