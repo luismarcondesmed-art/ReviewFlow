@@ -43,7 +43,7 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-blue-500 dark:text-blue-400 drop-shadow-sm"
+                        className="text-slate-500 dark:text-slate-400 drop-shadow-sm"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                     />
@@ -436,7 +436,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                                         {/* Review Cards */}
                                                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                                             {t.reviews.map((r, i) => (
-                                                                                <div key={i} className="flex flex-col p-3 rounded-xl bg-white dark:bg-black/20 border border-slate-100 dark:border-white/5 transition-all hover:border-blue-500/30">
+                                                                                <div key={i} className="flex flex-col p-3 rounded-xl bg-white dark:bg-black/20 border border-slate-100 dark:border-white/5 transition-all hover:border-slate-300 dark:hover:border-white/20">
                                                                                     <div className="flex justify-between items-center mb-2">
                                                                                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{r.label}</span>
                                                                                         <span className={`text-[9px] font-bold ${r.done ? 'text-emerald-500' : 'text-slate-300'}`}>{formatDate(r.date)}</span>

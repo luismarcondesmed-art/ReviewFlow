@@ -131,7 +131,7 @@ export const formatFullDate = (d: string) => {
 
 export const getPriorityInfo = (imp: ImportanceType) => {
     switch(imp) {
-        case 'extreme': return { label: 'Extrema', bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' };
+        case 'extreme': return { label: 'Extrema', bg: 'bg-slate-100 dark:bg-slate-900/30', text: 'text-slate-600 dark:text-slate-400', dot: 'bg-slate-500' };
         case 'high': return { label: 'Alta', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' };
         case 'medium': return { label: 'Média', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400', dot: 'bg-amber-500' };
         case 'low': return { label: 'Baixa', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', dot: 'bg-red-500' };
@@ -669,7 +669,7 @@ export const mergeItems = (local: any[], cloud: any[]) => {
 
 export const getAreaTheme = (areaId: AreaType) => {
   switch (areaId) {
-    case 'clinica': return { bg: 'bg-blue-100 dark:bg-blue-500/10', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-500/20', activeBorder: 'border-blue-500', iconBg: 'bg-blue-500', chartFill: '#3b82f6' };
+    case 'clinica': return { bg: 'bg-slate-100 dark:bg-slate-500/10', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-500/20', activeBorder: 'border-slate-500', iconBg: 'bg-slate-500', chartFill: '#64748b' };
     case 'cirurgia': return { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-700 dark:text-red-300', border: 'border-red-200 dark:border-red-500/20', activeBorder: 'border-red-500', iconBg: 'bg-red-500', chartFill: '#ef4444' };
     case 'pediatria': return { bg: 'bg-amber-100 dark:bg-amber-500/10', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-500/20', activeBorder: 'border-amber-500', iconBg: 'bg-amber-500', chartFill: '#f59e0b' };
     case 'go': return { bg: 'bg-purple-100 dark:bg-purple-500/10', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-500/20', activeBorder: 'border-purple-500', iconBg: 'bg-purple-500', chartFill: '#a855f7' };

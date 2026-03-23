@@ -30,7 +30,7 @@ const LoadingSpinner = () => (
     <div className="flex flex-col h-full w-full items-center justify-center p-10 gap-4 animate-fade-in">
         <div className="relative">
             <div className="w-12 h-12 rounded-full border-4 border-slate-100 dark:border-white/10"></div>
-            <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-slate-500 border-t-transparent animate-spin"></div>
         </div>
         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Carregando</span>
     </div>
@@ -231,12 +231,13 @@ export function App() {
     const handleUpdateTopic = (updated: Topic) => {
         const old = topics.find(t => t.id === updated.id);
         let reviews = updated.reviews;
+        const baseQ = old ? old.reviews[0].targetQ : undefined;
         if (old && old.studyDate !== updated.studyDate) {
              if (confirm("Recalcular cronograma devido à mudança de data?")) {
-                 reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id);
+                 reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, undefined, baseQ);
              } else { updated.studyDate = old.studyDate; }
         } else if (old && old.importance !== updated.importance) {
-            reviews = reviews.map(r => r.done ? r : { ...r, targetQ: calculateNextLoad(updated.importance, null, r.type, null) });
+            reviews = reviews.map(r => r.done ? r : { ...r, targetQ: calculateNextLoad(updated.importance, null, r.type, null, baseQ) });
         }
         const finalTopic = { ...updated, reviews, updatedAt: Date.now() };
         setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
@@ -260,7 +261,8 @@ export function App() {
             };
             if (reviewData.rIdx + 1 < newReviews.length) {
                 const acc = total > 0 ? correct/total : 0;
-                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc);
+                const baseQ = t.reviews[0].targetQ;
+                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc, baseQ);
             }
             return { ...t, reviews: newReviews, updatedAt: Date.now() };
         }));
@@ -332,7 +334,7 @@ export function App() {
         reader.readAsText(file);
     };
 
-    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f2f4f7] dark:bg-black"><Activity size={40} className="animate-spin text-blue-600"/></div>;
+    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f2f4f7] dark:bg-black"><Activity size={40} className="animate-spin text-slate-600"/></div>;
 
     const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
@@ -349,14 +351,14 @@ export function App() {
 
     return (
         <div 
-            className="min-h-[100dvh] bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-blue-500/30 touch-manipulation"
+            className="min-h-[100dvh] bg-[#f2f4f7] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-200 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
         >
             
             {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
             <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
                 <div className="flex items-center gap-12 w-1/3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
-                        <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
+                        <div className="w-8 h-8 rounded-xl bg-slate-600 flex items-center justify-center text-white shadow-md">
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
                         <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white mr-4">ReviewFlow</h1>
@@ -395,7 +397,7 @@ export function App() {
                             {desktopNewMenuOpen && (
                                 <div className="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-2 animate-scale-in z-50">
                                     <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
-                                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center"><BookOpen size={16}/></div>
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center"><BookOpen size={16}/></div>
                                         Novo Tema
                                     </button>
                                     <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
@@ -557,7 +559,7 @@ export function App() {
                                     onClick={() => { setAddModalOpen(true); setIsActionMenuOpen(false); }}
                                     className="flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs"
                                 >
-                                    <div className="p-1.5 bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 rounded-lg"><BookOpen size={16}/></div>
+                                    <div className="p-1.5 bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400 rounded-lg"><BookOpen size={16}/></div>
                                     Nova Matéria
                                 </button>
                                 <button 

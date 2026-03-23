@@ -21,7 +21,7 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
                 <div className="space-y-1 hidden sm:block">
-                    <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3"><Activity size={28} className="text-blue-500"/> Estatísticas</h3>
+                    <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3"><Activity size={28} className="text-slate-500"/> Estatísticas</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytics & Performance</p>
                 </div>
             </div>

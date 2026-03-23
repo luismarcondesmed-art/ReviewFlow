@@ -97,7 +97,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
                                                         </div>
                                                         
                                                         <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-200 dark:border-white/5">
-                                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="flex items-center gap-2 px-4 py-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors">
+                                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="flex items-center gap-2 px-4 py-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                                                                 <Edit size={14}/> Editar
                                                             </button>
                                                             <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} className="flex items-center gap-2 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">

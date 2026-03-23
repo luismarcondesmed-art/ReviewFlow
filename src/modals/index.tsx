@@ -151,10 +151,10 @@ export const DailyTodoContent = ({
                     <ChevronLeft size={16} />
                 </button>
                 <div className="flex items-center gap-2">
-                    <Calendar size={14} className="text-blue-500" />
+                    <Calendar size={14} className="text-slate-500" />
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200 capitalize">{displayDate}</span>
                     {selectedDate !== todayStr && (
-                        <button onClick={() => setSelectedDate(todayStr)} className="text-[10px] font-bold text-blue-500 hover:text-blue-600 ml-1">
+                        <button onClick={() => setSelectedDate(todayStr)} className="text-[10px] font-bold text-slate-500 hover:text-slate-600 ml-1">
                             (Voltar para Hoje)
                         </button>
                     )}
@@ -184,7 +184,7 @@ export const DailyTodoContent = ({
                         <div key={i} className="flex items-start gap-2 group">
                             <button 
                                 onClick={() => isChecklist ? toggleLine(i) : null} 
-                                className={`mt-0.5 shrink-0 transition-colors ${isChecklist ? 'text-slate-400 hover:text-blue-500 cursor-pointer' : 'text-transparent cursor-default'}`}
+                                className={`mt-0.5 shrink-0 transition-colors ${isChecklist ? 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer' : 'text-transparent cursor-default'}`}
                             >
                                 {isChecked ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Circle size={16} />}
                             </button>
@@ -208,7 +208,7 @@ export const DailyTodoContent = ({
                 
                 <button 
                     onClick={addLine} 
-                    className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-500 mt-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-fit"
+                    className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 mt-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-fit"
                 >
                     <Plus size={14} /> Adicionar atividade
                 </button>
@@ -231,7 +231,7 @@ export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     const [step, setStep] = useState(0);
     const steps = [
         { title: "O Método ReviewFlow", icon: <Zap size={24} className="text-amber-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Bem-vindo! Este app utiliza <strong>Repetição Espaçada</strong> automática.</p></div> },
-        { title: "Cronograma & Automação", icon: <Calendar size={24} className="text-blue-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Acompanhe suas aulas.</p></div> },
+        { title: "Cronograma & Automação", icon: <Calendar size={24} className="text-slate-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Acompanhe suas aulas.</p></div> },
         { title: "Simulados & Métricas", icon: <BarChart3 size={24} className="text-emerald-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Registre seus simulados.</p></div> }
     ];
     if (!isOpen) return null;
@@ -590,7 +590,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             const isLate = !isDone && r.date < getTodayStr();
                             const acc = r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0;
                             return (
-                                <div key={i} className={`p-4 rounded-2xl border ${isDone ? 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5' : 'bg-slate-50 dark:bg-white/5 border-dashed border-slate-200 dark:border-white/5'} flex items-center justify-between group transition-all hover:border-blue-200 dark:hover:border-blue-500/30`}>
+                                <div key={i} className={`p-4 rounded-2xl border ${isDone ? 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5' : 'bg-slate-50 dark:bg-white/5 border-dashed border-slate-200 dark:border-white/5'} flex items-center justify-between group transition-all hover:border-slate-300 dark:hover:border-white/20`}>
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-bold uppercase shadow-sm ${isDone ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20' : 'bg-slate-200 text-slate-500 dark:bg-white/10'}`}>
                                             {r.label.split(':')[0]}
@@ -775,7 +775,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
         <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
             {status === 'online' && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>}
             {status === 'offline' && <div className="w-2 h-2 rounded-full bg-slate-400"></div>}
-            {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>}
+            {status === 'syncing' && <div className="w-2 h-2 rounded-full bg-slate-500 animate-bounce"></div>}
             {status === 'error' && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
             <span className="text-[10px] font-bold text-slate-500 uppercase">{status}</span>
         </div>
@@ -792,7 +792,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                     <ChevronRight size={20} className="opacity-60 group-hover:translate-x-1 transition-transform"/>
                 </button>
                 {installPrompt && (
-                    <button onClick={onInstallApp} className="w-full p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-transform animate-scale-in">
+                    <button onClick={onInstallApp} className="w-full p-4 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-black/10 active:scale-[0.98] transition-transform animate-scale-in">
                         <div className="p-2 bg-white/20 rounded-xl"><Smartphone size={20}/></div>
                         <div className="text-left"><div className="text-xs font-bold opacity-80 uppercase">Disponível</div><div className="font-black text-sm">Instalar Aplicativo</div></div>
                     </button>
@@ -827,15 +827,15 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase">O que incluir na notificação?</label>
                                 <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
-                                    <input type="checkbox" checked={tempConfig.notifications?.showModules} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showModules: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <input type="checkbox" checked={tempConfig.notifications?.showModules} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showModules: e.target.checked } }))} className="w-4 h-4 text-slate-900 bg-gray-100 border-gray-300 rounded focus:ring-slate-900 dark:focus:ring-white dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Quais módulos revisar</span>
                                 </label>
                                 <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
-                                    <input type="checkbox" checked={tempConfig.notifications?.showQuestionCount} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showQuestionCount: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <input type="checkbox" checked={tempConfig.notifications?.showQuestionCount} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showQuestionCount: e.target.checked } }))} className="w-4 h-4 text-slate-900 bg-gray-100 border-gray-300 rounded focus:ring-slate-900 dark:focus:ring-white dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Quantidade de questões</span>
                                 </label>
                                 <label className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 cursor-pointer">
-                                    <input type="checkbox" checked={tempConfig.notifications?.showNextTasks} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showNextTasks: e.target.checked } }))} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                                    <input type="checkbox" checked={tempConfig.notifications?.showNextTasks} onChange={e => setTempConfig(prev => ({ ...prev, notifications: { ...prev.notifications!, showNextTasks: e.target.checked } }))} className="w-4 h-4 text-slate-900 bg-gray-100 border-gray-300 rounded focus:ring-slate-900 dark:focus:ring-white dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Próximas tarefas (Amanhã)</span>
                                 </label>
                             </div>
@@ -858,7 +858,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                     </div>
                 </div>
                 <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
-                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Target size={18} className="text-blue-500"/> Metas de Estudo</h4>
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Target size={18} className="text-slate-500"/> Metas de Estudo</h4>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase">Data da Prova</label>
@@ -879,7 +879,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="flex-1 p-4 bg-white dark:bg-white/5 rounded-2xl flex flex-col items-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-100 dark:border-white/5 shadow-sm hover:scale-105 active:scale-95">
-                        {themeMode === 'light' ? <Sun size={24} className="text-amber-500"/> : <Moon size={24} className="text-blue-400"/>}
+                        {themeMode === 'light' ? <Sun size={24} className="text-amber-500"/> : <Moon size={24} className="text-slate-400"/>}
                         <span className="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Tema</span>
                     </button>
                     <div className="flex-1 flex gap-2">
@@ -947,10 +947,26 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
                  <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
                      <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={12}/> Temas com Dificuldade</label><span className="text-[10px] font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{selectedDifficulties.length} selecionados</span></div>
                      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/><input type="text" placeholder="Buscar matéria..." value={simTopicSearch} onChange={(e) => setSimTopicSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-black/20 rounded-xl text-xs font-bold outline-none appearance-none"/></div>
-                     <div className="max-h-32 overflow-y-auto custom-scrollbar space-y-1">
-                         {topics.filter(t => !t.deleted && t.title.toLowerCase().includes(simTopicSearch.toLowerCase())).map(t => {
+                     <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                         {topics.filter(t => !t.deleted && (t.title.toLowerCase().includes(simTopicSearch.toLowerCase()) || t.linkedLessons?.some(l => l.toLowerCase().includes(simTopicSearch.toLowerCase())))).map(t => {
                              const isSelected = selectedDifficulties.includes(t.id);
-                             return (<div key={t.id} onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className={`p-2 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'}`}><span className="text-xs font-bold truncate pr-2">{t.title}</span>{isSelected && <Check size={12}/>}</div>)
+                             return (
+                                 <div key={t.id} onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className={`p-3 rounded-xl flex flex-col gap-1 cursor-pointer transition-colors border ${isSelected ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent' : 'bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/5'}`}>
+                                     <div className="flex items-center justify-between">
+                                         <span className="text-sm font-bold truncate pr-2">{t.title}</span>
+                                         {isSelected && <Check size={14}/>}
+                                     </div>
+                                     {t.linkedLessons && t.linkedLessons.length > 0 && (
+                                         <div className="flex flex-wrap gap-1 mt-1">
+                                             {t.linkedLessons.map((l, i) => (
+                                                 <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-white/20 dark:bg-black/10 text-white dark:text-black' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'}`}>
+                                                     {l}
+                                                 </span>
+                                             ))}
+                                         </div>
+                                     )}
+                                 </div>
+                             )
                          })}
                          {topics.filter(t => !t.deleted).length === 0 && <div className="text-center text-[10px] text-slate-400 py-2">Nenhuma matéria cadastrada.</div>}
                      </div>
@@ -1034,8 +1050,9 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             {showLessons && (
                                 <div className="mt-2 flex flex-col gap-1 max-h-24 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-white/5 p-2 rounded-xl border border-slate-100 dark:border-white/5 text-left">
                                     {topic.linkedLessons.map((lesson: string, idx: number) => (
-                                        <div key={idx} className="text-[10px] font-medium text-slate-600 dark:text-slate-300 truncate">
-                                            • {lesson}
+                                        <div key={idx} className="text-[10px] font-medium text-slate-600 dark:text-slate-300 truncate flex justify-between">
+                                            <span>• {lesson}</span>
+                                            <span className="text-slate-400 font-bold">~{Math.max(1, Math.round((currentReview?.targetQ || 20) / topic.linkedLessons.length))}q</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1169,7 +1186,7 @@ export const OptimizationInfoModal = ({ isOpen, onClose }: any) => {
             <div className="p-6 space-y-6">
                 <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
                     <p>O algoritmo de otimização reajusta seu cronograma para garantir que você não perca revisões importantes.</p>
-                    <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shrink-0 font-bold">1</div><div><h4 className="font-bold text-slate-800 dark:text-white">Identificação de Atrasos</h4><p className="text-xs mt-1 opacity-80">O sistema varre todo o banco de dados procurando revisões que deveriam ter sido feitas ontem ou antes (atraso maior que 1 dia).</p></div></div>
+                    <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0 font-bold">1</div><div><h4 className="font-bold text-slate-800 dark:text-white">Identificação de Atrasos</h4><p className="text-xs mt-1 opacity-80">O sistema varre todo o banco de dados procurando revisões que deveriam ter sido feitas ontem ou antes (atraso maior que 1 dia).</p></div></div>
                     <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 shrink-0 font-bold">2</div><div><h4 className="font-bold text-slate-800 dark:text-white">Priorização Inteligente</h4><p className="text-xs mt-1 opacity-80">As revisões são ordenadas. Matérias mais antigas e de alta importância ganham prioridade para serem agendadas para <strong>Hoje</strong>.</p></div></div>
                     <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 shrink-0 font-bold">3</div><div><h4 className="font-bold text-slate-800 dark:text-white">Remanejamento Futuro</h4><p className="text-xs mt-1 opacity-80">Se uma revisão R1 atrasada é movida para hoje, as revisões futuras (R2, R3) desse tópico também são empurradas para frente, mantendo o intervalo de espaçamento correto.</p></div></div>
                 </div>

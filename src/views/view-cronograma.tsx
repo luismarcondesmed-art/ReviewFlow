@@ -29,7 +29,7 @@ const getPriorityWeight = (priority: string | undefined): number => {
 
 const getPriorityColor = (priority: string | undefined) => {
     const p = (priority || '').toLowerCase();
-    if (p.includes('azul')) return { dot: 'bg-blue-500', text: 'text-blue-500', bg: 'bg-blue-500/10' };
+    if (p.includes('azul')) return { dot: 'bg-slate-500', text: 'text-slate-500', bg: 'bg-slate-500/10' };
     if (p.includes('verde')) return { dot: 'bg-emerald-500', text: 'text-emerald-500', bg: 'bg-emerald-500/10' };
     if (p.includes('amarelo')) return { dot: 'bg-amber-500', text: 'text-amber-500', bg: 'bg-amber-500/10' };
     if (p.includes('vermelho')) return { dot: 'bg-red-500', text: 'text-red-500', bg: 'bg-red-500/10' };
@@ -54,9 +54,9 @@ const LessonItem = React.memo(({ item, isChecked, onToggle }: { item: any, isChe
     return (
         <div 
             onClick={() => onToggle(item.id)}
-            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${isChecked ? 'bg-slate-50 dark:bg-black/20 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 hover:border-blue-300 dark:hover:border-blue-500/30'}`}
+            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${isChecked ? 'bg-slate-50 dark:bg-black/20 border-transparent opacity-60' : 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'}`}
         >
-            <div className={`mt-1 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-blue-500'}`}>
+            <div className={`mt-1 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-white/20 group-hover:border-slate-500'}`}>
                 {isChecked && <Check size={12} className="text-white" strokeWidth={3}/>}
             </div>
             <div className="flex-1 min-w-0">
@@ -165,7 +165,7 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                         {existingTopic && (
                             <button 
                                 onClick={handleNotionClick}
-                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all shadow-sm ${existingTopic.notionLink ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'bg-white dark:bg-zinc-800 text-slate-400 border border-slate-200 dark:border-white/10 hover:border-blue-400'}`}
+                                className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all shadow-sm ${existingTopic.notionLink ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'bg-white dark:bg-zinc-800 text-slate-400 border border-slate-200 dark:border-white/10 hover:border-slate-400'}`}
                                 title={existingTopic.notionLink ? "Editar Link Notion" : "Adicionar Link Notion"}
                             >
                                 <LinkIcon size={14}/>
@@ -178,7 +178,7 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm 
                                 ${topicStatus === 'created' 
                                     ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' 
-                                    : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-blue-400'
+                                    : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-slate-400'
                                 }`}
                         >
                             {topicStatus === 'created' ? <Check size={12}/> : <Plus size={12}/>}
@@ -322,14 +322,14 @@ export const CronogramaView = ({
                         <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-scale-in">
                             <button 
                                 onClick={() => { onScheduleChange('MEDCOF'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-700 dark:text-slate-300'}`}
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
                             >
                                 MedCof Extensivo
                                 {activeScheduleCode === 'MEDCOF' && <Check size={14}/>}
                             </button>
                             <button 
                                 onClick={() => { onScheduleChange('ESTRATEGIA'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'ESTRATEGIA' ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-700 dark:text-slate-300'}`}
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'ESTRATEGIA' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
                             >
                                 Estratégia MED
                                 {activeScheduleCode === 'ESTRATEGIA' && <Check size={14}/>}
@@ -345,7 +345,7 @@ export const CronogramaView = ({
                         placeholder="Filtrar cronograma..." 
                         value={searchLocal}
                         onChange={(e) => setSearchLocal(e.target.value)}
-                        className="w-full h-full bg-slate-50 dark:bg-zinc-800 rounded-xl pl-9 pr-4 text-xs font-bold outline-none border border-transparent focus:border-blue-500/50 transition-all py-2.5 text-slate-800 dark:text-white"
+                        className="w-full h-full bg-slate-50 dark:bg-zinc-800 rounded-xl pl-9 pr-4 text-xs font-bold outline-none border border-transparent focus:border-slate-500/50 transition-all py-2.5 text-slate-800 dark:text-white"
                     />
                     {searchLocal && (
                         <button onClick={() => setSearchLocal('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -374,7 +374,7 @@ export const CronogramaView = ({
                         <h4 className="font-bold text-slate-800 dark:text-white mt-4 mb-2">Prioridade das Aulas (MedCof)</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 rounded-full bg-blue-500 shrink-0"></div>
+                                <div className="w-4 h-4 rounded-full bg-slate-500 shrink-0"></div>
                                 <span className="font-bold text-slate-800 dark:text-white">Ver primeiro (Azul)</span>
                             </div>
                             <div className="flex items-center gap-3">

@@ -11,7 +11,7 @@ export const StatsView = () => {
       <div className="bg-white/70 dark:bg-zinc-900/70 border border-white/20 dark:border-white/5 backdrop-blur-2xl rounded-[32px] p-6 lg:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-black shadow-lg shrink-0">
               <BarChart2 size={24} />
             </div>
             <div>
@@ -55,11 +55,11 @@ export const StatsView = () => {
                     </ul>
                 </div>
                 
-                <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                <div className="mt-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-4">
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-300 mb-2 flex items-center gap-2">
                     <BookOpen size={16} /> Como usar estes dados?
                   </h4>
-                  <ul className="text-xs text-blue-700 dark:text-blue-400/80 space-y-2 list-disc list-inside">
+                  <ul className="text-xs text-slate-700 dark:text-slate-400 space-y-2 list-disc list-inside">
                     <li><strong>Por Especialidade:</strong> Direcione seu tempo de estudo proporcionalmente às disciplinas mais cobradas.</li>
                     <li><strong>Por Tema:</strong> Foque seu estudo nos temas mais prevalentes de cada especialidade.</li>
                     <li><strong>Por Assunto:</strong> Estude de maneira objetiva os assuntos mais cobrados pelo INEP.</li>

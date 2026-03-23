@@ -47,7 +47,7 @@ export const Tooltip = ({ children, content, className = "relative inline-flex i
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
     if (level < 10) return { label: 'Estudante', icon: BookOpen, color: 'text-slate-400', bg: 'from-slate-700 to-slate-900' };
-    if (level < 20) return { label: 'Interno', icon: Star, color: 'text-blue-400', bg: 'from-blue-600 to-blue-900' };
+    if (level < 20) return { label: 'Interno', icon: Star, color: 'text-slate-400', bg: 'from-slate-600 to-slate-900' };
     if (level < 30) return { label: 'Residente', icon: Medal, color: 'text-amber-400', bg: 'from-amber-600 to-amber-900' };
     if (level < 50) return { label: 'Especialista', icon: Trophy, color: 'text-emerald-400', bg: 'from-emerald-600 to-emerald-900' };
     return { label: 'Chefe de Serviço', icon: Crown, color: 'text-purple-400', bg: 'from-purple-600 to-purple-900' };
@@ -253,7 +253,7 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
     }, [topics, simulados, range]);
 
     const StatCard = ({ label, value, subLabel, icon: Icon, colorClass }: any) => (
-        <div className={`flex-1 bg-white dark:bg-zinc-900 rounded-2xl ${compact ? 'p-3' : 'p-4'} border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/20 transition-all`}>
+        <div className={`flex-1 bg-white dark:bg-zinc-900 rounded-2xl ${compact ? 'p-3' : 'p-4'} border border-slate-100 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-slate-500/20 transition-all`}>
             <div>
                 <div className={`text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1`}>{label}</div>
                 <div className={`${compact ? 'text-xl' : 'text-2xl'} font-black text-slate-800 dark:text-white leading-none`}>{value}</div>
@@ -284,7 +284,7 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
             )}
             <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'} w-full`}>
                 <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
-                <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-blue-500 text-blue-500" />
+                <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-slate-500 text-slate-500" />
                 <StatCard label="Taxa de Acerto" value={`${accuracy}%`} subLabel={`em ${rangeLabel.toLowerCase()}`} icon={Target} colorClass="bg-emerald-500 text-emerald-500" />
                 {stats.avgTimePerQuestion ? (
                      <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
@@ -489,7 +489,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                 const isOverdue = item.date < today;
                 const priority = getPriorityInfo(item.topic.importance);
                 return (
-                    <div key={`${item.topic.id}-${item.idx}`} className="bg-white dark:bg-zinc-900/50 backdrop-blur-sm p-4 rounded-[20px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-blue-500/30 transition-all">
+                    <div key={`${item.topic.id}-${item.idx}`} className="bg-white dark:bg-zinc-900/50 backdrop-blur-sm p-4 rounded-[20px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between group hover:border-slate-500/30 transition-all">
                         <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-sm ${theme.bg} ${theme.text}`}>
                                 {isOverdue ? <AlertCircle size={20}/> : <Calendar size={20}/>}
@@ -515,7 +515,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                                             
                                             let dotColor = 'bg-slate-200 dark:bg-zinc-700'; // Future
                                             if (isDone) dotColor = 'bg-emerald-500';
-                                            else if (isToday || isNext) dotColor = 'bg-blue-500';
+                                            else if (isToday || isNext) dotColor = 'bg-slate-500';
 
                                             return (
                                                 <Tooltip 
@@ -530,7 +530,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                                                     }
                                                 >
                                                     <div className="flex items-center">
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-blue-500/30' : ''}`} />
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-slate-500/30' : ''}`} />
                                                         {i < item.topic.reviews.length - 1 && (
                                                             <div className={`w-2 h-px ${isDone ? 'bg-emerald-500/50' : 'bg-slate-200 dark:bg-zinc-700'}`} />
                                                         )}
@@ -641,7 +641,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         <button
                             key={r}
                             onClick={() => { setRange(r as any); setOffsetDays(0); }}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-white dark:bg-zinc-800 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-white dark:bg-zinc-800 text-slate-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
                         >
                             {r}D
                         </button>
@@ -652,7 +652,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         <ChevronLeft size={14} />
                     </button>
                     {offsetDays > 0 && (
-                        <button onClick={handleReset} className="px-2 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+                        <button onClick={handleReset} className="px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/20 text-slate-600 dark:text-slate-400 text-[10px] font-bold hover:bg-slate-200 dark:hover:bg-slate-900/40 transition-colors">
                             Hoje
                         </button>
                     )}
@@ -673,10 +673,10 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         }
 
                         let colorClass = 'bg-slate-100 dark:bg-white/5 border border-transparent';
-                        if (day.count > 0) colorClass = 'bg-blue-200 dark:bg-blue-900/50 border-blue-300 dark:border-blue-800';
-                        if (day.count > 10) colorClass = 'bg-blue-300 dark:bg-blue-700/60 border-blue-400 dark:border-blue-600';
-                        if (day.count > 30) colorClass = 'bg-blue-400 dark:bg-blue-600/80 border-blue-500 dark:border-blue-500';
-                        if (day.count > 60) colorClass = 'bg-blue-500 dark:bg-blue-500 border-blue-600 dark:border-blue-400';
+                        if (day.count > 0) colorClass = 'bg-slate-200 dark:bg-slate-900/50 border-slate-300 dark:border-slate-800';
+                        if (day.count > 10) colorClass = 'bg-slate-300 dark:bg-slate-700/60 border-slate-400 dark:border-slate-600';
+                        if (day.count > 30) colorClass = 'bg-slate-400 dark:bg-slate-600/80 border-slate-500 dark:border-slate-500';
+                        if (day.count > 60) colorClass = 'bg-slate-500 dark:bg-slate-500 border-slate-600 dark:border-slate-400';
 
                         return (
                             <div 
@@ -689,7 +689,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                                 onMouseLeave={() => setTooltipData(null)}
                             >
                                 <div 
-                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-[4px] transition-all ${colorClass} ${day.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
+                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-[4px] transition-all ${colorClass} ${day.isToday ? 'ring-2 ring-slate-500 ring-offset-1 dark:ring-offset-zinc-900' : ''}`}
                                 />
                             </div>
                         );
@@ -705,9 +705,9 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                     <span>Menos</span>
                     <div className="flex gap-1">
                         <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-slate-100 dark:bg-white/5"></div>
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-200 dark:bg-blue-900/50"></div>
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-400 dark:bg-blue-600/80"></div>
-                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-blue-500 dark:bg-blue-500"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-slate-200 dark:bg-slate-900/50"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-slate-400 dark:bg-slate-600/80"></div>
+                        <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[3px] bg-slate-500 dark:bg-slate-500"></div>
                     </div>
                     <span>Mais</span>
                 </div>
@@ -725,7 +725,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                     <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 flex flex-col items-center min-w-[80px]">
                         <span className="text-slate-400 mb-0.5">{tooltipData.day.dayObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                         {tooltipData.day.count > 0 ? (
-                            <span className="text-blue-400">{tooltipData.day.correct}/{tooltipData.day.total} ({Math.round(tooltipData.day.correct/tooltipData.day.total*100)}%)</span>
+                            <span className="text-slate-400">{tooltipData.day.correct}/{tooltipData.day.total} ({Math.round(tooltipData.day.correct/tooltipData.day.total*100)}%)</span>
                         ) : (
                             <span className="opacity-50">Sem atividade</span>
                         )}
@@ -788,7 +788,7 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-bold text-slate-500">
-                    Total: <span className="text-blue-500">{chartData.totalLoad}q</span>
+                    Total: <span className="text-slate-500">{chartData.totalLoad}q</span>
                 </div>
                 <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
                     <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
@@ -816,12 +816,12 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
                             <div className="flex flex-col items-center gap-1.5 sm:gap-2 flex-1 group relative h-full w-full">
                                 <div className="w-full bg-slate-100 dark:bg-white/5 rounded-t-sm sm:rounded-t-md flex items-end justify-center relative overflow-hidden h-full">
                                     <div 
-                                        className={`w-full rounded-t-sm sm:rounded-t-md transition-all duration-500 ${isToday ? 'bg-blue-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
+                                        className={`w-full rounded-t-sm sm:rounded-t-md transition-all duration-500 ${isToday ? 'bg-slate-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
                                         style={{ height: `${heightPct}%` }}
                                     ></div>
                                 </div>
                                 {showLabel && (
-                                    <span className={`text-[7px] sm:text-[9px] font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} absolute -bottom-4`}>
+                                    <span className={`text-[7px] sm:text-[9px] font-bold uppercase ${isToday ? 'text-slate-600 dark:text-slate-400' : 'text-slate-400'} absolute -bottom-4`}>
                                         {isToday ? 'Hoj' : (period === 'week' ? day.dayOfWeek.substring(0, 3) : `${day.dateObj.getDate()}/${day.dateObj.getMonth()+1}`)}
                                     </span>
                                 )}
@@ -897,7 +897,7 @@ export const RetentionWidget = React.memo(({ topics }: { topics: Topic[] }) => {
                         <span>{stats.cold} ({getPct(stats.cold)}%)</span>
                     </div>
                     <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-400" style={{width: `${getPct(stats.cold)}%`}}></div>
+                        <div className="h-full bg-slate-400" style={{width: `${getPct(stats.cold)}%`}}></div>
                     </div>
                 </div>
                 
@@ -929,7 +929,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
 
     // Calculate days since last review
     let lastReviewText = "Não iniciado";
-    let heatIcon = <div className="text-blue-400" title="Frio"><Flame size={14} /></div>; // Default cold
+    let heatIcon = <div className="text-slate-400" title="Frio"><Flame size={14} /></div>; // Default cold
     
     if (prevReview) {
         const prevDate = new Date(prevReview.date + 'T12:00:00');
@@ -947,7 +947,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
             lastReviewText = `Há ${diffDays} dias`;
             if (diffDays <= 3) heatIcon = <div className="text-orange-400" title="Morno"><Flame size={14} fill="currentColor" /></div>;
             else if (diffDays <= 7) heatIcon = <div className="text-amber-400" title="Esfriando"><Flame size={14} /></div>;
-            // else remains cold (blue)
+            // else remains cold (slate)
         }
     }
 
@@ -976,7 +976,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
         <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all w-full
             ${isPico 
                 ? 'border-indigo-300 dark:border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] dark:shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
-                : 'border-black/5 dark:border-white/5 hover:border-blue-500/30'
+                : 'border-black/5 dark:border-white/5 hover:border-slate-500/30'
             }
         `}>
             {isOverdue && (
@@ -1005,7 +1005,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                 {/* Desktop Actions */}
                 <div className="hidden md:flex items-center gap-1 shrink-0">
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
+                        <button onClick={onEdit} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-slate-500"><Edit size={14}/></button>
                         {onDelete && (
                             <button onClick={() => onDelete(topic.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
                         )}
@@ -1044,7 +1044,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                         
                         let dotColor = 'bg-slate-200 dark:bg-zinc-700'; // Future
                         if (isDone) dotColor = 'bg-emerald-500';
-                        else if (isToday || isNext) dotColor = 'bg-blue-500';
+                        else if (isToday || isNext) dotColor = 'bg-slate-500';
 
                         return (
                             <Tooltip
@@ -1060,7 +1060,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                                 }
                             >
                                 <div className="flex items-center">
-                                    <div className={`w-2 h-2 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-blue-500/30' : ''}`} />
+                                    <div className={`w-2 h-2 rounded-full ${dotColor} ${isNext ? 'ring-2 ring-slate-500/30' : ''}`} />
                                     {i < topic.reviews.length - 1 && (
                                         <div className={`w-3 h-px ${isDone ? 'bg-emerald-500/50' : 'bg-slate-200 dark:bg-zinc-700'}`} />
                                     )}
@@ -1078,7 +1078,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                         </div>
                     )}
                     {nextReview && (
-                        <div className="text-[9px] font-bold text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <div className="text-[9px] font-bold text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded flex items-center gap-1">
                             <Target size={10}/> {nextReview.targetQ}q
                         </div>
                     )}
