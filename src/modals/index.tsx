@@ -419,13 +419,13 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                     <div className="flex p-2 bg-slate-50/50 dark:bg-white/5 border-b border-black/5 dark:border-white/5 backdrop-blur-sm">
                         <button 
                             onClick={() => setActiveTab('details')}
-                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'details' ? 'bg-white dark:bg-white/10 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'details' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
                         >
                             <LayoutList size={14}/> Detalhes
                         </button>
                         <button 
                             onClick={() => setActiveTab('history')}
-                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-white dark:bg-white/10 shadow-sm text-purple-600 dark:text-purple-400' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
+                            className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'}`}
                         >
                             <History size={14}/> Histórico
                         </button>
@@ -436,13 +436,13 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Tema</label>
-                            <input name="title" defaultValue={safeTopic.title || ''} type="text" className="w-full text-lg font-bold bg-white dark:bg-black/20 p-4 rounded-2xl outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 transition-all appearance-none focus:ring-4 focus:ring-blue-500/10" required placeholder="Ex: Diabetes, HAS..." />
+                            <input name="title" defaultValue={safeTopic.title || ''} type="text" className="w-full text-lg font-bold bg-white dark:bg-black/20 p-4 rounded-2xl outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 transition-all appearance-none focus:ring-4 focus:ring-slate-100 dark:focus:ring-white/5" required placeholder="Ex: Diabetes, HAS..." />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Área</label>
                                 <div className="relative">
-                                    <select name="area" defaultValue={safeTopic.area || 'clinica'} className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none appearance-none cursor-pointer text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50">
+                                    <select name="area" defaultValue={safeTopic.area || 'clinica'} className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none appearance-none cursor-pointer text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30">
                                         {AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}
                                     </select>
                                     <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" size={16}/>
@@ -450,7 +450,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Disciplina</label>
-                                <input name="subarea" type="text" defaultValue={safeTopic.subarea || ''} placeholder="Ex: Cardio" className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 appearance-none" />
+                                <input name="subarea" type="text" defaultValue={safeTopic.subarea || ''} placeholder="Ex: Cardio" className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none" />
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -458,9 +458,9 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             {tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-2">
                                     {tags.map((tag, idx) => (
-                                        <span key={idx} className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wide">
+                                        <span key={idx} className="flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white rounded-lg text-xs font-bold uppercase tracking-wide">
                                             {tag}
-                                            <button type="button" onClick={() => handleRemoveTag(idx)} className="hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+                                            <button type="button" onClick={() => handleRemoveTag(idx)} className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                                                 <X size={12} />
                                             </button>
                                         </span>
@@ -473,12 +473,12 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                 onChange={(e) => setNewTagInput(e.target.value)}
                                 onKeyDown={handleAddTag}
                                 placeholder="Digite uma disciplina e aperte Enter" 
-                                className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 appearance-none" 
+                                className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none" 
                             />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Início</label>
-                            <input name="date" type="date" defaultValue={safeTopic.studyDate || getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-blue-500/50 appearance-none min-h-[54px]" required />
+                            <input name="date" type="date" defaultValue={safeTopic.studyDate || getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none min-h-[54px]" required />
                         </div>
                         <div className="space-y-3">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Prioridade</label>
@@ -503,9 +503,9 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                             value={newLessonInput}
                                             onChange={(e) => setNewLessonInput(e.target.value)}
                                             placeholder="Buscar aula no cronograma..."
-                                            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-transparent focus:border-blue-500/50 transition-all"
+                                            className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-transparent focus:border-slate-400 dark:focus:border-white/30 transition-all"
                                         />
-                                        <button type="button" onClick={() => handleAddLesson(newLessonInput)} className="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-lg active:scale-90"><Plus size={18}/></button>
+                                        <button type="button" onClick={() => handleAddLesson(newLessonInput)} className="p-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl lg:hover:bg-slate-800 dark:lg:hover:bg-slate-200 transition-colors shadow-lg active:scale-90"><Plus size={18}/></button>
                                     </div>
                                     {/* Suggestions Dropdown */}
                                     {suggestions.length > 0 && (
@@ -540,7 +540,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                             <button 
                                 type="button" 
                                 onClick={() => setShowAdvanced(!showAdvanced)} 
-                                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors w-full justify-center py-2 border border-dashed border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5"
+                                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors w-full justify-center py-2 border border-dashed border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5"
                             >
                                 <SlidersHorizontal size={14}/> {showAdvanced ? 'Ocultar Personalização' : 'Configuração Personalizada'}
                             </button>
@@ -612,7 +612,7 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                             </div>
                                         )}
                                         {onEditReview && (
-                                            <button onClick={() => onEditReview(i)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-blue-500 transition-colors">
+                                            <button onClick={() => onEditReview(i)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                                                 <Edit2 size={14}/>
                                             </button>
                                         )}
@@ -883,7 +883,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         <span className="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Tema</span>
                     </button>
                     <div className="flex-1 flex gap-2">
-                        <button onClick={onShowOptimizationInfo} className="w-16 flex items-center justify-center p-4 bg-white dark:bg-white/5 rounded-2xl active:scale-95 text-slate-400 hover:text-blue-500 transition-colors border border-slate-100 dark:border-white/5 shadow-sm hover:bg-slate-50 dark:hover:bg-white/10"><Info size={24}/></button>
+                        <button onClick={onShowOptimizationInfo} className="w-16 flex items-center justify-center p-4 bg-white dark:bg-white/5 rounded-2xl active:scale-95 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-100 dark:border-white/5 shadow-sm hover:bg-slate-50 dark:hover:bg-white/10"><Info size={24}/></button>
                         <button onClick={runOptimization} className="flex-1 p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex flex-col items-center gap-2 active:scale-95 shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"><Zap size={24} className="text-white"/><span className="text-[10px] font-bold uppercase text-white">Otimizar</span></button>
                     </div>
                 </div>
@@ -945,12 +945,12 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
                     </div>
                  </div>
                  <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
-                     <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={12}/> Temas com Dificuldade</label><span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">{selectedDifficulties.length} selecionados</span></div>
+                     <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={12}/> Temas com Dificuldade</label><span className="text-[10px] font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-full">{selectedDifficulties.length} selecionados</span></div>
                      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/><input type="text" placeholder="Buscar matéria..." value={simTopicSearch} onChange={(e) => setSimTopicSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-black/20 rounded-xl text-xs font-bold outline-none appearance-none"/></div>
                      <div className="max-h-32 overflow-y-auto custom-scrollbar space-y-1">
                          {topics.filter(t => !t.deleted && t.title.toLowerCase().includes(simTopicSearch.toLowerCase())).map(t => {
                              const isSelected = selectedDifficulties.includes(t.id);
-                             return (<div key={t.id} onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className={`p-2 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-blue-500 text-white' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'}`}><span className="text-xs font-bold truncate pr-2">{t.title}</span>{isSelected && <Check size={12}/>}</div>)
+                             return (<div key={t.id} onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className={`p-2 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'}`}><span className="text-xs font-bold truncate pr-2">{t.title}</span>{isSelected && <Check size={12}/>}</div>)
                          })}
                          {topics.filter(t => !t.deleted).length === 0 && <div className="text-center text-[10px] text-slate-400 py-2">Nenhuma matéria cadastrada.</div>}
                      </div>
@@ -958,7 +958,7 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
                  </div>
                  <div className="flex gap-4">
                     {onDelete && simulado && <button type="button" onClick={() => { if(window.confirm('Tem certeza que deseja excluir?')) { onDelete(simulado.id); onClose(); } }} className="flex-[1] bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold py-4 rounded-[20px] shadow-sm active:scale-[0.98] transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2 border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-900/20"><Trash2 size={16}/> <span className="hidden sm:inline">Excluir</span></button>}
-                    <button type="submit" className={`flex-[2] bg-purple-600 text-white font-bold py-4 rounded-[20px] shadow-lg shadow-purple-500/30 active:scale-[0.98] transition-all text-sm uppercase tracking-wider hover:bg-purple-700 ${!simulado ? 'w-full' : ''}`}>Salvar Resultado</button>
+                    <button type="submit" className={`flex-[2] bg-slate-900 dark:bg-white text-white dark:text-black font-bold py-4 rounded-[20px] shadow-lg shadow-black/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider ${!simulado ? 'w-full' : ''}`}>Salvar Resultado</button>
                  </div>
             </form>
         </Modal>
@@ -1008,7 +1008,7 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                             <button 
                                 type="button"
                                 onClick={onEditTopic} 
-                                className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                                 title="Editar Disciplina/Matéria"
                             >
                                 <Edit2 size={14} />
@@ -1045,7 +1045,7 @@ export const ReviewModal = ({ isOpen, onClose, topic, reviewIdx, onSubmit, targe
                 </div>
                 
                 <div className="flex flex-col gap-4">
-                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between transition-all focus-within:border-blue-500/50 focus-within:bg-blue-50/50 dark:focus-within:bg-blue-900/10">
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-slate-200/60 dark:border-white/5 flex items-center justify-between transition-all focus-within:border-slate-400 focus-within:bg-slate-100 dark:focus-within:bg-white/5 dark:focus-within:border-white/20">
                         <div className="flex items-center gap-2">
                             <input 
                                 type="number" 

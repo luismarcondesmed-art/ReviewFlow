@@ -199,11 +199,11 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
                             <button onClick={() => { setActiveTab('topics'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
                                 <span>Matérias</span>
-                                {activeTab === 'topics' && <Check size={14} className="text-blue-500"/>}
+                                {activeTab === 'topics' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                             </button>
                             <button onClick={() => { setActiveTab('simulados'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
                                 <span>Simulados</span>
-                                {activeTab === 'simulados' && <Check size={14} className="text-blue-500"/>}
+                                {activeTab === 'simulados' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                             </button>
                         </div>
                     )}
@@ -216,7 +216,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         <div className="relative flex-1 sm:flex-none">
                             <button 
                                 onClick={() => setGroupMenuOpen(!groupMenuOpen)}
-                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${groupBy !== 'none' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200 dark:border-blue-500/30' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${groupBy !== 'none' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                             >
                                 <LayoutGrid size={16}/>
                                 <span className="hidden sm:inline">Agrupar</span>
@@ -225,19 +225,19 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                 <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
                                     <button onClick={() => { setGroupBy('none'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Sem Agrupar</span>
-                                        {groupBy === 'none' && <Check size={14} className="text-blue-500"/>}
+                                        {groupBy === 'none' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                     </button>
                                     <button onClick={() => { setGroupBy('area'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Por Área</span>
-                                        {groupBy === 'area' && <Check size={14} className="text-blue-500"/>}
+                                        {groupBy === 'area' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                     </button>
                                     <button onClick={() => { setGroupBy('tag'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Por Disciplina</span>
-                                        {groupBy === 'tag' && <Check size={14} className="text-blue-500"/>}
+                                        {groupBy === 'tag' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                     </button>
                                     <button onClick={() => { setGroupBy('block'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Por Bloco</span>
-                                        {groupBy === 'block' && <Check size={14} className="text-blue-500"/>}
+                                        {groupBy === 'block' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                     </button>
                                 </div>
                             )}
@@ -268,12 +268,12 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                 <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-y-auto max-h-60 animate-scale-in z-30 custom-scrollbar">
                                     <button onClick={() => { setFilterArea('all'); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
                                         <span>Todas as Áreas</span>
-                                        {filterArea === 'all' && <Check size={14} className="text-blue-500"/>}
+                                        {filterArea === 'all' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                     </button>
                                     {AREAS.map(a => (
                                         <button key={a.id} onClick={() => { setFilterArea(a.id); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 truncate flex items-center justify-between">
                                             <span>{a.name}</span>
-                                            {filterArea === a.id && <Check size={14} className="text-blue-500"/>}
+                                            {filterArea === a.id && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                         </button>
                                     ))}
                                 </div>
@@ -305,7 +305,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                             <div key={groupName} className="bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm flex flex-col relative z-0">
                                 {groupBy !== 'none' && (
                                     <div className="bg-slate-50/50 dark:bg-black/20 p-4 border-b border-slate-100 dark:border-white/5 flex items-center gap-3 rounded-t-[24px]">
-                                        <div className="w-2 h-6 bg-blue-500 rounded-full"></div>
+                                        <div className="w-2 h-6 bg-slate-900 dark:bg-white rounded-full"></div>
                                         <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{groupName}</h3>
                                         <span className="text-xs font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-2 py-0.5 rounded-md">{groupTopics.length}</span>
                                     </div>
@@ -346,7 +346,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                                 {t.tags && t.tags.length > 0 && (
                                                                     <div className="mt-1 flex flex-wrap gap-1">
                                                                         {t.tags.map((tag, idx) => (
-                                                                            <span key={idx} className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded text-[9px] font-bold uppercase tracking-wide">
+                                                                            <span key={idx} className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white rounded text-[9px] font-bold uppercase tracking-wide">
                                                                                 {tag}
                                                                             </span>
                                                                         ))}
@@ -366,7 +366,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                             <td className="p-3 sm:p-4">
                                                                 <div className="flex items-center justify-center gap-1 sm:gap-2">
                                                                     <div className="w-8 sm:w-16 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                                                        <div className="h-full bg-blue-500" style={{width: `${progressPercentage}%`}}></div>
+                                                                        <div className="h-full bg-slate-900 dark:bg-white" style={{width: `${progressPercentage}%`}}></div>
                                                                     </div>
                                                                     <span className="text-[9px] sm:text-[10px] font-bold text-slate-400">{progressPercentage}%</span>
                                                                 </div>
@@ -461,7 +461,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
 
                                                                         {/* Actions */}
                                                                         <div className="flex justify-end gap-3 pt-2 border-t border-slate-200/50 dark:border-white/5">
-                                                                            <button onClick={() => onEdit(t)} className="flex items-center gap-2 px-4 py-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors">
+                                                                            <button onClick={() => onEdit(t)} className="flex items-center gap-2 px-4 py-2 hover:bg-white dark:hover:bg-white/10 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
                                                                                 <Edit size={14}/> Editar
                                                                             </button>
                                                                             <button onClick={() => onDelete(t.id)} className="flex items-center gap-2 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs font-bold text-slate-500 hover:text-red-500 transition-colors">

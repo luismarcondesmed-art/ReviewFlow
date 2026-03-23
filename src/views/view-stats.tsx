@@ -21,7 +21,7 @@ export const StatsView = () => {
           </div>
           <button 
             onClick={() => setInfoOpen(!infoOpen)}
-            className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+            className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}
             title="Informações das Estatísticas"
           >
             <Info size={16} />
@@ -32,7 +32,7 @@ export const StatsView = () => {
             <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas ENAMED</h1>
             <button 
                 onClick={() => setInfoOpen(!infoOpen)}
-                className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}
                 title="Informações das Estatísticas"
             >
                 <Info size={16} />

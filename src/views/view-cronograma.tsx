@@ -356,7 +356,7 @@ export const CronogramaView = ({
                 
                 <button 
                     onClick={() => setInfoOpen(!infoOpen)}
-                    className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-blue-500 hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
+                    className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
                     title="Informações do Cronograma"
                 >
                     <Info size={16} />
@@ -430,7 +430,7 @@ export const CronogramaView = ({
                                             </h3>
                                             <div className="flex items-center gap-3">
                                                 <div className="w-24 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-500 transition-all duration-700" style={{width: `${progress}%`}}></div>
+                                                    <div className="h-full bg-slate-900 dark:bg-white transition-all duration-700" style={{width: `${progress}%`}}></div>
                                                 </div>
                                                 <span className="text-[10px] font-bold text-slate-400">{progress}%</span>
                                             </div>

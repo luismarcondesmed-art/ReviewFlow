@@ -214,7 +214,7 @@ export const HubView = ({
                                                         setPopoverPosition(null);
                                                         onReview(item.topic.id, item.idx);
                                                     }} 
-                                                    className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                    className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-lg lg:hover:bg-slate-900 dark:lg:hover:bg-white lg:hover:text-white dark:lg:hover:text-black transition-all shadow-sm"
                                                 >
                                                     <PlayCircle size={16}/>
                                                 </button>
@@ -245,17 +245,14 @@ export const HubView = ({
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-2 overflow-x-auto custom-scrollbar">
                 <div className="flex items-center gap-2 px-2 shrink-0" role="tablist" aria-label="Seções do Hub">
                     {[
-                        { id: 'overview', label: 'Atividades de Hoje', icon: LayoutGrid, color: 'indigo' },
-                        { id: 'temas', label: 'Banco de Temas', icon: BookOpen, color: 'blue' },
-                        { id: 'stats', label: 'Estatísticas', icon: BarChart2, color: 'emerald' },
-                        { id: 'simulados', label: 'Simulados', icon: ClipboardList, color: 'purple' }
+                        { id: 'overview', label: 'Atividades de Hoje', icon: LayoutGrid },
+                        { id: 'temas', label: 'Banco de Temas', icon: BookOpen },
+                        { id: 'stats', label: 'Estatísticas', icon: BarChart2 },
+                        { id: 'simulados', label: 'Simulados', icon: ClipboardList }
                     ].map((tab) => {
                         const isActive = activeTab === tab.id;
                         const colorClass = isActive 
-                            ? (tab.color === 'blue' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' : 
-                               tab.color === 'emerald' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' : 
-                               tab.color === 'indigo' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' :
-                               'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400')
+                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
                             : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
                             
                         return (
@@ -312,7 +309,7 @@ export const HubView = ({
 
                         <button 
                             onClick={() => setSortOrder(sortOrder === 'area' ? 'date' : 'area')}
-                            className={`h-10 w-10 lg:w-auto lg:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800/30 dark:text-blue-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
+                            className={`h-10 w-10 lg:w-auto lg:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
                             title="Agrupar por Área"
                         >
                             <LayoutGrid size={16} className="lg:w-3.5 lg:h-3.5" />
@@ -349,7 +346,7 @@ export const HubView = ({
                                 className="w-full p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] flex items-center justify-between text-left shadow-sm active:scale-[0.98] transition-all"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white flex items-center justify-center">
                                         <ClipboardList size={24} />
                                     </div>
                                     <div>
@@ -369,7 +366,7 @@ export const HubView = ({
                                 </h2>
                                 <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
                                     {dueItems.length > 0 ? (
-                                        <>Você tem <button onClick={handlePendingClick} className="font-bold text-blue-500 lg:hover:text-blue-600 dark:lg:hover:text-blue-400 active:text-blue-600 dark:active:text-blue-400 underline decoration-blue-500/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes hoje.</>
+                                        <>Você tem <button onClick={handlePendingClick} className="font-bold text-slate-900 dark:text-white lg:hover:text-slate-600 dark:lg:hover:text-slate-300 active:text-slate-600 dark:active:text-slate-300 underline decoration-slate-900/30 dark:decoration-white/30 underline-offset-4 transition-colors">{dueItems.length} revisões</button> pendentes hoje.</>
                                     ) : (
                                         <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
                                     )}
@@ -379,9 +376,9 @@ export const HubView = ({
                             {dueItems.length > 0 && (
                                 <button 
                                     onClick={startQuickSession} 
-                                    className="relative z-10 bg-slate-900 dark:bg-white text-white dark:text-black lg:hover:scale-105 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md w-full md:w-auto justify-center"
+                                    className="relative z-10 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white lg:hover:bg-slate-200 dark:lg:hover:bg-white/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
                                 >
-                                    <PlayCircle size={18} fill="currentColor" className="text-white dark:text-black" />
+                                    <PlayCircle size={18} fill="currentColor" className="text-slate-900 dark:text-white" />
                                     Começar
                                 </button>
                             )}
