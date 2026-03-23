@@ -248,7 +248,7 @@ export const HubView = ({
                                     </h2>
                                     <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">
                                         {dueItems.length > 0 ? (
-                                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-slate-900 dark:text-white lg:hover:text-slate-600 dark:lg:hover:text-slate-300 active:text-slate-600 dark:active:text-slate-300 underline decoration-slate-900/30 dark:decoration-white/30 underline-offset-4 transition-colors flex items-center gap-1 inline-flex">{dueItems.length} revisões <ChevronDown size={14} className={`transition-transform ${isPendingExpanded ? 'rotate-180' : ''}`} /></button> pendentes hoje.</>
+                                            <>Você tem <button onClick={handlePendingClick} className="font-bold text-slate-900 dark:text-white lg:hover:text-slate-600 dark:lg:hover:text-slate-300 active:text-slate-600 dark:active:text-slate-300 underline decoration-slate-900/30 dark:decoration-white/30 underline-offset-4 transition-colors flex items-center gap-1 inline-flex">{dueItems.length} revisões ({dueItems.reduce((acc, item) => acc + (item.targetQ || 0), 0)} questões) <ChevronDown size={14} className={`transition-transform ${isPendingExpanded ? 'rotate-180' : ''}`} /></button> pendentes hoje.</>
                                         ) : (
                                             <>Nenhuma revisão pendente. Aproveite para descansar ou adiantar temas.</>
                                         )}
@@ -274,7 +274,7 @@ export const HubView = ({
                                             const theme = getAreaTheme(item.topic.area);
                                             const isOverdue = item.date < today;
                                             const reviewObj = item.topic.reviews[item.idx];
-                                            const numQuestions = reviewObj?.total || 0;
+                                            const numQuestions = reviewObj?.targetQ || 0;
                                             
                                             return (
                                                 <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer" onClick={() => onReview(item.topic.id, item.idx)}>
