@@ -375,7 +375,7 @@ export function App() {
                                 <button 
                                     key={item.id}
                                     onClick={() => setView(item.id as any)}
-                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-50 dark:lg:hover:bg-white/5'}`}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-50 dark:lg:hover:bg-white/5'}`}
                                 >
                                     <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
                                     {item.label}
@@ -390,7 +390,7 @@ export function App() {
                         <div className="relative">
                             <button 
                                 onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                className="w-9 h-9 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-md lg:hover:scale-105 active:scale-90 transition-all duration-300"
+                                className="w-9 h-9 bg-blue-600 dark:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 lg:hover:scale-105 active:scale-90 transition-all duration-300"
                             >
                                 <Plus size={18} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
                             </button>
@@ -427,7 +427,7 @@ export function App() {
                                     setView(item.id as any);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }} 
-                                className={`h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-md' : 'text-slate-400 dark:text-slate-500 active:bg-slate-100 dark:active:bg-white/5'}`}
+                                className={`h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-500/20' : 'text-slate-400 dark:text-slate-500 active:bg-slate-100 dark:active:bg-white/5'}`}
                             >
                                 <item.icon 
                                     size={20} 
@@ -593,7 +593,7 @@ export function App() {
 
                     <button 
                         onClick={() => { vibration.tick(); setIsActionMenuOpen(!isActionMenuOpen); }} 
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:shadow-black/50 border transition-all duration-300 ${isActionMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black border-transparent rotate-90 scale-90' : 'bg-white dark:bg-zinc-800 border-white/20 dark:border-white/10 text-slate-800 dark:text-white lg:hover:scale-105'}`}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.2)] dark:shadow-black/50 border transition-all duration-300 ${isActionMenuOpen ? 'bg-blue-600 dark:bg-blue-500 text-white border-transparent rotate-90 scale-90' : 'bg-white dark:bg-zinc-800 border-white/20 dark:border-white/10 text-slate-800 dark:text-white lg:hover:scale-105'}`}
                     >
                         {isActionMenuOpen ? <X size={24} /> : <MoreHorizontal size={24} />}
                     </button>

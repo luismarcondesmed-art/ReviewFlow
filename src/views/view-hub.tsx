@@ -123,7 +123,7 @@ export const HubView = ({
                     ].map((tab) => {
                         const isActive = activeTab === tab.id;
                         const colorClass = isActive 
-                            ? 'bg-slate-800 text-slate-100 dark:bg-slate-200 dark:text-slate-800 shadow-sm'
+                            ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white shadow-sm'
                             : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 dark:text-slate-400';
                             
                         return (
@@ -180,7 +180,7 @@ export const HubView = ({
 
                         <button 
                             onClick={() => setSortOrder(sortOrder === 'area' ? 'date' : 'area')}
-                            className={`h-10 w-10 lg:w-auto lg:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
+                            className={`h-10 w-10 lg:w-auto lg:px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${sortOrder === 'area' ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500 dark:text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-zinc-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5'}`}
                             title="Agrupar por Área"
                         >
                             <LayoutGrid size={16} className="lg:w-3.5 lg:h-3.5" />
@@ -211,7 +211,7 @@ export const HubView = ({
                 {activeTab === 'overview' && (
                     <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" className="flex flex-col gap-6 animate-fade-in">
                         {/* HERO: Para fazer hoje */}
-                        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm relative overflow-hidden">
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800/30 rounded-[32px] p-6 shadow-sm relative overflow-hidden">
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                                 <div className="relative z-10">
                                     <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight mb-1">
@@ -229,9 +229,9 @@ export const HubView = ({
                                 {dueItems.length > 0 && (
                                     <button 
                                         onClick={startQuickSession} 
-                                        className="relative z-10 bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200 lg:hover:bg-slate-200 dark:lg:hover:bg-white/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
+                                        className="relative z-10 bg-blue-600 dark:bg-blue-500 text-white lg:hover:bg-blue-700 dark:lg:hover:bg-blue-600 shadow-md shadow-blue-500/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
                                     >
-                                        <PlayCircle size={18} fill="currentColor" className="text-slate-800 dark:text-slate-200" />
+                                        <PlayCircle size={18} fill="currentColor" className="text-white" />
                                         Começar
                                     </button>
                                 )}
@@ -266,7 +266,7 @@ export const HubView = ({
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <button className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg shadow-sm transition-colors shrink-0">
+                                                    <button className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg shadow-sm transition-colors shrink-0">
                                                         <PlayCircle size={16}/>
                                                     </button>
                                                 </div>
@@ -285,7 +285,7 @@ export const HubView = ({
                                     className="w-full p-4 flex items-center justify-between text-left active:bg-slate-50 dark:active:bg-white/5 transition-all"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-200 flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center">
                                             <ClipboardList size={24} />
                                         </div>
                                         <div>

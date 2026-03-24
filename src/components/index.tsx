@@ -275,7 +275,7 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
                         <button 
                             key={r}
                             onClick={() => setRange(r)}
-                            className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-slate-800 text-white dark:bg-white dark:text-black' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${range === r ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}
                         >
                             {r === 'week' ? '7D' : r === 'month' ? '30D' : r === 'year' ? '1A' : 'Tudo'}
                         </button>
@@ -284,7 +284,7 @@ export const DetailedStatsWidget = React.memo(({ topics, simulados, compact = fa
             )}
             <div className={`grid ${compact ? 'grid-cols-2 gap-2 sm:gap-3' : 'grid-cols-2 md:grid-cols-4 gap-4'} w-full`}>
                 <StatCard label="Total Hoje" value={stats.totalToday} subLabel="Questões" icon={Zap} colorClass="bg-amber-500 text-amber-500" />
-                <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-slate-500 text-slate-500" />
+                <StatCard label={`Total (${rangeLabel})`} value={stats.totalRange} subLabel="Questões" icon={BarChart2} colorClass="bg-blue-500 text-blue-500" />
                 <StatCard label="Taxa de Acerto" value={`${accuracy}%`} subLabel={`em ${rangeLabel.toLowerCase()}`} icon={Target} colorClass="bg-emerald-500 text-emerald-500" />
                 {stats.avgTimePerQuestion ? (
                      <StatCard label="Velocidade" value={`${stats.avgTimePerQuestion}s`} subLabel="por questão" icon={Clock} colorClass="bg-rose-500 text-rose-500" />
@@ -445,7 +445,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy, limit }: 
                             <div className={`absolute rounded-full border-2 border-white dark:border-zinc-900 transition-all duration-300 ease-out shadow-sm ${isHovered ? 'w-4 h-4 bg-purple-600 shadow-[0_0_15px_rgba(139,92,246,0.5)] scale-110' : 'w-2 h-2 bg-purple-500'}`}></div>
                             {isHovered && (
                                 <div className={`absolute ${isHigh ? 'top-full mt-3' : 'bottom-full mb-3'} flex flex-col items-center animate-scale-in z-[60]`}>
-                                    <div className="bg-slate-800/95 dark:bg-black/95 backdrop-blur-xl text-white p-3 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 min-w-[140px] text-center transform transition-transform">
+                                    <div className="bg-blue-600/95 dark:bg-black/95 backdrop-blur-xl text-white p-3 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 min-w-[140px] text-center transform transition-transform">
                                         <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{point.formattedDate}</div>
                                         <div className="font-bold text-xs text-white mb-1 whitespace-nowrap">{point.name}</div>
                                         <div className="flex items-center justify-center gap-2 mt-1">
@@ -453,7 +453,7 @@ export const EvolutionChart = React.memo(({ simulados, targetAccuracy, limit }: 
                                             <span className="text-[9px] font-bold text-slate-400 bg-white/10 px-1.5 py-0.5 rounded">{point.correct}/{point.total}</span>
                                         </div>
                                     </div>
-                                    <div className={`w-2.5 h-2.5 bg-slate-900/95 dark:bg-black/95 rotate-45 border-r border-b border-white/10 absolute ${isHigh ? '-top-1 rotate-[225deg]' : '-bottom-1 rotate-45'}`}></div>
+                                    <div className={`w-2.5 h-2.5 bg-blue-600/95 dark:bg-black/95 rotate-45 border-r border-b border-white/10 absolute ${isHigh ? '-top-1 rotate-[225deg]' : '-bottom-1 rotate-45'}`}></div>
                                 </div>
                             )}
                         </div>
@@ -521,7 +521,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                                                 <Tooltip 
                                                     key={i}
                                                     content={
-                                                        <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
+                                                        <div className="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
                                                             {r.label} ({formatDate(r.date)})
                                                             <div className="text-[8px] text-slate-400 font-normal mt-0.5">
                                                                 {r.done ? `${r.correct}/${r.total} acertos (${r.total > 0 ? Math.round((r.correct/r.total)*100) : 0}%)` : `${r.targetQ} questões`}
@@ -542,7 +542,7 @@ export const SmartSuggestions = React.memo(({ topics, onReview }: { topics: Topi
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => onReview(item.topic.id, item.idx)} className="p-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+                        <button onClick={() => onReview(item.topic.id, item.idx)} className="p-2 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white transition-all">
                             <ChevronRight size={18}/>
                         </button>
                     </div>
@@ -722,7 +722,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                         transform: 'translate(-50%, -100%)'
                     }}
                 >
-                    <div className="bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 flex flex-col items-center min-w-[80px]">
+                    <div className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg shadow-xl border border-white/10 flex flex-col items-center min-w-[80px]">
                         <span className="text-slate-400 mb-0.5">{tooltipData.day.dayObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                         {tooltipData.day.count > 0 ? (
                             <span className="text-slate-400">{tooltipData.day.correct}/{tooltipData.day.total} ({Math.round(tooltipData.day.correct/tooltipData.day.total*100)}%)</span>
@@ -730,7 +730,7 @@ export const HeatmapWidget = React.memo(({ topics, simulados }: { topics: Topic[
                             <span className="opacity-50">Sem atividade</span>
                         )}
                     </div>
-                    <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
+                    <div className="w-2 h-2 bg-blue-600 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2 border-r border-b border-white/10"></div>
                 </div>,
                 document.body
             )}
@@ -791,10 +791,10 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
                     Total: <span className="text-slate-500">{chartData.totalLoad}q</span>
                 </div>
                 <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg p-1">
-                    <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-800 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
-                    <button onClick={() => setPeriod('week')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'week' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
-                    <button onClick={() => setPeriod('month')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'month' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Mês</button>
-                    <button onClick={() => setPeriod('total')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'total' ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Total</button>
+                    <button onClick={() => setPeriod('day')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'day' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}>Dia</button>
+                    <button onClick={() => setPeriod('week')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'week' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
+                    <button onClick={() => setPeriod('month')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'month' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}>Mês</button>
+                    <button onClick={() => setPeriod('total')} className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all ${period === 'total' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600'}`}>Total</button>
                 </div>
             </div>
             <div className="flex items-end justify-between gap-0.5 sm:gap-1 h-24 sm:h-32 mt-2">
@@ -808,7 +808,7 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
                             key={day.dateStr}
                             className="flex-1 h-full w-full"
                             content={
-                                <div className="bg-slate-900 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                                <div className="bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-lg">
                                     {day.dateObj.getDate()}/{day.dateObj.getMonth()+1}: {day.load}q
                                 </div>
                             }
@@ -1013,7 +1013,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                     {nextReview && (
                         <button 
                             onClick={() => onReview(topic.id, nextReviewIdx)} 
-                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-md ml-1"
+                            className="w-8 h-8 flex items-center justify-center bg-blue-600 dark:bg-blue-500 text-white rounded-full hover:scale-105 active:scale-95 transition-all shadow-md ml-1"
                             title="Revisar"
                         >
                             <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
@@ -1026,7 +1026,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                     {nextReview && (
                         <button 
                             onClick={() => onReview(topic.id, nextReviewIdx)} 
-                            className="w-8 h-8 flex items-center justify-center bg-slate-900 dark:bg-white text-white dark:text-black rounded-full shadow-md ml-1"
+                            className="w-8 h-8 flex items-center justify-center bg-blue-600 dark:bg-blue-500 text-white rounded-full shadow-md ml-1"
                         >
                             <Play size={14} fill="currentColor" className="text-white dark:text-black ml-0.5" />
                         </button>
@@ -1050,7 +1050,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                             <Tooltip
                                 key={i}
                                 content={
-                                    <div className="bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
+                                    <div className="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded whitespace-nowrap shadow-xl border border-white/10">
                                         {r.label} ({formatDate(r.date)})
                                         {/* Show questions count */}
                                         <div className="text-[8px] text-slate-400 font-normal mt-0.5">
