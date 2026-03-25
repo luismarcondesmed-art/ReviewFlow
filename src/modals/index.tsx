@@ -45,6 +45,78 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTo
     );
 };
 
+export const SyncAdModal = ({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: () => void }) => {
+    const [countdown, setCountdown] = useState(5);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setCountdown(5);
+            return;
+        }
+        
+        // Initialize AdSense
+        try {
+            // @ts-ignore
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (err) {
+            console.error('Erro ao carregar o AdSense no modal:', err);
+        }
+
+        const timer = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Sincronização">
+            <div className="p-6 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
+                    <Cloud size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Apoie o ReviewFlow</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    Para manter a sincronização gratuita, exibimos este anúncio rápido. Torne-se Premium para remover anúncios!
+                </p>
+                
+                {/* Ad Container */}
+                <div className="w-full min-h-[250px] bg-slate-100 dark:bg-zinc-900/50 rounded-xl flex items-center justify-center mb-6 overflow-hidden">
+                    <ins className="adsbygoogle"
+                         style={{ display: 'block', width: '100%', height: '250px' }}
+                         data-ad-client="ca-pub-6526249232306742"
+                         data-ad-slot="1876421190"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                </div>
+
+                <button 
+                    onClick={() => {
+                        onConfirm();
+                        onClose();
+                    }}
+                    disabled={countdown > 0}
+                    className={`w-full py-4 rounded-2xl font-bold text-white transition-all shadow-lg flex items-center justify-center gap-2 ${countdown > 0 ? 'bg-slate-400 dark:bg-slate-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 shadow-blue-500/25'}`}
+                >
+                    {countdown > 0 ? `Aguarde ${countdown}s...` : 'Confirmar Sincronização'}
+                </button>
+                
+                <button onClick={onClose} className="mt-4 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    Cancelar
+                </button>
+            </div>
+        </Modal>
+    );
+};
+
 export const DailyTodoContent = ({ 
     dailyNotes, 
     setDailyNotes, 

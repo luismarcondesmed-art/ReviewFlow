@@ -15,7 +15,7 @@ import {
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
 import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown, AdBanner } from './components';
-import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
+import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal } from './modals';
 import { Toaster, toast } from 'sonner';
 
 // --- Lazy Loaded Views for Performance ---
@@ -82,8 +82,17 @@ export function App() {
     const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
     const [optimizationInfoOpen, setOptimizationInfoOpen] = useState(false);
     const [tutorialOpen, setTutorialOpen] = useState(false);
+    const [syncAdOpen, setSyncAdOpen] = useState(false);
     
     const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
+
+    const handleSyncClick = () => {
+        if (userRole === 'free') {
+            setSyncAdOpen(true);
+        } else {
+            syncNow(true);
+        }
+    };
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -512,7 +521,7 @@ export function App() {
                             )}
                         </div>
                         <button 
-                            onClick={() => syncNow(true)} 
+                            onClick={handleSyncClick} 
                             disabled={status === 'syncing' || !syncKey}
                             className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-100 dark:lg:hover:bg-white/10'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}
                             title="Sincronizar agora"
@@ -701,7 +710,7 @@ export function App() {
                                     Ajustes
                                 </button>
                                 <button 
-                                    onClick={() => { syncNow(true); setIsActionMenuOpen(false); }}
+                                    onClick={() => { handleSyncClick(); setIsActionMenuOpen(false); }}
                                     disabled={status === 'syncing' || !syncKey}
                                     className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs ${!syncKey ? 'opacity-50' : ''}`}
                                 >
@@ -806,6 +815,12 @@ export function App() {
             <TutorialModal 
                 isOpen={tutorialOpen}
                 onClose={() => setTutorialOpen(false)}
+            />
+
+            <SyncAdModal
+                isOpen={syncAdOpen}
+                onClose={() => setSyncAdOpen(false)}
+                onConfirm={() => syncNow(true)}
             />
         </div>
     );
