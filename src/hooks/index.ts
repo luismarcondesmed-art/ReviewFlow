@@ -64,12 +64,21 @@ export const useSync = () => {
   const syncNow = async (manual = false) => {
       if (!syncKey || !loaded) return;
       
-      const lastSyncDate = localStorage.getItem('reviewflow_last_sync_date');
-      const today = getTodayStr();
+      const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+      const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
+      const hasUnlimitedSync = adminKeys.includes(syncKey) || premiumKeys.includes(syncKey);
       
-      if (manual && lastSyncDate === today) {
-          alert("A sincronização gratuita é limitada a uma vez por dia. Você já sincronizou hoje! Futuramente, teremos opções premium para sincronizações ilimitadas.");
-          return;
+      const lastSyncTimeStr = localStorage.getItem('reviewflow_last_sync_time');
+      const now = Date.now();
+      
+      if (manual && !hasUnlimitedSync && lastSyncTimeStr) {
+          const lastSyncTime = parseInt(lastSyncTimeStr, 10);
+          const timeDiffMinutes = (now - lastSyncTime) / (1000 * 60);
+          
+          if (timeDiffMinutes < 30) {
+              alert(`A sincronização gratuita é limitada a uma vez a cada 30 minutos. Tente novamente em ${Math.ceil(30 - timeDiffMinutes)} minutos.\n\nTorne-se um "Futuro Especialista" para sincronizações ilimitadas!`);
+              return;
+          }
       }
       
       try {
@@ -177,8 +186,8 @@ export const useSync = () => {
           };
           localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(lastSyncedState.current));
 
-          // 5. Update last sync date
-          localStorage.setItem('reviewflow_last_sync_date', getTodayStr());
+          // 5. Update last sync time
+          localStorage.setItem('reviewflow_last_sync_time', now.toString());
           setStatus('online');
 
       } catch (e) {
@@ -187,17 +196,18 @@ export const useSync = () => {
       }
   };
 
-  // 3. Auto-sync once a day on load
+  // 3. Auto-sync on load
   useEffect(() => {
       if (!loaded || !syncKey) return;
       
-      const lastSyncDate = localStorage.getItem('reviewflow_last_sync_date');
-      const today = getTodayStr();
+      const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+      const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
+      const hasUnlimitedSync = adminKeys.includes(syncKey) || premiumKeys.includes(syncKey);
       
-      if (lastSyncDate !== today) {
-          syncNow();
+      if (hasUnlimitedSync) {
+          syncNow(false);
       } else {
-          setStatus('online'); // Assume online if already synced today
+          setStatus('online'); // Assume online, but require manual sync
       }
   }, [loaded, syncKey]);
 
@@ -213,6 +223,10 @@ export const useSync = () => {
     localStorage.setItem('reviewflow_sync_key', syncKey);
   }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, loaded]);
 
+  const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+  const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
+  const userRole = adminKeys.includes(syncKey) ? 'admin' : premiumKeys.includes(syncKey) ? 'premium' : 'free';
+
   return { 
     topics, setTopics, 
     simulados, setSimulados, 
@@ -224,7 +238,8 @@ export const useSync = () => {
     syncKey,
     setSyncKey,
     appId,
-    syncNow
+    syncNow,
+    userRole
   };
 };
 

@@ -64,6 +64,7 @@ export interface UserConfig {
   examDate: string; // YYYY-MM-DD
   targetAccuracy: number; // 0-100
   activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
+  useFSRS?: boolean; // Toggle for Spaced Repetition System
   notifications?: {
     enabled: boolean;
     time: string; // HH:mm format

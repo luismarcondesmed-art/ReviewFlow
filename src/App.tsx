@@ -10,7 +10,7 @@ import {
 } from './types';
 import { 
     AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateFSRSNextDate
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
@@ -37,7 +37,7 @@ const LoadingSpinner = () => (
 );
 
 export function App() {
-    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow } = useSync();
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole } = useSync();
     const vibration = useVibration();
     
     // UI State
@@ -250,6 +250,8 @@ export function App() {
         setTopics(prev => prev.map(t => {
             if (t.id !== reviewData.tId) return t;
             const newReviews = [...t.reviews];
+            const acc = total > 0 ? Math.round((correct/total)*100) : 0;
+            
             newReviews[reviewData.rIdx] = { 
                 ...newReviews[reviewData.rIdx], 
                 done: true, 
@@ -259,10 +261,31 @@ export function App() {
                 completedAt: new Date().toISOString(),
                 timeSpent
             };
-            if (reviewData.rIdx + 1 < newReviews.length) {
-                const acc = total > 0 ? correct/total : 0;
+            
+            if (config.useFSRS) {
+                // Calculate next interval based on FSRS
+                let previousInterval = 1;
+                if (reviewData.rIdx > 0) {
+                    const currDate = new Date(newReviews[reviewData.rIdx].date);
+                    const prevDate = new Date(newReviews[reviewData.rIdx - 1].date);
+                    previousInterval = Math.max(1, Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24)));
+                }
+                
+                const nextDateStr = calculateFSRSNextDate(acc, previousInterval);
+                const nextType = `R${newReviews.length}` as any;
+                
+                newReviews.push({
+                    type: nextType,
+                    date: nextDateStr,
+                    label: `Revisão ${newReviews.length}`,
+                    done: false,
+                    correct: 0,
+                    total: 0,
+                    targetQ: calculateNextLoad(t.importance, difficulty, nextType, acc/100, newReviews[0].targetQ)
+                });
+            } else if (reviewData.rIdx + 1 < newReviews.length) {
                 const baseQ = t.reviews[0].targetQ;
-                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc, baseQ);
+                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc/100, baseQ);
             }
             return { ...t, reviews: newReviews, updatedAt: Date.now() };
         }));
@@ -362,6 +385,8 @@ export function App() {
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
                         <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white mr-4">ReviewFlow</h1>
+                        {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
+                        {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
                         <div className="hidden lg:block mr-6">
                             <UserStatsDropdown totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} />
                         </div>

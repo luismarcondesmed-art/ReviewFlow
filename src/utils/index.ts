@@ -48,6 +48,20 @@ const SYSTEM_PARAMS = {
 
 export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
+export const calculateFSRSNextDate = (accuracy: number, previousIntervalDays: number): string => {
+    let multiplier = 1;
+    if (accuracy >= 90) multiplier = 2.5;
+    else if (accuracy >= 75) multiplier = 1.5;
+    else if (accuracy >= 50) multiplier = 1.2;
+    else multiplier = 0.5; // Decrease interval if poor performance
+
+    let nextInterval = Math.max(1, Math.round(previousIntervalDays * multiplier));
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + nextInterval);
+    return nextDate.toISOString().split('T')[0];
+};
+
 export const calculateStreak = (topics: Topic[], simulados: Simulado[]): number => {
     // Use local date for today
     const today = new Date();

@@ -231,6 +231,7 @@ export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     const [step, setStep] = useState(0);
     const steps = [
         { title: "O Método ReviewFlow", icon: <Zap size={24} className="text-amber-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Bem-vindo! Este app utiliza <strong>Repetição Espaçada</strong> automática.</p></div> },
+        { title: "Sincronização & Nuvem", icon: <Cloud size={24} className="text-blue-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Para garantir a sustentabilidade do projeto e cobrir os custos com servidores em nuvem, a sincronização gratuita é limitada a <strong>uma vez a cada 30 minutos</strong> e deve ser feita manualmente clicando no botão de sincronizar no topo da tela.</p><p className="text-sm text-slate-600 dark:text-slate-300">Essa mecânica é um investimento essencial para que possamos manter o aplicativo no ar e continuar desenvolvendo novas funcionalidades para ajudar você a atingir seus objetivos.</p><p className="text-sm text-slate-600 dark:text-slate-300">Usuários que apoiam o projeto recebem o cargo de <strong>"Futuro Especialista"</strong> e têm acesso a sincronizações ilimitadas e automáticas!</p></div> },
         { title: "Cronograma & Automação", icon: <Calendar size={24} className="text-slate-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Acompanhe suas aulas.</p></div> },
         { title: "Simulados & Métricas", icon: <BarChart3 size={24} className="text-emerald-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Registre seus simulados.</p></div> }
     ];
@@ -241,10 +242,15 @@ export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
                 <div className="flex-1 p-8 flex flex-col items-center text-center justify-center">
                     <div className="w-20 h-20 bg-slate-100 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 animate-scale-in shadow-inner border border-white/20 dark:border-white/5">{steps[step].icon}</div>
                     <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">{steps[step].title}</h3>
-                    <div className="w-full text-left bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5">{steps[step].content}</div>
+                    <div className="w-full text-left bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 max-h-[250px] overflow-y-auto">{steps[step].content}</div>
                 </div>
-                <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-md">
-                    <button onClick={onClose} className="w-full py-4 bg-blue-600 dark:bg-blue-500 text-white dark:text-white rounded-[20px] text-xs font-bold shadow-lg shadow-black/10 active:scale-95 transition-all">Começar</button>
+                <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-md flex gap-3">
+                    {step > 0 && <button onClick={() => setStep(s => s - 1)} className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide text-xs">Anterior</button>}
+                    {step < steps.length - 1 ? (
+                        <button onClick={() => setStep(s => s + 1)} className="flex-[2] py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Próximo</button>
+                    ) : (
+                        <button onClick={onClose} className="flex-[2] py-4 bg-emerald-600 dark:bg-emerald-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Começar</button>
+                    )}
                 </div>
             </div>
         </Modal>
@@ -798,6 +804,25 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                     </button>
                 )}
                 
+                {/* FSRS Toggle */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Zap size={18} className="text-amber-500"/> Revisão Inteligente (FSRS)</h4>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 max-w-[200px]">Calcula o próximo intervalo com base no seu desempenho, substituindo os intervalos fixos (1d, 7d, 30d).</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={tempConfig.useFSRS || false}
+                                onChange={e => setTempConfig(prev => ({ ...prev, useFSRS: e.target.checked }))}
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+
                 {/* Notificações */}
                 <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
                     <div className="flex items-center justify-between">
