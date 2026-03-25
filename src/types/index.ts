@@ -34,6 +34,7 @@ export interface Topic {
   
   // New: Linked Lessons from Schedule
   linkedLessons?: string[]; 
+  hasDifficultLesson?: boolean; // Added for gamification/difficulty
   notionLink?: string; // Link to Notion page
   source?: string; // e.g. "BLOCO 1 - Medcof"
   tags?: string[]; // e.g. ["hematologia", "ginecologia geral"]
@@ -55,6 +56,7 @@ export interface Simulado {
   correctCount: number;
   dateTaken: string; // Full ISO string
   difficultyTopics: string[]; // IDs of topics
+  difficultyLessons?: string[]; // Names of difficult lessons
   deleted?: boolean;
   deletedAt?: any; // Firestore Timestamp ou null antes da sync
   updatedAt: number;
@@ -65,6 +67,7 @@ export interface UserConfig {
   targetAccuracy: number; // 0-100
   activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
   useFSRS?: boolean; // Toggle for Spaced Repetition System
+  bonusXP?: number; // Gamification bonus XP
   notifications?: {
     enabled: boolean;
     time: string; // HH:mm format

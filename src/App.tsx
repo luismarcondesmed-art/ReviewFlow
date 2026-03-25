@@ -10,12 +10,13 @@ import {
 } from './types';
 import { 
     AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateFSRSNextDate
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateFSRSNextDate, calculateStreak, getLevelInfo
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
-import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown } from './components';
+import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown, AdBanner } from './components';
 import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal } from './modals';
+import { Toaster, toast } from 'sonner';
 
 // --- Lazy Loaded Views for Performance ---
 const HubView = lazy(() => import('./views/view-hub').then(module => ({ default: module.HubView })));
@@ -108,6 +109,21 @@ export function App() {
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
+    // Daily Login Bonus
+    useEffect(() => {
+        if (!loaded) return;
+        const todayStr = getTodayStr();
+        const lastLogin = localStorage.getItem('reviewflow_last_login');
+        if (lastLogin !== todayStr) {
+            localStorage.setItem('reviewflow_last_login', todayStr);
+            setConfig(prev => ({ ...prev, bonusXP: (prev.bonusXP || 0) + 50 }));
+            setTimeout(() => {
+                triggerConfetti();
+                toast.success('+50 XP!', { description: 'Bônus de login diário!' });
+            }, 1000);
+        }
+    }, [loaded]);
+
     // PWA Badges
     useEffect(() => {
         const today = getTodayStr();
@@ -162,8 +178,25 @@ export function App() {
 
     const stats = useMemo(() => {
         const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0);
-        return { totalAnswered: totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0) };
-    }, [activeTopics, activeSimulados]);
+        const totalAnswered = totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0);
+        const streak = calculateStreak(activeTopics, activeSimulados);
+        const totalXP = totalAnswered * 10 + streak * 50 + (config.bonusXP || 0);
+        return { totalAnswered, totalXP };
+    }, [activeTopics, activeSimulados, config.bonusXP]);
+
+    // Level up celebration
+    const prevLevelRef = useRef(getLevelInfo(stats.totalXP).level);
+    useEffect(() => {
+        const currentLevel = getLevelInfo(stats.totalXP).level;
+        if (currentLevel > prevLevelRef.current) {
+            triggerConfetti();
+            toast.success(`Nível ${currentLevel} Alcançado!`, {
+                description: 'Parabéns pela sua dedicação! Continue assim.',
+                icon: '🎉',
+            });
+            prevLevelRef.current = currentLevel;
+        }
+    }, [stats.totalXP]);
 
     // --- Actions ---
     const handleDeleteTopic = (id: string) => {
@@ -194,11 +227,23 @@ export function App() {
         const existing = topics.find(t => t.title === title && !t.deleted);
         
         if (existing) {
+            const hasDifficultLesson = lessons.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+            const updatedReviews = existing.reviews.map(r => {
+                if (r.done) return r;
+                // If it wasn't difficult before but is now, we should increase it
+                // To be safe, we just recalculate
+                let nextTargetQ = calculateNextLoad(existing.importance, null, r.type, null, existing.reviews[0].targetQ);
+                if (hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                return { ...r, targetQ: nextTargetQ };
+            });
+
             const updated: Topic = {
                 ...existing,
                 linkedLessons: lessons,
+                hasDifficultLesson,
                 source: blockId || existing.source,
                 tags: tags || existing.tags,
+                reviews: updatedReviews,
                 updatedAt: Date.now()
             };
             setTopics(prev => prev.map(t => t.id === existing.id ? updated : t));
@@ -207,7 +252,13 @@ export function App() {
         } else {
             const newTopicId = generateId();
             // Pass baseQuestions as overrideBaseQuestions to maintain AI schedule
-            const reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, undefined, baseQuestions);
+            let reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, undefined, baseQuestions);
+            
+            const hasDifficultLesson = lessons.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+            if (hasDifficultLesson) {
+                reviews = reviews.map(r => ({ ...r, targetQ: Math.ceil(r.targetQ * 1.1) }));
+            }
+
             const newTopic: Topic = {
                 id: newTopicId,
                 title,
@@ -217,6 +268,7 @@ export function App() {
                 studyDate: getTodayStr(),
                 reviews,
                 linkedLessons: lessons,
+                hasDifficultLesson,
                 source: blockId,
                 tags: tags,
                 deleted: false,
@@ -237,7 +289,12 @@ export function App() {
                  reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, undefined, baseQ);
              } else { updated.studyDate = old.studyDate; }
         } else if (old && old.importance !== updated.importance) {
-            reviews = reviews.map(r => r.done ? r : { ...r, targetQ: calculateNextLoad(updated.importance, null, r.type, null, baseQ) });
+            reviews = reviews.map(r => {
+                if (r.done) return r;
+                let nextTargetQ = calculateNextLoad(updated.importance, null, r.type, null, baseQ);
+                if (updated.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                return { ...r, targetQ: nextTargetQ };
+            });
         }
         const finalTopic = { ...updated, reviews, updatedAt: Date.now() };
         setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
@@ -274,6 +331,9 @@ export function App() {
                 const nextDateStr = calculateFSRSNextDate(acc, previousInterval);
                 const nextType = `R${newReviews.length}` as any;
                 
+                let nextTargetQ = calculateNextLoad(t.importance, difficulty, nextType, acc/100, newReviews[0].targetQ);
+                if (t.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+
                 newReviews.push({
                     type: nextType,
                     date: nextDateStr,
@@ -281,17 +341,21 @@ export function App() {
                     done: false,
                     correct: 0,
                     total: 0,
-                    targetQ: calculateNextLoad(t.importance, difficulty, nextType, acc/100, newReviews[0].targetQ)
+                    targetQ: nextTargetQ
                 });
             } else if (reviewData.rIdx + 1 < newReviews.length) {
                 const baseQ = t.reviews[0].targetQ;
-                newReviews[reviewData.rIdx+1].targetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc/100, baseQ);
+                const hasDifficultLesson = t.linkedLessons?.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+                let nextTargetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc/100, baseQ);
+                if (hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                newReviews[reviewData.rIdx+1].targetQ = nextTargetQ;
             }
             return { ...t, reviews: newReviews, updatedAt: Date.now() };
         }));
         setReviewData(null);
         vibration.complete();
         triggerConfetti();
+        toast.success(`+${total * 10} XP!`, { description: 'Revisão concluída com sucesso!' });
     };
 
     const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
@@ -315,9 +379,23 @@ export function App() {
         } else {
             setSimulados(prev => [...prev, sWithId]);
         }
+
+        // Update hasDifficultLesson on topics
+        if (newS.difficultyLessons && newS.difficultyLessons.length > 0) {
+            setTopics(prev => prev.map(t => {
+                const hasDifficult = t.linkedLessons?.some(l => newS.difficultyLessons?.includes(l));
+                if (hasDifficult && !t.hasDifficultLesson) {
+                    return { ...t, hasDifficultLesson: true, updatedAt: Date.now() };
+                }
+                return t;
+            }));
+        }
+
         setSimuladoModalOpen(false);
         setEditingSimulado(null);
         vibration.success();
+        triggerConfetti();
+        toast.success(`+${(newS.totalQuestions || 100) * 10} XP!`, { description: 'Simulado salvo com sucesso!' });
     };
 
     const runOptimization = () => {
@@ -376,6 +454,7 @@ export function App() {
         <div 
             className="min-h-[100dvh] bg-[#f5f5f5] dark:bg-[#121212] text-slate-800 dark:text-slate-300 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
         >
+            <Toaster position="top-center" richColors />
             
             {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
             <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
@@ -388,7 +467,7 @@ export function App() {
                         {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
                         {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
                         <div className="hidden lg:block mr-6">
-                            <UserStatsDropdown totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} />
+                            <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} />
                         </div>
                     </div>
                 </div>
@@ -474,6 +553,7 @@ export function App() {
 
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-[calc(6rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+                <AdBanner userRole={userRole} />
                 
                 {/* Search Overlay (When active) */}
                 {isSearchActive && (

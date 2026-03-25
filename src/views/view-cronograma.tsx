@@ -221,11 +221,18 @@ export const CronogramaView = ({
     existingTopics: Topic[],
     onUpdateTopic?: (topic: Topic) => void
 }) => {
-    const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(new Set());
+    const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem('reviewflow_collapsed_blocks');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [searchLocal, setSearchLocal] = useState('');
     const [scheduleMenuOpen, setScheduleMenuOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
     const activeScheduleCode = config.activeSchedule || 'MEDCOF';
+
+    useEffect(() => {
+        localStorage.setItem('reviewflow_collapsed_blocks', JSON.stringify(Array.from(collapsedBlocks)));
+    }, [collapsedBlocks]);
 
     const finalSearch = searchTerm || searchLocal;
 

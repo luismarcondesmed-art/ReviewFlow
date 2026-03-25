@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, ChevronLeft, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock, Circle, CheckCircle2 } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock, Circle, CheckCircle2, Star } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from '../types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
@@ -919,13 +919,23 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
 };
 
 export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: { isOpen: boolean; onClose: () => void; simulado: Simulado | null; onSave: (s: any) => void; onDelete?: (id: string) => void; topics: Topic[] }) => {
-    // ... (Keep existing implementation) ...
     const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+    const [selectedLessons, setSelectedLessons] = useState<string[]>([]);
     const [simTopicSearch, setSimTopicSearch] = useState('');
+    const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+
     useEffect(() => {
-        if (isOpen && simulado) { setSelectedDifficulties(simulado.difficultyTopics || []); } else { setSelectedDifficulties([]); }
+        if (isOpen && simulado) { 
+            setSelectedDifficulties(simulado.difficultyTopics || []); 
+            setSelectedLessons(simulado.difficultyLessons || []);
+        } else { 
+            setSelectedDifficulties([]); 
+            setSelectedLessons([]);
+        }
         setSimTopicSearch('');
+        setExpandedTopic(null);
     }, [isOpen, simulado]);
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
@@ -937,69 +947,99 @@ export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, top
             correctCount: parseInt(fd.get('correct') as string) || 0,
             dateTaken: new Date(fd.get('date') as string + 'T12:00:00').toISOString(),
             difficultyTopics: selectedDifficulties,
+            difficultyLessons: selectedLessons,
             updatedAt: Date.now()
         };
         onSave(newS);
         onClose();
     };
+
+    const toggleLesson = (lesson: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedLessons(prev => prev.includes(lesson) ? prev.filter(l => l !== lesson) : [...prev, lesson]);
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={simulado ? "Editar Simulado" : "Novo Simulado"}>
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                 <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-purple-600 uppercase tracking-widest pl-1">Instituição</label>
-                    <input name="institution" defaultValue={simulado?.name} autoFocus type="text" placeholder="Ex: USP, UNIFESP..." className="w-full text-lg font-bold bg-white dark:bg-zinc-900 p-4 rounded-2xl outline-none focus:ring-4 focus:ring-purple-500/10 text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none transition-all" required />
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-purple-600 uppercase tracking-widest pl-1">Instituição</label>
+                    <input name="institution" defaultValue={simulado?.name} autoFocus type="text" placeholder="Ex: USP, UNIFESP..." className="w-full text-base font-bold bg-slate-50 dark:bg-zinc-900/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none transition-all" required />
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Data</label>
-                        <input name="date" type="date" defaultValue={simulado ? simulado.dateTaken.split('T')[0] : getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none min-h-[54px]" required />
+                 <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Data</label>
+                        <input name="date" type="date" defaultValue={simulado ? simulado.dateTaken.split('T')[0] : getTodayStr()} className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none min-h-[48px]" required />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Ano</label>
-                        <input name="year" type="number" placeholder="2025" defaultValue={simulado?.year || new Date().getFullYear()} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none" required />
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest pl-1">Acertos</label>
-                        <input name="correct" type="number" defaultValue={simulado?.correctCount} className="w-full p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 font-black text-2xl text-center outline-none border-2 border-transparent focus:border-emerald-500/20 appearance-none focus:bg-emerald-100 dark:focus:bg-emerald-900/30 transition-colors" required />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Total</label>
-                        <input name="total" type="number" defaultValue={simulado?.totalQuestions || 100} className="w-full p-4 rounded-2xl bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 font-black text-2xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Ano</label>
+                        <input name="year" type="number" placeholder="2025" defaultValue={simulado?.year || new Date().getFullYear()} className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none" required />
                     </div>
                  </div>
-                 <div className="bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-3">
-                     <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Target size={12}/> Temas com Dificuldade</label><span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">{selectedDifficulties.length} selecionados</span></div>
-                     <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/><input type="text" placeholder="Buscar matéria..." value={simTopicSearch} onChange={(e) => setSimTopicSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-black/20 rounded-xl text-xs font-bold outline-none appearance-none"/></div>
-                     <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-2">
+                 <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest pl-1">Acertos</label>
+                        <input name="correct" type="number" defaultValue={simulado?.correctCount} className="w-full p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 text-emerald-600 font-black text-xl text-center outline-none border border-emerald-200/50 dark:border-emerald-500/20 focus:border-emerald-500/50 appearance-none transition-colors" required />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Total</label>
+                        <input name="total" type="number" defaultValue={simulado?.totalQuestions || 100} className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-slate-700 dark:text-slate-200 font-black text-xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none" required />
+                    </div>
+                 </div>
+                 
+                 <div className="bg-slate-50 dark:bg-zinc-900/30 p-3.5 rounded-xl border border-slate-200 dark:border-white/5 space-y-3">
+                     <div className="flex items-center justify-between">
+                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><Target size={12}/> Temas com Dificuldade</label>
+                         <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">{selectedDifficulties.length + selectedLessons.length} selecionados</span>
+                     </div>
+                     <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/><input type="text" placeholder="Buscar matéria..." value={simTopicSearch} onChange={(e) => setSimTopicSearch(e.target.value)} className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-black/20 rounded-lg text-xs font-medium outline-none appearance-none border border-slate-200 dark:border-white/5 focus:border-blue-500/30 transition-colors"/></div>
+                     <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
                          {topics.filter(t => !t.deleted && (t.title.toLowerCase().includes(simTopicSearch.toLowerCase()) || t.linkedLessons?.some(l => l.toLowerCase().includes(simTopicSearch.toLowerCase())))).map(t => {
                              const isSelected = selectedDifficulties.includes(t.id);
+                             const isExpanded = expandedTopic === t.id;
+                             const hasLessons = t.linkedLessons && t.linkedLessons.length > 0;
+                             
                              return (
-                                 <div key={t.id} onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className={`p-3 rounded-xl flex flex-col gap-1 cursor-pointer transition-colors border ${isSelected ? 'bg-blue-600 dark:bg-blue-500 text-white border-transparent' : 'bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/5'}`}>
-                                     <div className="flex items-center justify-between">
-                                         <span className="text-sm font-bold truncate pr-2">{t.title}</span>
-                                         {isSelected && <Check size={14}/>}
+                                 <div key={t.id} className={`rounded-lg border overflow-hidden transition-all ${isSelected ? 'border-blue-500/30 bg-blue-50/30 dark:bg-blue-900/10' : 'border-slate-200 dark:border-white/5 bg-white dark:bg-zinc-900/50'}`}>
+                                     <div className="flex items-center p-1">
+                                         <div onClick={() => { if (isSelected) setSelectedDifficulties(p => p.filter(id => id !== t.id)); else setSelectedDifficulties(p => [...p, t.id]); }} className="flex-1 flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-md transition-colors">
+                                             <div className={`w-4 h-4 rounded flex items-center justify-center border ${isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                                                 {isSelected && <Check size={10} strokeWidth={3} />}
+                                             </div>
+                                             <span className={`text-xs font-medium truncate ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>{t.title}</span>
+                                         </div>
+                                         {hasLessons && (
+                                             <button type="button" onClick={() => setExpandedTopic(isExpanded ? null : t.id)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                                 <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                             </button>
+                                         )}
                                      </div>
-                                     {t.linkedLessons && t.linkedLessons.length > 0 && (
-                                         <div className="flex flex-wrap gap-1 mt-1">
-                                             {t.linkedLessons.map((l, i) => (
-                                                 <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-white/20 dark:bg-black/10 text-white dark:text-black' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'}`}>
-                                                     {l}
-                                                 </span>
-                                             ))}
+                                     
+                                     {isExpanded && hasLessons && (
+                                         <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 space-y-1.5">
+                                             <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-2 mt-1">Aulas Específicas</p>
+                                             {t.linkedLessons!.map((l, i) => {
+                                                 const isLessonSelected = selectedLessons.includes(l);
+                                                 return (
+                                                     <div key={i} onClick={(e) => toggleLesson(l, e)} className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-[11px] transition-colors border ${isLessonSelected ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium' : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/10'}`}>
+                                                         <span className="truncate pr-2">{l}</span>
+                                                         {isLessonSelected ? <Star size={12} className="fill-amber-500 text-amber-500 shrink-0" /> : <Star size={12} className="text-slate-300 dark:text-slate-600 shrink-0" />}
+                                                     </div>
+                                                 );
+                                             })}
                                          </div>
                                      )}
                                  </div>
                              )
                          })}
-                         {topics.filter(t => !t.deleted).length === 0 && <div className="text-center text-[10px] text-slate-400 py-2">Nenhuma matéria cadastrada.</div>}
+                         {topics.filter(t => !t.deleted).length === 0 && <div className="text-center text-[10px] text-slate-400 py-4">Nenhuma matéria cadastrada.</div>}
                      </div>
-                     <p className="text-[9px] text-slate-400 leading-tight">Marque os temas que você errou.</p>
+                     <p className="text-[9px] text-slate-400 leading-tight text-center">Marque os temas ou aulas específicas que você errou. Aulas marcadas com estrela terão 10% a mais de questões.</p>
                  </div>
-                 <div className="flex gap-4">
-                    {onDelete && simulado && <button type="button" onClick={() => { if(window.confirm('Tem certeza que deseja excluir?')) { onDelete(simulado.id); onClose(); } }} className="flex-[1] bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold py-4 rounded-[20px] shadow-sm active:scale-[0.98] transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-2 border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-900/20"><Trash2 size={16}/> <span className="hidden sm:inline">Excluir</span></button>}
-                    <button type="submit" className={`flex-[2] bg-blue-600 dark:bg-blue-500 text-white font-bold py-4 rounded-[20px] shadow-lg shadow-black/10 active:scale-[0.98] transition-all text-sm uppercase tracking-wider ${!simulado ? 'w-full' : ''}`}>Salvar Resultado</button>
+                 
+                 <div className="flex gap-3 pt-2">
+                    {onDelete && simulado && <button type="button" onClick={() => { if(window.confirm('Tem certeza que deseja excluir?')) { onDelete(simulado.id); onClose(); } }} className="flex-[1] bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl active:scale-[0.98] transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-900/20"><Trash2 size={14}/> <span className="hidden sm:inline">Excluir</span></button>}
+                    <button type="submit" className={`flex-[2] bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all text-xs uppercase tracking-wider ${!simulado ? 'w-full' : ''}`}>Salvar Resultado</button>
                  </div>
             </form>
         </Modal>

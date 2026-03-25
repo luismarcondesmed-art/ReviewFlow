@@ -418,9 +418,7 @@ export const getStreak = (topics: Topic[], simulados: Simulado[]) => {
     return currentStreak;
 };
 
-export const getLevelInfo = (totalQuestions: number) => {
-    const XP_PER_Q = 10;
-    const totalXP = totalQuestions * XP_PER_Q;
+export const getLevelInfo = (totalXP: number) => {
     const CONSTANT = 225;
     const level = Math.floor(Math.sqrt(totalXP / CONSTANT)) || 1;
     const currentLevelBaseXP = (level * level) * CONSTANT;

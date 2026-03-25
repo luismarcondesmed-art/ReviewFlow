@@ -6,6 +6,7 @@ import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, Bo
 import { Topic, Simulado, AreaType } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
 
+export { AdBanner } from './AdBanner';
 export const getAreaIcon = (area: AreaType) => {
     switch (area) {
         case 'clinica': return Stethoscope;
@@ -58,8 +59,8 @@ const getRankInfo = (level: number) => {
 // --- Compact Level System (Sidebar) ---
 import { calculateStreak } from '../utils';
 
-export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados }: { totalQuestions: number, topics: Topic[], simulados: Simulado[] }) => {
-    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, simulados, userRole }: { totalXP: number, totalQuestions: number, topics: Topic[], simulados: Simulado[], userRole: string }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalXP);
     const rank = getRankInfo(level);
     const RankIcon = rank.icon;
     const [isOpen, setIsOpen] = useState(false);
@@ -88,6 +89,7 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
                         <div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{rank.label}</div>
                             <div className="text-lg font-black text-slate-800 dark:text-slate-200">Nível {level}</div>
+                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">{userRole === 'admin' ? 'Administrador' : userRole === 'premium' ? 'Premium' : 'Usuário'}</div>
                         </div>
                     </div>
                     
@@ -126,8 +128,8 @@ export const UserStatsDropdown = React.memo(({ totalQuestions, topics, simulados
     );
 });
 
-export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
-    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+export const CompactLevelSystem = React.memo(({ totalXP }: { totalXP: number }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalXP);
     const rank = getRankInfo(level);
     const RankIcon = rank.icon;
     const [isOpen, setIsOpen] = useState(false);
@@ -169,8 +171,8 @@ export const CompactLevelSystem = React.memo(({ totalQuestions }: { totalQuestio
 });
 
 // --- Level System (Full Widget - for Dashboard) ---
-export const LevelSystem = React.memo(({ totalQuestions }: { totalQuestions: number }) => {
-    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalQuestions);
+export const LevelSystem = React.memo(({ totalXP }: { totalXP: number }) => {
+    const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalXP);
     const rank = getRankInfo(level);
     const RankIcon = rank.icon;
 
@@ -990,6 +992,11 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                     <div className="min-w-0 pr-4"> {/* Added padding right to avoid overlapping with the dot */}
                         <div className="flex items-center gap-2">
                             <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate">{topic.title}</h4>
+                            {topic.hasDifficultLesson && (
+                                <div className="text-amber-400" title="Contém aulas difíceis (+10% carga)">
+                                    <Star size={14} fill="currentColor" />
+                                </div>
+                            )}
                             {heatIcon}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
