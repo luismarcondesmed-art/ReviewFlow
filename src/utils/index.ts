@@ -565,10 +565,14 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
                     score += daysOverdue * 10;
                 }
                 score += getImportanceWeight(t.importance) * 25;
-                if (r.type === 'R0') score += 200;
-                if (r.type === 'R1') score += 150;
+                
+                // Prioritize by review type: R0 > R1 > R2 > R3
+                if (r.type === 'R0' || r.label === 'R0') score += 400;
+                else if (r.type === 'R1' || r.label === 'R1') score += 300;
+                else if (r.type === 'R2' || r.label === 'R2') score += 200;
+                else if (r.type === 'R3' || r.label === 'R3') score += 100;
 
-                const isHighR1 = (t.importance === 'high' || t.importance === 'extreme') && r.type === 'R1';
+                const isHighR1 = (t.importance === 'high' || t.importance === 'extreme') && (r.type === 'R1' || r.label === 'R1');
 
                 pendingItems.push({
                     topicId: t.id,

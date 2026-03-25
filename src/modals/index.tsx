@@ -699,7 +699,7 @@ export const OptimizationResultModal = ({ isOpen, onClose, onConfirm, changes }:
                 </div>
                 <div className="p-6 pt-4 border-t border-slate-100 dark:border-white/5 mt-auto bg-white/50 dark:bg-[#121214]/50 backdrop-blur-md z-10 flex gap-3">
                     <button onClick={onClose} className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide text-xs">Cancelar</button>
-                    <button onClick={onConfirm} className="flex-[2] py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Confirmar & Sincronizar</button>
+                    <button onClick={onConfirm} className="flex-[2] py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs">Confirmar</button>
                 </div>
             </div>
         </Modal>
@@ -887,7 +887,7 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                         <button onClick={runOptimization} className="flex-1 p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex flex-col items-center gap-2 active:scale-95 shadow-lg shadow-purple-500/30 hover:scale-105 transition-all"><Zap size={24} className="text-white"/><span className="text-[10px] font-bold uppercase text-white">Otimizar</span></button>
                     </div>
                 </div>
-                <button onClick={handleSave} className="w-full py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold text-sm rounded-[20px] shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide flex justify-center items-center gap-2"><Cloud size={18}/> Salvar e Sincronizar</button>
+                <button onClick={handleSave} className="w-full py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold text-sm rounded-[20px] shadow-xl active:scale-[0.98] transition-all uppercase tracking-wide flex justify-center items-center gap-2"><Cloud size={18}/> Salvar</button>
             </div>
         </Modal>
     );

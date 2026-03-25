@@ -50,212 +50,168 @@ export const useSync = () => {
       if (p) setScheduleProgress(JSON.parse(p));
       const n = localStorage.getItem('reviewflow_daily_notes');
       if (n) setDailyNotes(JSON.parse(n));
+      
+      // Load last synced state to prevent overwriting local changes if sync fails
+      const lastSynced = localStorage.getItem('reviewflow_last_synced_state');
+      if (lastSynced) {
+          lastSyncedState.current = JSON.parse(lastSynced);
+      }
     } catch (e) { console.error(e); }
     setLoaded(true);
   }, []);
 
-  // 2. Firebase Connection
+  // 2. Firebase Connection & Sync Now function
+  const syncNow = async (manual = false) => {
+      if (!syncKey || !loaded) return;
+      
+      const lastSyncDate = localStorage.getItem('reviewflow_last_sync_date');
+      const today = getTodayStr();
+      
+      if (manual && lastSyncDate === today) {
+          alert("A sincronização gratuita é limitada a uma vez por dia. Você já sincronizou hoje! Futuramente, teremos opções premium para sincronizações ilimitadas.");
+          return;
+      }
+      
+      try {
+          setStatus('syncing');
+          
+          let db = dbRef.current;
+          if (!db) {
+              const { initializeApp } = await import('firebase/app') as any;
+              const { getFirestore } = await import('firebase/firestore') as any;
+              const { getAuth, signInAnonymously } = await import('firebase/auth') as any;
+
+              const app = initializeApp(USER_FIREBASE_CONFIG);
+              const auth = getAuth(app);
+              db = getFirestore(app);
+              dbRef.current = db;
+
+              await signInAnonymously(auth);
+          }
+
+          const { doc, getDoc, setDoc } = await import('firebase/firestore') as any;
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', syncKey);
+          
+          // 1. Fetch remote data
+          const snap = await getDoc(docRef);
+          let remoteData: any = {};
+          if (snap.exists()) {
+              remoteData = snap.data();
+          }
+
+          // 2. Merge remote with local
+          let mergedTopics = stateRef.current.topics;
+          if (remoteData.topics) {
+              mergedTopics = mergeItems(stateRef.current.topics, remoteData.topics);
+              if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) {
+                  setTopics(mergedTopics);
+              }
+          }
+
+          let mergedSimulados = stateRef.current.simulados;
+          if (remoteData.simulados) {
+              mergedSimulados = mergeItems(stateRef.current.simulados, remoteData.simulados);
+              if (JSON.stringify(mergedSimulados) !== JSON.stringify(stateRef.current.simulados)) {
+                  setSimulados(mergedSimulados);
+              }
+          }
+
+          let mergedConfig = stateRef.current.config;
+          if (remoteData.config) {
+              const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
+              if (!hasLocalChanges && JSON.stringify(remoteData.config) !== JSON.stringify(stateRef.current.config)) {
+                  mergedConfig = remoteData.config;
+                  setConfig(mergedConfig);
+              }
+          }
+
+          let mergedScheduleProgress = stateRef.current.scheduleProgress;
+          if (remoteData.scheduleProgress) {
+              const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
+              if (!hasLocalChanges && JSON.stringify(remoteData.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
+                  mergedScheduleProgress = remoteData.scheduleProgress;
+                  setScheduleProgress(mergedScheduleProgress);
+              }
+          }
+
+          let mergedDailyNotes = stateRef.current.dailyNotes;
+          if (remoteData.dailyNotes) {
+              const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
+              if (!hasLocalChanges && JSON.stringify(remoteData.dailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
+                  mergedDailyNotes = remoteData.dailyNotes;
+                  setDailyNotes(mergedDailyNotes);
+              }
+          }
+
+          // 3. Save merged data back to Firebase
+          const payload = JSON.parse(JSON.stringify({
+              topics: mergedTopics,
+              simulados: mergedSimulados,
+              config: mergedConfig,
+              scheduleProgress: mergedScheduleProgress,
+              dailyNotes: mergedDailyNotes,
+              updatedAt: new Date().toISOString()
+          }));
+
+          // Fill in deletedAt timestamps
+          if (payload.topics) {
+              payload.topics.forEach((t: any) => {
+                  if (t.deleted && !t.deletedAt) t.deletedAt = new Date().toISOString();
+              });
+          }
+          if (payload.simulados) {
+              payload.simulados.forEach((s: any) => {
+                  if (s.deleted && !s.deletedAt) s.deletedAt = new Date().toISOString();
+              });
+          }
+
+          await setDoc(docRef, payload, { merge: true });
+
+          // 4. Update last synced state
+          lastSyncedState.current = {
+              topics: JSON.stringify(mergedTopics),
+              simulados: JSON.stringify(mergedSimulados),
+              config: JSON.stringify(mergedConfig),
+              scheduleProgress: JSON.stringify(mergedScheduleProgress),
+              dailyNotes: JSON.stringify(mergedDailyNotes)
+          };
+          localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(lastSyncedState.current));
+
+          // 5. Update last sync date
+          localStorage.setItem('reviewflow_last_sync_date', getTodayStr());
+          setStatus('online');
+
+      } catch (e) {
+          console.error("Sync Error:", e);
+          setStatus('error');
+      }
+  };
+
+  // 3. Auto-sync once a day on load
   useEffect(() => {
-    if (!syncKey || !loaded) {
-        setStatus('offline');
-        return;
-    }
+      if (!loaded || !syncKey) return;
+      
+      const lastSyncDate = localStorage.getItem('reviewflow_last_sync_date');
+      const today = getTodayStr();
+      
+      if (lastSyncDate !== today) {
+          syncNow();
+      } else {
+          setStatus('online'); // Assume online if already synced today
+      }
+  }, [loaded, syncKey]);
 
-    let unsub: any = null;
-    let authUnsub: any = null;
-
-    const connect = async () => {
-        try {
-            setStatus('syncing');
-            // Dynamic imports to avoid static analysis errors and ensure compatibility
-            const { initializeApp } = await import('firebase/app') as any;
-            const { getFirestore, doc, onSnapshot } = await import('firebase/firestore') as any;
-            const { getAuth, signInAnonymously, onAuthStateChanged } = await import('firebase/auth') as any;
-
-            const app = initializeApp(USER_FIREBASE_CONFIG);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            dbRef.current = db;
-
-            await signInAnonymously(auth);
-
-            authUnsub = onAuthStateChanged(auth, (user: any) => {
-                if (user) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', syncKey);
-                    
-                    unsub = onSnapshot(docRef, (snap: any) => {
-                        if (snap.exists()) {
-                            const d = snap.data();
-                            
-                            if (d.topics) {
-                                lastSyncedState.current.topics = JSON.stringify(d.topics);
-                                const merged = mergeItems(stateRef.current.topics, d.topics);
-                                if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.topics)) {
-                                    setTopics(merged);
-                                }
-                            } else {
-                                lastSyncedState.current.topics = JSON.stringify([]);
-                            }
-                            
-                            if (d.simulados) {
-                                lastSyncedState.current.simulados = JSON.stringify(d.simulados);
-                                const merged = mergeItems(stateRef.current.simulados, d.simulados);
-                                if (JSON.stringify(merged) !== JSON.stringify(stateRef.current.simulados)) {
-                                    setSimulados(merged);
-                                }
-                            } else {
-                                lastSyncedState.current.simulados = JSON.stringify([]);
-                            }
-                            
-                            if (d.config) {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.config = JSON.stringify(d.config);
-                                    if (JSON.stringify(d.config) !== JSON.stringify(stateRef.current.config)) {
-                                        setConfig(d.config);
-                                    }
-                                }
-                            } else {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.config = JSON.stringify({ examDate: '', targetAccuracy: 80 });
-                                }
-                            }
-                            
-                            if (d.scheduleProgress) {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.scheduleProgress = JSON.stringify(d.scheduleProgress);
-                                    if (JSON.stringify(d.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
-                                        setScheduleProgress(d.scheduleProgress);
-                                    }
-                                }
-                            } else {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.scheduleProgress = JSON.stringify({});
-                                }
-                            }
-                            
-                            if (d.dailyNotes) {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.dailyNotes = JSON.stringify(d.dailyNotes);
-                                    if (JSON.stringify(d.dailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
-                                        setDailyNotes(d.dailyNotes);
-                                    }
-                                }
-                            } else {
-                                const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
-                                if (!hasLocalChanges) {
-                                    lastSyncedState.current.dailyNotes = JSON.stringify({});
-                                }
-                            }
-                        }
-                        setStatus('online');
-                    }, (err: any) => {
-                        console.error("Firestore Error:", err);
-                        setStatus('error');
-                    });
-                }
-            });
-
-        } catch (e) {
-            console.error("Firebase Connection Error:", e);
-            setStatus('error');
-        }
-    };
-
-    connect();
-
-    return () => {
-        if (unsub) unsub();
-        if (authUnsub) authUnsub();
-    };
-  }, [syncKey, loaded, appId]);
-
-  // 3. Save to LocalStorage & Cloud (Debounced)
+  // 4. Save to LocalStorage (Immediate)
   useEffect(() => {
     if (!loaded) return;
     
-    const currentTopicsStr = JSON.stringify(topics);
-    const currentSimuladosStr = JSON.stringify(simulados);
-    const currentConfigStr = JSON.stringify(config);
-    const currentScheduleProgressStr = JSON.stringify(scheduleProgress);
-    const currentDailyNotesStr = JSON.stringify(dailyNotes);
-
-    // Local Save
-    localStorage.setItem('reviewflow_v3_data', currentTopicsStr);
-    localStorage.setItem('reviewflow_simulados', currentSimuladosStr);
-    localStorage.setItem('reviewflow_config', currentConfigStr);
-    localStorage.setItem('reviewflow_schedule_progress', currentScheduleProgressStr);
-    localStorage.setItem('reviewflow_daily_notes', currentDailyNotesStr);
+    localStorage.setItem('reviewflow_v3_data', JSON.stringify(topics));
+    localStorage.setItem('reviewflow_simulados', JSON.stringify(simulados));
+    localStorage.setItem('reviewflow_config', JSON.stringify(config));
+    localStorage.setItem('reviewflow_schedule_progress', JSON.stringify(scheduleProgress));
+    localStorage.setItem('reviewflow_daily_notes', JSON.stringify(dailyNotes));
     localStorage.setItem('reviewflow_sync_key', syncKey);
-
-    // Cloud Save (Debounced 2s to save costs but remain responsive)
-    if (status === 'online' && dbRef.current && syncKey) {
-        // Check if there are actual local changes compared to last synced state
-        if (
-            currentTopicsStr === lastSyncedState.current.topics &&
-            currentSimuladosStr === lastSyncedState.current.simulados &&
-            currentConfigStr === lastSyncedState.current.config &&
-            currentScheduleProgressStr === lastSyncedState.current.scheduleProgress &&
-            currentDailyNotesStr === lastSyncedState.current.dailyNotes
-        ) {
-            return; // No local changes to save
-        }
-
-        const timeout = setTimeout(async () => {
-            try {
-                // Dynamically import firestore functions needed for saving
-                const { doc, setDoc } = await import('firebase/firestore') as any;
-
-                const docRef = doc(dbRef.current, 'artifacts', appId, 'public', 'data', 'users', syncKey);
-                
-                // Sanitize payload to remove undefined values which cause Firestore to crash
-                const payload = JSON.parse(JSON.stringify({
-                    topics,
-                    simulados,
-                    config,
-                    scheduleProgress,
-                    dailyNotes,
-                    updatedAt: new Date().toISOString()
-                }));
-
-                // Fill in deletedAt timestamps for deleted items if missing
-                if (payload.topics) {
-                    payload.topics.forEach((t: any) => {
-                        if (t.deleted && !t.deletedAt) {
-                            t.deletedAt = new Date().toISOString();
-                        }
-                    });
-                }
-                if (payload.simulados) {
-                    payload.simulados.forEach((s: any) => {
-                        if (s.deleted && !s.deletedAt) {
-                            s.deletedAt = new Date().toISOString();
-                        }
-                    });
-                }
-
-                // Update lastSyncedState BEFORE saving to prevent race conditions
-                lastSyncedState.current = {
-                    topics: currentTopicsStr,
-                    simulados: currentSimuladosStr,
-                    config: currentConfigStr,
-                    scheduleProgress: currentScheduleProgressStr,
-                    dailyNotes: currentDailyNotesStr
-                };
-
-                await setDoc(docRef, payload, { merge: true });
-            } catch (e) {
-                console.error("Save Error:", e);
-                setStatus('error');
-            }
-        }, 2000);
-        return () => clearTimeout(timeout);
-    }
-  }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, status, loaded, appId]);
+  }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, loaded]);
 
   return { 
     topics, setTopics, 
@@ -267,7 +223,8 @@ export const useSync = () => {
     status,
     syncKey,
     setSyncKey,
-    appId
+    appId,
+    syncNow
   };
 };
 

@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, LogOut, Moon, Sun, Monitor
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -37,7 +37,7 @@ const LoadingSpinner = () => (
 );
 
 export function App() {
-    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey } = useSync();
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow } = useSync();
     const vibration = useVibration();
     
     // UI State
@@ -407,6 +407,14 @@ export function App() {
                                 </div>
                             )}
                         </div>
+                        <button 
+                            onClick={() => syncNow(true)} 
+                            disabled={status === 'syncing' || !syncKey}
+                            className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-100 dark:lg:hover:bg-white/10'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Sincronizar agora"
+                        >
+                            <RefreshCw size={18} />
+                        </button>
                         <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white rounded-full lg:hover:bg-slate-100 dark:lg:hover:bg-white/10 transition-all">
                             <Settings size={18} />
                         </button>
@@ -586,6 +594,16 @@ export function App() {
                                 >
                                     <div className="p-1.5 bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400 rounded-lg"><Settings size={16}/></div>
                                     Ajustes
+                                </button>
+                                <button 
+                                    onClick={() => { syncNow(true); setIsActionMenuOpen(false); }}
+                                    disabled={status === 'syncing' || !syncKey}
+                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl active:bg-black/5 lg:hover:bg-black/5 dark:active:bg-white/10 dark:lg:hover:bg-white/10 transition-colors text-slate-800 dark:text-white font-bold text-xs ${!syncKey ? 'opacity-50' : ''}`}
+                                >
+                                    <div className={`p-1.5 rounded-lg ${status === 'syncing' ? 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 animate-spin' : 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'}`}>
+                                        <RefreshCw size={16}/>
+                                    </div>
+                                    {status === 'syncing' ? 'Sincronizando...' : 'Sincronizar'}
                                 </button>
                             </div>
                         </>
