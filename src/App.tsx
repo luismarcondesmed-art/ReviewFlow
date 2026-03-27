@@ -194,9 +194,20 @@ export function App() {
     }, [activeTopics, activeSimulados, config.bonusXP]);
 
     // Level up celebration
-    const prevLevelRef = useRef(getLevelInfo(stats.totalXP).level);
+    const prevLevelRef = useRef(1);
+    const hasLoadedRef = useRef(false);
+
     useEffect(() => {
+        if (!loaded) return;
+
         const currentLevel = getLevelInfo(stats.totalXP).level;
+        
+        if (!hasLoadedRef.current) {
+            prevLevelRef.current = currentLevel;
+            hasLoadedRef.current = true;
+            return;
+        }
+
         if (currentLevel > prevLevelRef.current) {
             triggerConfetti();
             toast.success(`Nível ${currentLevel} Alcançado!`, {
@@ -205,7 +216,7 @@ export function App() {
             });
             prevLevelRef.current = currentLevel;
         }
-    }, [stats.totalXP]);
+    }, [stats.totalXP, loaded]);
 
     // --- Actions ---
     const handleDeleteTopic = (id: string) => {
@@ -662,7 +673,7 @@ export function App() {
             </main>
 
             {/* --- Mobile Action Button (Bottom Right) --- */}
-            <div className="lg:hidden fixed bottom-6 right-4 z-[90]">
+            <div className={`lg:hidden fixed ${userRole === 'free' ? 'bottom-28' : 'bottom-6'} right-4 z-[90] transition-all duration-300`}>
                 <div className="relative pointer-events-auto">
                     {isActionMenuOpen && (
                         <>

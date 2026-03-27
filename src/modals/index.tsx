@@ -47,19 +47,28 @@ export const Modal = ({ isOpen, onClose, title, children, headerContent, alignTo
 
 export const SyncAdModal = ({ isOpen, onClose, onConfirm }: { isOpen: boolean, onClose: () => void, onConfirm: () => void }) => {
     const [countdown, setCountdown] = useState(5);
+    const adPushed = useRef(false);
 
     useEffect(() => {
         if (!isOpen) {
             setCountdown(5);
+            adPushed.current = false;
             return;
         }
         
         // Initialize AdSense
-        try {
-            // @ts-ignore
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
-        } catch (err) {
-            console.error('Erro ao carregar o AdSense no modal:', err);
+        if (!adPushed.current) {
+            try {
+                // @ts-ignore
+                (window.adsbygoogle = window.adsbygoogle || []).push({});
+                adPushed.current = true;
+            } catch (err: any) {
+                if (err.message && err.message.includes('already have ads')) {
+                    adPushed.current = true;
+                } else {
+                    console.error('Erro ao carregar o AdSense no modal:', err);
+                }
+            }
         }
 
         const timer = setInterval(() => {
