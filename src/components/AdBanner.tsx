@@ -10,10 +10,8 @@ interface AdBannerProps {
 export const AdBanner = ({ userRole, adClient = "ca-pub-6526249232306742", adSlot = "1876421190" }: AdBannerProps) => {
     const adPushed = useRef(false);
 
-    // Só exibe anúncios para usuários gratuitos
-    if (userRole !== 'free') return null;
-    
     useEffect(() => {
+        if (userRole !== 'free') return;
         if (adPushed.current) return;
         if (adSlot === "SEU_SLOT_AQUI") return;
 
@@ -29,7 +27,10 @@ export const AdBanner = ({ userRole, adClient = "ca-pub-6526249232306742", adSlo
                 console.error('Erro ao carregar o AdSense:', err);
             }
         }
-    }, [adSlot]);
+    }, [adSlot, userRole]);
+
+    // Só exibe anúncios para usuários gratuitos
+    if (userRole !== 'free') return null;
 
     return (
         <div className="fixed bottom-0 left-0 w-full flex justify-center overflow-hidden min-h-[60px] sm:min-h-[90px] bg-slate-100 dark:bg-zinc-900/95 backdrop-blur-md items-center z-[80] border-t border-slate-200 dark:border-white/10 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
