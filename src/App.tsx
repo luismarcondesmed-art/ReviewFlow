@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -37,7 +37,61 @@ const LoadingSpinner = () => (
     </div>
 );
 
-export function App() {
+// --- Error Boundary ---
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+    constructor(props: {children: React.ReactNode}) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("Uncaught error:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="min-h-screen bg-slate-50 dark:bg-[#141415] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
+                        <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">Ops, algo deu errado!</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+                            Ocorreu um erro inesperado. Tente recarregar a página ou limpar os dados locais se o problema persistir.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors"
+                            >
+                                Recarregar Página
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    localStorage.clear();
+                                    window.location.reload();
+                                }} 
+                                className="w-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                            >
+                                Limpar Dados e Recarregar
+                            </button>
+                        </div>
+                        {this.state.error && (
+                            <div className="mt-6 p-3 bg-slate-100 dark:bg-black/50 rounded-lg text-left overflow-auto max-h-32">
+                                <p className="text-xs font-mono text-slate-600 dark:text-slate-400 break-all">
+                                    {this.state.error.toString()}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function AppContent() {
     const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole } = useSync();
     const vibration = useVibration();
     
@@ -842,5 +896,13 @@ export function App() {
                 onConfirm={() => syncNow(true)}
             />
         </div>
+    );
+}
+
+export function App() {
+    return (
+        <ErrorBoundary>
+            <AppContent />
+        </ErrorBoundary>
     );
 }

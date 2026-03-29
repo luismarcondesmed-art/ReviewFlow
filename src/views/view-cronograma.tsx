@@ -29,7 +29,7 @@ const getPriorityWeight = (priority: string | undefined): number => {
 
 const getPriorityColor = (priority: string | undefined) => {
     const p = (priority || '').toLowerCase();
-    if (p.includes('azul')) return { dot: 'bg-slate-500', text: 'text-slate-500', bg: 'bg-slate-500/10' };
+    if (p.includes('azul')) return { dot: 'bg-blue-500', text: 'text-blue-500', bg: 'bg-blue-500/10' };
     if (p.includes('verde')) return { dot: 'bg-emerald-500', text: 'text-emerald-500', bg: 'bg-emerald-500/10' };
     if (p.includes('amarelo')) return { dot: 'bg-amber-500', text: 'text-amber-500', bg: 'bg-amber-500/10' };
     if (p.includes('vermelho')) return { dot: 'bg-red-500', text: 'text-red-500', bg: 'bg-red-500/10' };

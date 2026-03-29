@@ -28,6 +28,14 @@ export const useSync = () => {
           setSimulados([]);
           setScheduleProgress({});
           setDailyNotes({});
+          lastSyncedState.current = { topics: '', simulados: '', config: '', scheduleProgress: '', dailyNotes: '' };
+          localStorage.removeItem('reviewflow_last_synced_state');
+          localStorage.removeItem('reviewflow_last_sync_time');
+          localStorage.removeItem('reviewflow_v3_data');
+          localStorage.removeItem('reviewflow_simulados');
+          localStorage.removeItem('reviewflow_config');
+          localStorage.removeItem('reviewflow_schedule_progress');
+          localStorage.removeItem('reviewflow_daily_notes');
       }
 
       setStatus('syncing'); 
@@ -134,26 +142,49 @@ export const useSync = () => {
               }
           }
 
+          const safeParse = (str: string) => {
+              try { return str ? JSON.parse(str) : {}; } catch { return {}; }
+          };
+          const mergeDict = (local: any, remote: any, lastSyncedStr: string) => {
+              const lastSynced = safeParse(lastSyncedStr);
+              const merged: any = {};
+              const allKeys = new Set([...Object.keys(local || {}), ...Object.keys(remote || {}), ...Object.keys(lastSynced || {})]);
+              
+              allKeys.forEach(k => {
+                  const l = local?.[k];
+                  const r = remote?.[k];
+                  const base = lastSynced?.[k];
+                  
+                  if (l !== base) {
+                      if (l !== undefined) merged[k] = l;
+                  } else if (r !== base) {
+                      if (r !== undefined) merged[k] = r;
+                  } else {
+                      if (base !== undefined) merged[k] = base;
+                  }
+              });
+              return merged;
+          };
+
           let mergedScheduleProgress = stateRef.current.scheduleProgress;
           if (remoteData.scheduleProgress) {
-              const hasLocalChanges = JSON.stringify(stateRef.current.scheduleProgress) !== lastSyncedState.current.scheduleProgress;
-              if (!hasLocalChanges && JSON.stringify(remoteData.scheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
-                  mergedScheduleProgress = remoteData.scheduleProgress;
+              mergedScheduleProgress = mergeDict(stateRef.current.scheduleProgress, remoteData.scheduleProgress, lastSyncedState.current.scheduleProgress);
+              if (JSON.stringify(mergedScheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
                   setScheduleProgress(mergedScheduleProgress);
               }
           }
 
           let mergedDailyNotes = stateRef.current.dailyNotes;
           if (remoteData.dailyNotes) {
-              const hasLocalChanges = JSON.stringify(stateRef.current.dailyNotes) !== lastSyncedState.current.dailyNotes;
-              if (!hasLocalChanges && JSON.stringify(remoteData.dailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
-                  mergedDailyNotes = remoteData.dailyNotes;
+              mergedDailyNotes = mergeDict(stateRef.current.dailyNotes, remoteData.dailyNotes, lastSyncedState.current.dailyNotes);
+              if (JSON.stringify(mergedDailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
                   setDailyNotes(mergedDailyNotes);
               }
           }
 
           // 3. Save merged data back to Firebase
           const payload = JSON.parse(JSON.stringify({
+              ...remoteData,
               topics: mergedTopics,
               simulados: mergedSimulados,
               config: mergedConfig,
@@ -174,7 +205,7 @@ export const useSync = () => {
               });
           }
 
-          await setDoc(docRef, payload, { merge: true });
+          await setDoc(docRef, payload);
 
           // 4. Update last synced state
           lastSyncedState.current = {
@@ -196,7 +227,7 @@ export const useSync = () => {
       }
   };
 
-  // 3. Auto-sync on load
+  // 3. Auto-sync on load and on data changes
   useEffect(() => {
       if (!loaded || !syncKey) return;
       
@@ -205,11 +236,15 @@ export const useSync = () => {
       const hasUnlimitedSync = adminKeys.includes(syncKey) || premiumKeys.includes(syncKey);
       
       if (hasUnlimitedSync) {
-          syncNow(false);
+          // Debounce auto-sync to avoid spamming Firebase
+          const timeout = setTimeout(() => {
+              syncNow(false);
+          }, 2000);
+          return () => clearTimeout(timeout);
       } else {
           setStatus('online'); // Assume online, but require manual sync
       }
-  }, [loaded, syncKey]);
+  }, [loaded, syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
 
   // 4. Save to LocalStorage (Immediate)
   useEffect(() => {
