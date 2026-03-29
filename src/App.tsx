@@ -198,6 +198,11 @@ export function App() {
     const hasLoadedRef = useRef(false);
 
     useEffect(() => {
+        // Reset level tracking when account changes
+        hasLoadedRef.current = false;
+    }, [syncKey]);
+
+    useEffect(() => {
         if (!loaded) return;
 
         const currentLevel = getLevelInfo(stats.totalXP).level;
@@ -215,8 +220,11 @@ export function App() {
                 icon: '🎉',
             });
             prevLevelRef.current = currentLevel;
+        } else if (currentLevel < prevLevelRef.current) {
+            // Se o nível caiu (ex: trocou de conta ou limpou dados), atualiza a referência
+            prevLevelRef.current = currentLevel;
         }
-    }, [stats.totalXP, loaded]);
+    }, [stats.totalXP, loaded, syncKey]);
 
     // --- Actions ---
     const handleDeleteTopic = (id: string) => {

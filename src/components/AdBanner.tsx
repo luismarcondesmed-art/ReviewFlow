@@ -41,7 +41,7 @@ export const AdBanner = ({ userRole, adClient = "ca-pub-6526249232306742", adSlo
                 </span>
             ) : (
                 <ins className="adsbygoogle"
-                     style={{ display: 'block', width: '100%', height: '90px' }}
+                     style={{ display: 'block', minWidth: '320px', width: '100%', height: '90px' }}
                      data-ad-client={adClient}
                      data-ad-slot={adSlot}
                      data-ad-format="horizontal"

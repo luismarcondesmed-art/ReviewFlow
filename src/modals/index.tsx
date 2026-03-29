@@ -100,7 +100,7 @@ export const SyncAdModal = ({ isOpen, onClose, onConfirm }: { isOpen: boolean, o
                 {/* Ad Container */}
                 <div className="w-full min-h-[250px] bg-slate-100 dark:bg-zinc-900/50 rounded-xl flex items-center justify-center mb-6 overflow-hidden">
                     <ins className="adsbygoogle"
-                         style={{ display: 'block', width: '100%', height: '250px' }}
+                         style={{ display: 'block', minWidth: '300px', width: '100%', height: '250px' }}
                          data-ad-client="ca-pub-6526249232306742"
                          data-ad-slot="1876421190"
                          data-ad-format="auto"
