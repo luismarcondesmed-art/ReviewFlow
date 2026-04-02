@@ -2,6 +2,7 @@
 export type AreaType = 'clinica' | 'cirurgia' | 'pediatria' | 'go' | 'preventiva';
 export type ImportanceType = 'extreme' | 'high' | 'medium' | 'low' | 'optional';
 export type ReviewType = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5' | 'R_FINAL' | 'extra';
+export type TopicStatus = 'backlog' | 'studying' | 'reviewing' | 'mastered';
 
 declare global {
   interface Window {
@@ -39,6 +40,8 @@ export interface Topic {
   source?: string; // e.g. "BLOCO 1 - Medcof"
   tags?: string[]; // e.g. ["hematologia", "ginecologia geral"]
 
+  status?: TopicStatus; // Kanban status
+
   deleted?: boolean;
   deletedAt?: any; // Firestore Timestamp ou null antes da sync
   updatedAt: number;
@@ -62,12 +65,30 @@ export interface Simulado {
   updatedAt: number;
 }
 
+export interface UserStats {
+  xp: number;
+  streak: number;
+  lastStudyDate: string; // YYYY-MM-DD
+  badges: string[];
+}
+
+export interface WeeklyGoal {
+  id: string;
+  weekStartDate: string; // YYYY-MM-DD (Monday)
+  type: 'questions' | 'topics';
+  target: number;
+  current: number;
+}
+
 export interface UserConfig {
   examDate: string; // YYYY-MM-DD
   targetAccuracy: number; // 0-100
+  dailyQuestionLimit?: number; // Limit for optimize function
   activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
   useFSRS?: boolean; // Toggle for Spaced Repetition System
   bonusXP?: number; // Gamification bonus XP
+  stats?: UserStats; // Gamification stats
+  weeklyGoals?: WeeklyGoal[]; // Weekly goals
   notifications?: {
     enabled: boolean;
     time: string; // HH:mm format

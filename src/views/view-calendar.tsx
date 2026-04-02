@@ -358,7 +358,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
 
                                     return (
                                         <div key={dateStr} className="space-y-3">
-                                            <div className="flex items-center gap-3 sticky top-0 bg-[#f5f5f5] dark:bg-[#0a0a0a] py-2 z-10">
+                                            <div className="flex items-center gap-3 sticky top-0 bg-slate-50 dark:bg-[#0a0a0a] py-2 z-10">
                                                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 font-black text-lg shadow-sm">
                                                     {day}
                                                 </div>

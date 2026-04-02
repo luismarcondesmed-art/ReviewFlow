@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from '../utils';
 
@@ -111,12 +111,73 @@ export const MiniEvolutionChart = ({ reviews }: { reviews: any[] }) => {
     );
 };
 
+const KanbanBoard = ({ topics, onEdit }: { topics: Topic[], onEdit: (t: Topic) => void }) => {
+    const columns = [
+        { id: 'backlog', title: 'A Fazer', color: 'bg-slate-100 dark:bg-zinc-800' },
+        { id: 'studying', title: 'Estudando', color: 'bg-blue-50 dark:bg-blue-900/20' },
+        { id: 'reviewing', title: 'Revisando', color: 'bg-amber-50 dark:bg-amber-900/20' },
+        { id: 'mastered', title: 'Dominado', color: 'bg-emerald-50 dark:bg-emerald-900/20' }
+    ];
+
+    const getColumnTopics = (statusId: string) => {
+        return topics.filter(t => (t.status || 'backlog') === statusId);
+    };
+
+    return (
+        <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 h-full min-h-[500px]">
+            {columns.map(col => {
+                const colTopics = getColumnTopics(col.id);
+                return (
+                    <div key={col.id} className={`flex-1 min-w-[280px] rounded-2xl p-4 flex flex-col gap-3 ${col.color} border border-black/5 dark:border-white/5`}>
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-xs">{col.title}</h3>
+                            <span className="text-xs font-bold text-slate-500 bg-white dark:bg-black/20 px-2 py-1 rounded-lg shadow-sm">{colTopics.length}</span>
+                        </div>
+                        <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                            {colTopics.map(t => (
+                                <div 
+                                    key={t.id} 
+                                    onClick={() => onEdit(t)}
+                                    className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-white/10 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-colors group"
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{t.area}</span>
+                                        {t.importance === 'extreme' && <span className="w-2 h-2 rounded-full bg-red-500"></span>}
+                                    </div>
+                                    <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t.title}</h4>
+                                    {t.source && <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mb-3">{t.source}</p>}
+                                    
+                                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-white/5">
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                                <div className="h-full bg-indigo-500" style={{width: `${Math.round((t.reviews.filter(r => r.done).length / Math.max(t.reviews.length, 1)) * 100)}%`}}></div>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                            {t.reviews.filter(r => r.done).length}/{t.reviews.length}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                            {colTopics.length === 0 && (
+                                <div className="text-center p-4 text-xs font-bold text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl">
+                                    Vazio
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimulado, onDeleteSimulado, config, searchTerm }: { topics: Topic[], onEdit: (t: Topic) => void, onDelete: (id: string) => void, simulados?: Simulado[], onEditSimulado?: (s: Simulado) => void, onDeleteSimulado?: (id: string) => void, config?: UserConfig, searchTerm?: string }) => {
     const [filterArea, setFilterArea] = useState('all');
     const [groupBy, setGroupBy] = useState<'none' | 'area' | 'block' | 'tag'>('area');
     const [activeTab, setActiveTab] = useState<'topics' | 'simulados'>('topics');
+    const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [showLinkedLessons, setShowLinkedLessons] = useState(false);
 
     // Dropdown states
     const [viewMenuOpen, setViewMenuOpen] = useState(false);
@@ -243,15 +304,21 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                             )}
                         </div>
 
-                        {/* Show Lessons Toggle */}
-                        <div className="relative flex-1 sm:flex-none">
+                        {/* View Mode Toggle */}
+                        <div className="relative flex-1 sm:flex-none flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl">
                             <button 
-                                onClick={() => setShowLinkedLessons(!showLinkedLessons)}
-                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${showLinkedLessons ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 border-purple-200 dark:border-purple-500/30' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                                title="Mostrar Aulas Vinculadas"
+                                onClick={() => setViewMode('list')}
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                title="Visualização em Lista"
                             >
                                 <List size={16}/>
-                                <span className="hidden sm:inline">Aulas</span>
+                            </button>
+                            <button 
+                                onClick={() => setViewMode('kanban')}
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                title="Visualização Kanban"
+                            >
+                                <Kanban size={16}/>
                             </button>
                         </div>
 
@@ -298,7 +365,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                 }}
             >
                 {activeTab === 'topics' ? (
-                    Object.keys(groupedTopics).length === 0 ? (
+                    viewMode === 'kanban' ? (
+                        <KanbanBoard topics={filteredTopics} onEdit={onEdit} />
+                    ) : (
+                        Object.keys(groupedTopics).length === 0 ? (
                         <div className="p-8 text-center text-slate-400 text-xs font-bold bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5">Nenhum registro encontrado.</div>
                     ) : (
                         Object.entries(groupedTopics).map(([groupName, groupTopics]) => (
@@ -352,11 +422,11 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                                                         ))}
                                                                     </div>
                                                                 )}
-                                                                {showLinkedLessons && t.linkedLessons && t.linkedLessons.length > 0 && (
+                                                                {t.linkedLessons && t.linkedLessons.length > 0 && (
                                                                     <div className="mt-2 flex flex-wrap gap-1">
                                                                         {t.linkedLessons.map((lesson, idx) => (
                                                                             <span key={idx} className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 rounded text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
-                                                                                {lesson}
+                                                                                {lesson.replace(/ \(~\d+q\)$/, '')}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -480,7 +550,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                                 </div>
                             </div>
                         ))
-                    )
+                    ))
                 ) : (
                     <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
                         <div 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
-import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget, getAreaIcon } from '../components';
+import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget, getAreaIcon, WeeklyGoalsWidget } from '../components';
 import { Modal, TodoModal, DailyTodoContent } from '../modals';
 
 export const HubView = ({ 
@@ -344,6 +344,9 @@ export const HubView = ({
                                         <FutureLoadWidget topics={activeTopics} />
                                     </div>
                                 </div>
+
+                                {/* Metas Semanais */}
+                                <WeeklyGoalsWidget config={config} topics={activeTopics} simulados={activeSimulados} />
                             </div>
                         </div>
                     </div>

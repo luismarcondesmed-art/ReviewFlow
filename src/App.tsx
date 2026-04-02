@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle, BrainCircuit
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -481,7 +481,7 @@ function AppContent() {
     };
 
     const runOptimization = () => {
-        const result = optimizeSchedule(topics);
+        const result = optimizeSchedule(topics, config);
         if (result.changes.length === 0) { alert("Nenhuma otimização necessária."); return; }
         setOptimizationResult(result);
         setSettingsOpen(false);
@@ -517,7 +517,7 @@ function AppContent() {
         reader.readAsText(file);
     };
 
-    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-[#f5f5f5] dark:bg-[#121212]"><Activity size={40} className="animate-spin text-slate-500"/></div>;
+    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-transparent"><Activity size={40} className="animate-spin text-slate-500"/></div>;
 
     const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
@@ -534,7 +534,7 @@ function AppContent() {
 
     return (
         <div 
-            className="min-h-[100dvh] bg-[#f5f5f5] dark:bg-[#121212] text-slate-800 dark:text-slate-300 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
+            className="min-h-[100dvh] bg-transparent text-slate-800 dark:text-slate-300 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
         >
             <Toaster position="top-center" richColors />
             
@@ -542,10 +542,10 @@ function AppContent() {
             <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
                 <div className="flex items-center gap-12 w-1/3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
-                        <div className="w-8 h-8 rounded-xl bg-slate-600 flex items-center justify-center text-white shadow-md">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
-                        <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white mr-4">ReviewFlow</h1>
+                        <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
                         {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
                         {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
                         <div className="hidden lg:block mr-6">

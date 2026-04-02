@@ -22,6 +22,8 @@ export const useSync = () => {
   const lastSyncedState = useRef({ topics: '', simulados: '', config: '', scheduleProgress: '', dailyNotes: '' });
   const appId = APP_ID;
 
+  const isSyncingRef = useRef(false);
+
   const setSyncKey = (newKey: string) => {
       if (syncKey && syncKey !== newKey) {
           setTopics([]);
@@ -70,7 +72,7 @@ export const useSync = () => {
 
   // 2. Firebase Connection & Sync Now function
   const syncNow = async (manual = false) => {
-      if (!syncKey || !loaded) return;
+      if (!syncKey || !loaded || isSyncingRef.current) return;
       
       const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
       const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
@@ -90,6 +92,13 @@ export const useSync = () => {
       }
       
       try {
+          if (!navigator.onLine) {
+              setStatus('error');
+              alert("Você está offline. Verifique sua conexão com a internet.");
+              return;
+          }
+
+          isSyncingRef.current = true;
           setStatus('syncing');
           
           let db = dbRef.current;
@@ -116,21 +125,17 @@ export const useSync = () => {
               remoteData = snap.data();
           }
 
-          // 2. Merge remote with local
+          // 2. Merge remote with local synchronously using stateRef
           let mergedTopics = stateRef.current.topics;
           if (remoteData.topics) {
               mergedTopics = mergeItems(stateRef.current.topics, remoteData.topics);
-              if (JSON.stringify(mergedTopics) !== JSON.stringify(stateRef.current.topics)) {
-                  setTopics(mergedTopics);
-              }
+              setTopics(mergedTopics);
           }
 
           let mergedSimulados = stateRef.current.simulados;
           if (remoteData.simulados) {
               mergedSimulados = mergeItems(stateRef.current.simulados, remoteData.simulados);
-              if (JSON.stringify(mergedSimulados) !== JSON.stringify(stateRef.current.simulados)) {
-                  setSimulados(mergedSimulados);
-              }
+              setSimulados(mergedSimulados);
           }
 
           let mergedConfig = stateRef.current.config;
@@ -138,8 +143,10 @@ export const useSync = () => {
               const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
               if (!hasLocalChanges && JSON.stringify(remoteData.config) !== JSON.stringify(stateRef.current.config)) {
                   mergedConfig = remoteData.config;
-                  setConfig(mergedConfig);
+              } else {
+                  mergedConfig = stateRef.current.config;
               }
+              setConfig(mergedConfig);
           }
 
           const safeParse = (str: string) => {
@@ -169,17 +176,13 @@ export const useSync = () => {
           let mergedScheduleProgress = stateRef.current.scheduleProgress;
           if (remoteData.scheduleProgress) {
               mergedScheduleProgress = mergeDict(stateRef.current.scheduleProgress, remoteData.scheduleProgress, lastSyncedState.current.scheduleProgress);
-              if (JSON.stringify(mergedScheduleProgress) !== JSON.stringify(stateRef.current.scheduleProgress)) {
-                  setScheduleProgress(mergedScheduleProgress);
-              }
+              setScheduleProgress(mergedScheduleProgress);
           }
 
           let mergedDailyNotes = stateRef.current.dailyNotes;
           if (remoteData.dailyNotes) {
               mergedDailyNotes = mergeDict(stateRef.current.dailyNotes, remoteData.dailyNotes, lastSyncedState.current.dailyNotes);
-              if (JSON.stringify(mergedDailyNotes) !== JSON.stringify(stateRef.current.dailyNotes)) {
-                  setDailyNotes(mergedDailyNotes);
-              }
+              setDailyNotes(mergedDailyNotes);
           }
 
           // 3. Save merged data back to Firebase
@@ -224,6 +227,8 @@ export const useSync = () => {
       } catch (e) {
           console.error("Sync Error:", e);
           setStatus('error');
+      } finally {
+          isSyncingRef.current = false;
       }
   };
 

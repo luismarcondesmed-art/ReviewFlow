@@ -516,7 +516,7 @@ export interface OptimizationChange {
     reason: string;
 }
 
-export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: OptimizationChange[] } => {
+export const optimizeSchedule = (topics: Topic[], config?: any): { topics: Topic[], changes: OptimizationChange[] } => {
     // Use structuredClone for better performance than JSON.parse/stringify
     const newTopics: Topic[] = typeof structuredClone === 'function' 
         ? structuredClone(topics) 
@@ -527,7 +527,7 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
     const todayDate = new Date(todayStr + 'T12:00:00');
     const ONE_DAY_MS = 86400000;
 
-    const MAX_QUESTIONS_PER_DAY = 150;
+    const MAX_QUESTIONS_PER_DAY = config?.dailyQuestionLimit || 150;
     const MAX_HIGH_R1_PER_DAY = 1;
     const MAX_REVIEWS_PER_TOPIC_PER_DAY = 2;
 
@@ -572,17 +572,21 @@ export const optimizeSchedule = (topics: Topic[]): { topics: Topic[], changes: O
         t.reviews.forEach((r, idx) => {
             if (!r.done) {
                 let score = 0;
+                
+                // 1. Prioritize R0 and R1 (Highest priority)
+                if (r.type === 'R0' || r.label === 'R0') score += 100000;
+                else if (r.type === 'R1' || r.label === 'R1') score += 50000;
+                else if (r.type === 'R2' || r.label === 'R2') score += 20000;
+                else if (r.type === 'R3' || r.label === 'R3') score += 10000;
+
+                // 2. Prioritize by Importance
+                score += getImportanceWeight(t.importance) * 1000;
+
+                // 3. Prioritize older cards
                 if (r.date < todayStr) {
                     const daysOverdue = Math.floor((todayDate.getTime() - new Date(r.date + 'T12:00:00').getTime()) / ONE_DAY_MS);
-                    score += daysOverdue * 10;
+                    score += daysOverdue; // +1 per day overdue
                 }
-                score += getImportanceWeight(t.importance) * 25;
-                
-                // Prioritize by review type: R0 > R1 > R2 > R3
-                if (r.type === 'R0' || r.label === 'R0') score += 400;
-                else if (r.type === 'R1' || r.label === 'R1') score += 300;
-                else if (r.type === 'R2' || r.label === 'R2') score += 200;
-                else if (r.type === 'R3' || r.label === 'R3') score += 100;
 
                 const isHighR1 = (t.importance === 'high' || t.importance === 'extreme') && (r.type === 'R1' || r.label === 'R1');
 

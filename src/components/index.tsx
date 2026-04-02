@@ -1006,6 +1006,15 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                                 <Clock size={10}/> {lastReviewText}
                             </span>
                         </div>
+                        {topic.linkedLessons && topic.linkedLessons.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                {topic.linkedLessons.map((lesson, idx) => (
+                                    <span key={idx} className="text-[9px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/5 truncate max-w-[150px]">
+                                        {lesson.replace(/ \(~\d+q\)$/, '')}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
                 
@@ -1117,6 +1126,92 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
 });
 
 // --- Simulados Mini Widget with Actions ---
+export const WeeklyGoalsWidget = React.memo(({ config, topics, simulados }: { config: any, topics: Topic[], simulados: Simulado[] }) => {
+    const goals = config.weeklyGoals || [];
+    
+    if (goals.length === 0) {
+        return (
+            <div className="bg-white dark:bg-[#1c1c1e] rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Target size={24} />
+                </div>
+                <div>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-white">Metas Semanais</h3>
+                    <p className="text-xs text-slate-500 mt-1">Defina metas em Configurações para acompanhar seu progresso.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Calculate current week's progress
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const startOfWeek = new Date(today.setDate(diff));
+    startOfWeek.setHours(0,0,0,0);
+    const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+    let currentQuestions = 0;
+    let currentTopics = 0;
+
+    topics.forEach(t => {
+        let topicCompletedThisWeek = false;
+        t.reviews.forEach(r => {
+            if (r.done && r.completedAt && r.completedAt >= startOfWeekStr) {
+                currentQuestions += r.total;
+                topicCompletedThisWeek = true;
+            }
+        });
+        if (topicCompletedThisWeek) currentTopics++;
+    });
+
+    simulados.forEach(s => {
+        if (s.dateTaken >= startOfWeekStr) {
+            currentQuestions += s.totalQuestions || 0;
+        }
+    });
+
+    return (
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Target size={20} />
+                </div>
+                <div>
+                    <h3 className="text-base font-bold text-slate-800 dark:text-white">Metas da Semana</h3>
+                    <p className="text-xs text-slate-500">Acompanhe seu progresso</p>
+                </div>
+            </div>
+            <div className="space-y-4">
+                {goals.filter((g: any) => g.target > 0).map((goal: any) => {
+                    const current = goal.type === 'questions' ? currentQuestions : currentTopics;
+                    const progress = Math.min(100, (current / goal.target) * 100);
+                    const isCompleted = current >= goal.target;
+                    return (
+                        <div key={goal.id} className="space-y-2">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="font-bold text-slate-700 dark:text-slate-300">
+                                    {goal.type === 'questions' ? 'Questões' : 'Temas'}
+                                </span>
+                                <span className={`font-bold ${isCompleted ? 'text-emerald-500' : 'text-slate-500'}`}>
+                                    {current} / {goal.target}
+                                </span>
+                            </div>
+                            <div className="h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${progress}%` }}
+                                    className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+});
+
 export const SimuladosMiniWidget = React.memo(({ simulados, targetAccuracy, onAdd }: { simulados: Simulado[], targetAccuracy: number, onAdd: () => void }) => {
     const displayData = useMemo(() => {
         if (!simulados || simulados.length === 0) return null;

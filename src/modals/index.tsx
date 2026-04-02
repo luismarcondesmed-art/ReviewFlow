@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { X, ChevronRight, ChevronLeft, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock, Circle, CheckCircle2, Star } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Trash2, ArrowRight, Target, Key, Save, Download, Upload, Sun, Moon, Zap, Minus, Plus, Search, Check, ClipboardList, Calendar, LayoutList, History, Info, AlertTriangle, Edit2, Cloud, BookOpen, Smartphone, HelpCircle, GraduationCap, BarChart3, SlidersHorizontal, Link as LinkIcon, Bell, ChevronDown, Clock, Circle, CheckCircle2, Star, BrainCircuit, Trophy } from 'lucide-react';
 import { Topic, AreaType, ImportanceType, Simulado, UserConfig, Review } from '../types';
 import { AREAS, formatDate, formatFullDate, getAreaTheme, getTodayStr, getPerformanceColor, OptimizationChange, getPerformanceBgLight, IMPORTANCE_LEVELS, generateSmartSchedule } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
@@ -311,10 +311,12 @@ export const TodoModal = ({ isOpen, onClose, dailyNotes, setDailyNotes }: { isOp
 export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const [step, setStep] = useState(0);
     const steps = [
-        { title: "O Método ReviewFlow", icon: <Zap size={24} className="text-amber-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Bem-vindo! Este app utiliza <strong>Repetição Espaçada</strong> automática.</p></div> },
+        { title: "O Método ReviewFlow", icon: <Zap size={24} className="text-amber-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Bem-vindo! Este app utiliza <strong>Repetição Espaçada</strong> automática para otimizar seus estudos.</p></div> },
+        { title: "Flashcards & Kanban", icon: <BrainCircuit size={24} className="text-purple-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Crie <strong>Flashcards</strong> para memorização rápida e acompanhe o progresso dos seus temas no modo <strong>Kanban</strong> no Banco de Dados.</p></div> },
+        { title: "Gamificação & Metas", icon: <Trophy size={24} className="text-emerald-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Ganhe <strong>XP</strong>, mantenha sua <strong>Ofensiva</strong> (Streak) e defina <strong>Metas Semanais</strong> nas Configurações para se manter motivado!</p></div> },
         { title: "Sincronização & Nuvem", icon: <Cloud size={24} className="text-blue-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Para garantir a sustentabilidade do projeto e cobrir os custos com servidores em nuvem, a sincronização gratuita é limitada a <strong>uma vez a cada 30 minutos</strong> e deve ser feita manualmente clicando no botão de sincronizar no topo da tela.</p><p className="text-sm text-slate-600 dark:text-slate-300">Essa mecânica é um investimento essencial para que possamos manter o aplicativo no ar e continuar desenvolvendo novas funcionalidades para ajudar você a atingir seus objetivos.</p><p className="text-sm text-slate-600 dark:text-slate-300">Usuários que apoiam o projeto recebem o cargo de <strong>"Futuro Especialista"</strong> e têm acesso a sincronizações ilimitadas e automáticas!</p></div> },
-        { title: "Cronograma & Automação", icon: <Calendar size={24} className="text-slate-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Acompanhe suas aulas.</p></div> },
-        { title: "Simulados & Métricas", icon: <BarChart3 size={24} className="text-emerald-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Registre seus simulados.</p></div> }
+        { title: "Cronograma & Automação", icon: <Calendar size={24} className="text-slate-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Acompanhe suas aulas e organize seu tempo.</p></div> },
+        { title: "Simulados & Métricas", icon: <BarChart3 size={24} className="text-emerald-500"/>, content: <div className="space-y-4"><p className="text-sm text-slate-600 dark:text-slate-300">Registre seus simulados e veja provas semelhantes na aba de Estatísticas.</p></div> }
     ];
     if (!isOpen) return null;
     return (
@@ -563,6 +565,18 @@ export const EditTopicModal = ({ isOpen, onClose, topic, onSave, onDelete, onEdi
                                 className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none" 
                             />
                         </div>
+                        {safeTopic.linkedLessons && safeTopic.linkedLessons.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Aulas do Bloco</label>
+                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                                    <ul className="list-disc list-inside text-xs font-medium text-slate-600 dark:text-slate-300 space-y-1">
+                                        {safeTopic.linkedLessons.map((lesson, idx) => (
+                                            <li key={idx}>{lesson}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">Início</label>
                             <input name="date" type="date" defaultValue={safeTopic.studyDate || getTodayStr()} className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none min-h-[54px]" required />
@@ -901,6 +915,68 @@ export const SettingsModal = ({ isOpen, onClose, config, onSaveConfig, syncKey, 
                             />
                             <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
+                    </div>
+                </div>
+
+                {/* Metas Semanais */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Target size={18} className="text-blue-500"/> Metas Semanais</h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {['questions', 'topics'].map((type) => {
+                            const goal = tempConfig.weeklyGoals?.find(g => g.type === type);
+                            const label = type === 'questions' ? 'Questões' : 'Temas Concluídos';
+                            return (
+                                <div key={type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl border border-slate-200 dark:border-white/10">
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{label}</span>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="number" 
+                                            min="0"
+                                            value={goal?.target || 0}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value) || 0;
+                                                setTempConfig(prev => {
+                                                    const goals = prev.weeklyGoals || [];
+                                                    const existingIdx = goals.findIndex(g => g.type === type);
+                                                    const newGoals = [...goals];
+                                                    if (existingIdx >= 0) {
+                                                        newGoals[existingIdx] = { ...newGoals[existingIdx], target: val };
+                                                    } else {
+                                                        newGoals.push({ id: Math.random().toString(), weekStartDate: getTodayStr(), type: type as any, target: val, current: 0 });
+                                                    }
+                                                    return { ...prev, weeklyGoals: newGoals };
+                                                });
+                                            }}
+                                            className="w-20 p-2 text-center rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Optimize Limit */}
+                <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><Zap size={18} className="text-amber-500"/> Limite Diário de Otimização</h4>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Define o número máximo de questões que a função "Otimizar" irá selecionar por dia.
+                    </p>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-black/20 rounded-xl border border-slate-200 dark:border-white/10">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Questões por dia</span>
+                        <input 
+                            type="number" 
+                            min="10"
+                            max="500"
+                            value={tempConfig.dailyQuestionLimit || 150}
+                            onChange={(e) => setTempConfig({...tempConfig, dailyQuestionLimit: parseInt(e.target.value) || 150})}
+                            className="w-20 p-2 text-center rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                        />
                     </div>
                 </div>
 
