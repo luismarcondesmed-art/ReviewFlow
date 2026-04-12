@@ -25,6 +25,7 @@ const DatabaseView = lazy(() => import('./views/view-database').then(module => (
 const SimuladosView = lazy(() => import('./views/view-simulados').then(module => ({ default: module.SimuladosView })));
 const CronogramaView = lazy(() => import('./views/view-cronograma').then(module => ({ default: module.CronogramaView })));
 const StatsView = lazy(() => import('./views/view-stats').then(module => ({ default: module.StatsView })));
+const LandingView = lazy(() => import('./views/view-landing').then(module => ({ default: module.LandingView })));
 
 // --- Loading Skeleton ---
 const LoadingSpinner = () => (
@@ -96,6 +97,8 @@ function AppContent() {
     const vibration = useVibration();
     
     // UI State
+    const [hasStarted, setHasStarted] = useState(() => localStorage.getItem('reviewflow_has_started') === 'true');
+    const [landingView, setLandingView] = useState<'main' | 'privacy' | 'terms'>('main');
     const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'stats'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
@@ -531,6 +534,21 @@ function AppContent() {
     ];
 
     const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
+
+    if (!hasStarted) {
+        return (
+            <Suspense fallback={<LoadingSpinner />}>
+                <LandingView 
+                    currentView={landingView}
+                    onChangeView={setLandingView}
+                    onStart={() => {
+                        localStorage.setItem('reviewflow_has_started', 'true');
+                        setHasStarted(true);
+                    }} 
+                />
+            </Suspense>
+        );
+    }
 
     return (
         <div 
