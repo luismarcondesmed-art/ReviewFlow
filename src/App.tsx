@@ -127,6 +127,7 @@ function AppContent() {
     
     // Mobile Navigation
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
@@ -642,50 +643,63 @@ function AppContent() {
             </header>
 
             {/* Mobile Top Navigation (Modern & Adapative) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 pt-[env(safe-area-inset-top)] animate-slide-down">
-                {/* Brand & Actions */}
-                <div className="flex items-center justify-between px-4 h-14">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-                             <Activity size={16} strokeWidth={2.5}/>
+            <div className="lg:hidden fixed top-[env(safe-area-inset-top)] left-0 right-0 z-[80] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
+                <div className="flex items-center justify-between px-4 h-16 relative">
+                    <button onClick={() => { vibration.tick(); setMobileMenuOpen(!mobileMenuOpen); }} className="flex items-center gap-3 -ml-1 p-1 rounded-xl active:scale-95 transition-all text-left">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 20, strokeWidth: 2.5 })}
                         </div>
-                        <span className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">ReviewFlow</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                         <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                             <RefreshCw size={16} />
+                        <div className="flex flex-col items-start justify-center">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">ReviewFlow</span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none">{currentViewTitle}</span>
+                                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${mobileMenuOpen ? 'rotate-180' : ''}`}/>
+                            </div>
+                        </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                         <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                             <RefreshCw size={18} />
                          </button>
-                         <button onClick={() => setSettingsOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300">
-                             <Settings size={16} />
+                         <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                             <Settings size={18} />
                          </button>
                     </div>
-                </div>
-                {/* Scrollable Nav Pills */}
-                <div className="px-4 pb-2">
-                    <nav className="flex items-center gap-2 overflow-x-auto hide-scrollbar snap-x pb-1">
-                        {NAV_ITEMS.map((item) => {
-                            const isActive = view === item.id;
-                            return (
-                                <button 
-                                    key={item.id} 
-                                    onClick={() => { 
-                                        vibration.tick(); 
-                                        setView(item.id as any);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }} 
-                                    className={`flex-shrink-0 snap-start h-9 px-4 rounded-full flex items-center gap-2 transition-all duration-300 text-sm font-bold ${isActive ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'}`}
-                                >
-                                    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-                                    {item.label}
-                                </button>
-                            );
-                        })}
-                    </nav>
+
+                    {/* Dropdown Menu */}
+                    {mobileMenuOpen && (
+                        <>
+                            <div className="fixed inset-0 top-[4rem] bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40" onClick={() => setMobileMenuOpen(false)}></div>
+                            <div className="absolute top-[calc(100%+8px)] left-4 w-64 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-down origin-top-left">
+                                <div className="p-2 space-y-1">
+                                    {NAV_ITEMS.map((item) => {
+                                        const isActive = view === item.id;
+                                        return (
+                                            <button 
+                                                key={item.id} 
+                                                onClick={() => { 
+                                                    vibration.tick(); 
+                                                    setView(item.id as any);
+                                                    setMobileMenuOpen(false);
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }} 
+                                                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${isActive ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 active:bg-slate-100 dark:active:bg-white/10'}`}
+                                            >
+                                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'} />
+                                                <span className={`text-sm ${isActive ? 'font-black' : 'font-bold'}`}>{item.title}</span>
+                                                {isActive && <Check size={16} strokeWidth={3} className="ml-auto" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-12 pt-[calc(6rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-12 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 <AdBanner userRole={userRole} />
                 
                 {/* Search Overlay (When active) */}
