@@ -217,7 +217,7 @@ export const CronogramaView = ({
     setScheduleProgress: React.Dispatch<React.SetStateAction<ScheduleProgress>>, 
     config: UserConfig, 
     searchTerm?: string, 
-    onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA') => void,
+    onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA' | 'MEDREVIEW') => void,
     onCreateAggregatedTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void,
     existingTopics: Topic[],
     onUpdateTopic?: (topic: Topic) => void
@@ -323,7 +323,7 @@ export const CronogramaView = ({
                         onClick={() => setScheduleMenuOpen(!scheduleMenuOpen)}
                         className="flex items-center gap-2 px-3 py-2.5 bg-slate-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
                     >
-                        {activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
+                        {activeScheduleCode === 'MEDREVIEW' ? 'MedReview 2026' : activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
                         <ChevronDown size={14} className={`transition-transform ${scheduleMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     
@@ -342,6 +342,13 @@ export const CronogramaView = ({
                             >
                                 Estratégia MED
                                 {activeScheduleCode === 'ESTRATEGIA' && <Check size={14}/>}
+                            </button>
+                            <button 
+                                onClick={() => { onScheduleChange('MEDREVIEW'); setScheduleMenuOpen(false); }} 
+                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDREVIEW' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
+                            >
+                                MedReview 2026
+                                {activeScheduleCode === 'MEDREVIEW' && <Check size={14}/>}
                             </button>
                         </div>
                     )}
