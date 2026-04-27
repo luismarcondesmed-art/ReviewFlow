@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban, Bookmark } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from '../utils';
 
@@ -134,15 +134,19 @@ const KanbanBoard = ({ topics, onEdit }: { topics: Topic[], onEdit: (t: Topic) =
                             <span className="text-xs font-bold text-slate-500 bg-white dark:bg-black/20 px-2 py-1 rounded-lg shadow-sm">{colTopics.length}</span>
                         </div>
                         <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
-                            {colTopics.map(t => (
-                                <div 
+                            <AnimatePresence>
+                            {colTopics.map((t, index) => (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
                                     key={t.id} 
                                     onClick={() => onEdit(t)}
-                                    className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-white/10 cursor-pointer hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors group"
+                                    className="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-white/10 cursor-pointer hover:border-blue-300 dark:hover:border-blue-500/50 hover:scale-[1.01] hover:-translate-y-0.5 transition-all group"
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{t.area}</span>
-                                        {t.importance === 'extreme' && <span className="w-2 h-2 rounded-full bg-red-500"></span>}
+                                        {t.importance === 'extreme' && <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>}
                                     </div>
                                     <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{t.title}</h4>
                                     {t.source && <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mb-2">{t.source}</p>}
@@ -159,17 +163,19 @@ const KanbanBoard = ({ topics, onEdit }: { topics: Topic[], onEdit: (t: Topic) =
                                     <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-white/5">
                                         <div className="flex items-center gap-1">
                                             <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                                <div className="h-full bg-blue-500" style={{width: `${Math.round((t.reviews.filter(r => r.done).length / Math.max(t.reviews.length, 1)) * 100)}%`}}></div>
+                                                <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600" style={{width: `${Math.round((t.reviews.filter(r => r.done).length / Math.max(t.reviews.length, 1)) * 100)}%`}}></div>
                                             </div>
                                         </div>
                                         <span className="text-[10px] font-bold text-slate-400">
                                             {t.reviews.filter(r => r.done).length}/{t.reviews.length}
                                         </span>
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
+                            </AnimatePresence>
                             {colTopics.length === 0 && (
-                                <div className="text-center p-4 text-xs font-bold text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl">
+                                <div className="text-center p-4 text-xs font-bold text-slate-400 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center gap-2">
+                                    <Bookmark size={20} className="text-slate-300 dark:text-slate-600" />
                                     Vazio
                                 </div>
                             )}

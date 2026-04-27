@@ -139,19 +139,32 @@ export const HubView = ({
                             
                             {/* Inline Dropdown for Pending Reviews */}
                             {isPendingExpanded && dueItems.length > 0 && (
-                                <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 animate-scale-in">
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5"
+                                >
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {dueItems.map((item: any) => {
+                                        <AnimatePresence>
+                                        {dueItems.map((item: any, i: number) => {
                                             const theme = getAreaTheme(item.topic.area);
                                             const isOverdue = item.date < today;
                                             const reviewObj = item.topic.reviews[item.idx];
                                             const numQuestions = reviewObj?.targetQ || 0;
                                             
                                             return (
-                                                <div key={`${item.topic.id}-${item.idx}`} className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer" onClick={() => onReview(item.topic.id, item.idx)}>
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.05 }}
+                                                    key={`${item.topic.id}-${item.idx}`} 
+                                                    className="bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group cursor-pointer hover:bg-white dark:hover:bg-white/10 hover:shadow-sm hover:border-slate-300 dark:hover:border-white/20 transition-all" 
+                                                    onClick={() => onReview(item.topic.id, item.idx)}
+                                                >
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-sm shrink-0 ${theme.bg} ${theme.text}`}>
-                                                            {isOverdue ? <AlertCircle size={14}/> : <Calendar size={14}/>}
+                                                            {isOverdue ? <AlertCircle size={14} className="animate-pulse"/> : <Calendar size={14}/>}
                                                         </div>
                                                         <div className="min-w-0">
                                                             <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">{item.topic.title}</h4>
@@ -178,11 +191,12 @@ export const HubView = ({
                                                     <button className="p-2 bg-white dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg shadow-sm transition-colors shrink-0">
                                                         <PlayCircle size={16}/>
                                                     </button>
-                                                </div>
+                                                </motion.div>
                                             );
                                         })}
+                                        </AnimatePresence>
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
                         </div>
 
