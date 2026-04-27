@@ -87,7 +87,7 @@ export interface UserConfig {
   dailyQuestionLimit?: number; // Caps the daily volume
   isPremium?: boolean; // True controls access to premium features (auto-optimization)
   lastAutoOptimization?: string; // YYYY-MM-DD
-  activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
+  activeSchedule?: 'MEDCOF' | 'ESTRATEGIA' | 'MEDREVIEW'; // Added preference
   useFSRS?: boolean; // Toggle for Spaced Repetition System
   bonusXP?: number; // Gamification bonus XP
   stats?: UserStats; // Gamification stats

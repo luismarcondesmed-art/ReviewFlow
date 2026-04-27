@@ -7,6 +7,7 @@ import { UserConfig, ScheduleProgress, AreaType, Topic, ImportanceType } from '.
 import { getAreaTheme, getTodayStr } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
 import { ESTRATEGIA_SCHEDULE } from '../services/estrategiaSchedule';
+import { MEDREVIEW_SCHEDULE } from '../services/medreviewSchedule';
 import { calculateEnamedStats } from '../utils/enamedUtils';
 
 // --- Helpers ---
@@ -237,6 +238,7 @@ export const CronogramaView = ({
     const finalSearch = searchTerm || searchLocal;
 
     const currentScheduleData = useMemo(() => {
+        if (activeScheduleCode === 'MEDREVIEW') return MEDREVIEW_SCHEDULE;
         return activeScheduleCode === 'MEDCOF' ? MEDCOF_SCHEDULE : ESTRATEGIA_SCHEDULE;
     }, [activeScheduleCode]);
 

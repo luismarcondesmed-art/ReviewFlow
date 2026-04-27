@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, laz
 import { 
     Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
     Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle, BrainCircuit
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle, BrainCircuit, Heart
 } from 'lucide-react';
 import { 
     AreaType, Topic, Simulado, ImportanceType
@@ -15,7 +15,7 @@ import {
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
 import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown, AdBanner } from './components';
-import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal } from './modals';
+import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal, SupportModal } from './modals';
 import { Toaster, toast } from 'sonner';
 
 // --- Lazy Loaded Views for Performance ---
@@ -141,6 +141,7 @@ function AppContent() {
     const [optimizationInfoOpen, setOptimizationInfoOpen] = useState(false);
     const [tutorialOpen, setTutorialOpen] = useState(false);
     const [syncAdOpen, setSyncAdOpen] = useState(false);
+    const [supportModalOpen, setSupportModalOpen] = useState(false);
     
     const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
 
@@ -627,6 +628,10 @@ function AppContent() {
                                 </div>
                             )}
                         </div>
+                        <button onClick={() => setSupportModalOpen(true)} className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0 mr-1">
+                            <Heart size={14} className="fill-rose-500/20" />
+                            <span>Ajude o site</span>
+                        </button>
                         <button 
                             onClick={handleSyncClick} 
                             disabled={status === 'syncing' || !syncKey}
@@ -658,6 +663,9 @@ function AppContent() {
                         </div>
                     </button>
                     <div className="flex items-center gap-2">
+                         <button onClick={() => setSupportModalOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                             <Heart size={18} className="fill-rose-500/20" />
+                         </button>
                          <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
                              <RefreshCw size={18} />
                          </button>
@@ -948,6 +956,11 @@ function AppContent() {
             <OptimizationInfoModal
                 isOpen={optimizationInfoOpen}
                 onClose={() => setOptimizationInfoOpen(false)}
+            />
+
+            <SupportModal 
+                isOpen={supportModalOpen}
+                onClose={() => setSupportModalOpen(false)}
             />
 
             <TutorialModal 

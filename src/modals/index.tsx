@@ -42,7 +42,9 @@ import {
   Trophy,
   Settings,
   Sparkles,
+  Heart,
 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import {
   Topic,
   AreaType,
@@ -65,6 +67,7 @@ import {
 } from "../utils";
 import { MEDCOF_SCHEDULE } from "../services/medcofSchedule";
 import { ESTRATEGIA_SCHEDULE } from "../services/estrategiaSchedule";
+import { MEDREVIEW_SCHEDULE } from "../services/medreviewSchedule";
 
 // --- Modern Glass Modal ---
 export const Modal = ({
@@ -676,10 +679,12 @@ export const EditTopicModal = ({
 
   // Lesson Autocomplete Logic
   const availableLessons = useMemo(() => {
-    const schedule =
-      config?.activeSchedule === "ESTRATEGIA"
-        ? ESTRATEGIA_SCHEDULE
-        : MEDCOF_SCHEDULE;
+    let schedule = MEDCOF_SCHEDULE;
+    if (config?.activeSchedule === "ESTRATEGIA") {
+      schedule = ESTRATEGIA_SCHEDULE;
+    } else if (config?.activeSchedule === "MEDREVIEW") {
+      schedule = MEDREVIEW_SCHEDULE;
+    }
     return schedule.map((s) => s.aula);
   }, [config?.activeSchedule]);
 
@@ -1328,6 +1333,55 @@ export const OptimizationResultModal = ({
   );
 };
 
+export const SupportModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Apoie o ReviewFlow">
+      <div className="p-5 text-center flex flex-col items-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-500/30">
+          <Heart size={32} strokeWidth={2.5} />
+        </div>
+        <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Ajude a Manter o Site</h3>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          O ReviewFlow é 100% gratuito e não possui propagandas intrusivas. Porém, manter os servidores, banco de dados e domínios gera custos mensais.
+          Sua doação ajuda a manter a plataforma no ar para todos os estudantes. Qualquer valor faz a diferença!
+        </p>
+
+        <div className="bg-slate-50 dark:bg-black/20 p-5 rounded-2xl border border-slate-200 dark:border-white/10 w-full mb-6">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+               <QRCodeCanvas value="00020126460014br.gov.bcb.pix0124378c679e-d198-46c0-bac6-47c2580ead635204000053039865802BR5913LUIS MARCONDES6009SAO PAULO62140510ReviewFlow63047C44" size={160} level="M" />
+            </div>
+          </div>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Chave PIX (Aleatória)</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-lg p-2.5 text-[11px] text-slate-600 dark:text-slate-300 font-bold break-all select-all">
+              378c679e-d198-46c0-bac6-47c2580ead63
+            </code>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText("378c679e-d198-46c0-bac6-47c2580ead63");
+                alert("Chave PIX copiada!");
+              }}
+              className="w-10 h-10 shrink-0 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20"
+            >
+              <ClipboardList size={16} />
+            </button>
+          </div>
+        </div>
+
+        <button 
+          onClick={onClose}
+          className="w-full h-12 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-white rounded-xl font-bold transition-all shadow-sm active:scale-[0.98]"
+        >
+          Voltar
+        </button>
+      </div>
+    </Modal>
+  );
+};
+
 export const SettingsModal = ({
   isOpen,
   onClose,
@@ -1565,6 +1619,25 @@ export const SettingsModal = ({
                       }
                       className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white appearance-none min-h-[44px]"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">
+                      Cronograma (Aulas)
+                    </label>
+                    <select
+                      value={tempConfig.activeSchedule || 'MEDCOF'}
+                      onChange={(e) =>
+                        setTempConfig((p: any) => ({
+                          ...p,
+                          activeSchedule: e.target.value,
+                        }))
+                      }
+                      className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white appearance-none min-h-[44px]"
+                    >
+                      <option value="MEDCOF">Medcof</option>
+                      <option value="ESTRATEGIA">Estratégia MED</option>
+                      <option value="MEDREVIEW">MedReview 2026</option>
+                    </select>
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
