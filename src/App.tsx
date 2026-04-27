@@ -202,6 +202,21 @@ function AppContent() {
         }
     }, [topics]);
 
+    // Auto Optimize
+    useEffect(() => {
+        if (loaded && hasStarted && config.isPremium && config.autoOptimize) {
+            const today = getTodayStr();
+            if (config.lastAutoOptimization !== today) {
+                const result = optimizeSchedule(topics, config);
+                if (result.changes.length > 0) {
+                    setTopics(result.topics);
+                    toast.success("Agenda otimizada automaticamente!", { description: `${result.changes.length} revisões ajustadas.` });
+                }
+                setConfig(prev => ({ ...prev, lastAutoOptimization: today }));
+            }
+        }
+    }, [loaded, hasStarted, config?.isPremium, config?.autoOptimize, config?.lastAutoOptimization]);
+
     const handleInstallApp = async () => {
         if (!installPrompt) return;
         installPrompt.prompt();
@@ -529,7 +544,7 @@ function AppContent() {
         { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
         { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
         { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
-        { id: 'database', label: 'Banco', icon: Database, title: 'Banco de Dados' },
+        { id: 'database', label: 'Acervo', icon: Database, title: 'Acervo de Estudos' },
         { id: 'stats', label: 'Estatísticas', icon: PieChart, title: 'Estatísticas ENAMED' },
     ];
 
@@ -560,10 +575,10 @@ function AppContent() {
             <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
                 <div className="flex items-center gap-12 w-1/3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
-                        <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
+                        <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
                         {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
                         {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
                         <div className="hidden lg:block mr-6">
@@ -626,33 +641,51 @@ function AppContent() {
                 </div>
             </header>
 
-            {/* Mobile Top Navigation (Floating & Dynamic) */}
-            <div className="lg:hidden fixed top-[calc(1rem+env(safe-area-inset-top))] left-4 right-4 z-[80] animate-slide-down">
-                <nav className="bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-black/50 rounded-2xl p-1.5 grid grid-cols-5 gap-1">
-                    {NAV_ITEMS.map((item) => {
-                        const isActive = view === item.id;
-                        return (
-                            <button 
-                                key={item.id} 
-                                onClick={() => { 
-                                    vibration.tick(); 
-                                    setView(item.id as any);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} 
-                                className={`h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-500/20' : 'text-slate-400 dark:text-slate-500 active:bg-slate-100 dark:active:bg-white/5'}`}
-                            >
-                                <item.icon 
-                                    size={20} 
-                                    strokeWidth={isActive ? 2.5 : 2} 
-                                />
-                            </button>
-                        );
-                    })}
-                </nav>
+            {/* Mobile Top Navigation (Modern & Adapative) */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 pt-[env(safe-area-inset-top)] animate-slide-down">
+                {/* Brand & Actions */}
+                <div className="flex items-center justify-between px-4 h-14">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                             <Activity size={16} strokeWidth={2.5}/>
+                        </div>
+                        <span className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">ReviewFlow</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                         <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                             <RefreshCw size={16} />
+                         </button>
+                         <button onClick={() => setSettingsOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                             <Settings size={16} />
+                         </button>
+                    </div>
+                </div>
+                {/* Scrollable Nav Pills */}
+                <div className="px-4 pb-2">
+                    <nav className="flex items-center gap-2 overflow-x-auto hide-scrollbar snap-x pb-1">
+                        {NAV_ITEMS.map((item) => {
+                            const isActive = view === item.id;
+                            return (
+                                <button 
+                                    key={item.id} 
+                                    onClick={() => { 
+                                        vibration.tick(); 
+                                        setView(item.id as any);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }} 
+                                    className={`flex-shrink-0 snap-start h-9 px-4 rounded-full flex items-center gap-2 transition-all duration-300 text-sm font-bold ${isActive ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400'}`}
+                                >
+                                    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                                    {item.label}
+                                </button>
+                            );
+                        })}
+                    </nav>
+                </div>
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-28 lg:pb-12 pt-[calc(6rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-12 pt-[calc(6rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 <AdBanner userRole={userRole} />
                 
                 {/* Search Overlay (When active) */}
@@ -747,7 +780,7 @@ function AppContent() {
                             />
                         )}
 
-                        {view === 'stats' && <StatsView />}
+                        {view === 'stats' && <StatsView topics={activeTopics} simulados={activeSimulados} />}
                     </Suspense>
                 </div>
             </main>

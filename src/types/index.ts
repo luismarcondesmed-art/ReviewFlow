@@ -83,7 +83,10 @@ export interface WeeklyGoal {
 export interface UserConfig {
   examDate: string; // YYYY-MM-DD
   targetAccuracy: number; // 0-100
-  dailyQuestionLimit?: number; // Limit for optimize function
+  autoOptimize?: boolean; // FSRS-based dynamic optimization
+  dailyQuestionLimit?: number; // Caps the daily volume
+  isPremium?: boolean; // True controls access to premium features (auto-optimization)
+  lastAutoOptimization?: string; // YYYY-MM-DD
   activeSchedule?: 'MEDCOF' | 'ESTRATEGIA'; // Added preference
   useFSRS?: boolean; // Toggle for Spaced Repetition System
   bonusXP?: number; // Gamification bonus XP

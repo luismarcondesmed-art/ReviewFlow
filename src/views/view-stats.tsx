@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { BarChart2, PieChart, TrendingUp, BookOpen, ChevronRight, Activity, Info, X, Search, Map as MapIcon } from 'lucide-react';
+import { BarChart2, PieChart, TrendingUp, BookOpen, ChevronRight, Activity, Info, X, Search, Map as MapIcon, Lightbulb } from 'lucide-react';
 import { especialidadesData, temasData, assuntosData } from '../data/enamedStats';
 import { provasIrmas } from '../data/provasIrmas';
+import { Topic, Simulado } from '../types';
+import { DetailedStatsWidget, AreaStatsWidget, RetentionWidget } from '../components';
 
-export const StatsView = () => {
-  const [activeTab, setActiveTab] = useState<'inep' | 'provas'>('inep');
+export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], simulados?: Simulado[] }) => {
+  const [activeTab, setActiveTab] = useState<'meu_desempenho' | 'inep' | 'provas'>('meu_desempenho');
   const [selectedEspecialidade, setSelectedEspecialidade] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [searchProva, setSearchProva] = useState('');
@@ -25,8 +27,8 @@ export const StatsView = () => {
               <BarChart2 size={24} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-200">Estatísticas & Provas</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Guia Estatístico e Provas Semelhantes</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-200">Estatísticas</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Acompanhe seu desempenho e guias de estudo</p>
             </div>
           </div>
           <button 
@@ -39,7 +41,7 @@ export const StatsView = () => {
         </div>
 
         <div className="lg:hidden flex items-center justify-between mb-6">
-            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas & Provas</h1>
+            <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Estatísticas</h1>
             <button 
                 onClick={() => setInfoOpen(!infoOpen)}
                 className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-black/40 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'}`}
@@ -50,16 +52,22 @@ export const StatsView = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex p-1 bg-slate-100 dark:bg-zinc-800/50 rounded-2xl mb-8">
+        <div className="flex p-1 bg-slate-100 dark:bg-zinc-800/50 rounded-2xl mb-8 overflow-x-auto custom-scrollbar">
+          <button
+            onClick={() => setActiveTab('meu_desempenho')}
+            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'meu_desempenho' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          >
+            Meu Desempenho
+          </button>
           <button
             onClick={() => setActiveTab('inep')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'inep' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'inep' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
-            Estatísticas INEP
+            Guia ENAMED
           </button>
           <button
             onClick={() => setActiveTab('provas')}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'provas' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'provas' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
             Provas Semelhantes
           </button>
@@ -74,9 +82,31 @@ export const StatsView = () => {
                 <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
                     <p>Aqui você pode analisar seu desempenho e descobrir provas semelhantes.</p>
                     <ul className="list-disc list-inside space-y-2">
-                        <li><strong>Estatísticas INEP:</strong> Identifique os temas e assuntos mais cobrados por especialidade.</li>
+                        <li><strong>Meu Desempenho:</strong> Suas estatísticas pessoais baseadas nas suas revisões e simulados.</li>
+                        <li><strong>Guia ENAMED:</strong> Identifique os temas e assuntos mais cobrados por especialidade.</li>
                         <li><strong>Provas Semelhantes:</strong> Descubra quais provas têm estilo e conteúdo parecidos com a sua prova alvo, multiplicando suas chances de aprovação.</li>
                     </ul>
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'meu_desempenho' && (
+            <div className="flex flex-col gap-6 animate-fade-in">
+                {/* Performance */}
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><BarChart2 size={16} className="text-blue-500"/> Performance Geral</h4>
+                    <DetailedStatsWidget topics={topics} simulados={simulados} />
+                </div>
+
+                {/* Desempenho por Área */}
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                     <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Desempenho por Área</h4>
+                     <AreaStatsWidget topics={topics} simulados={simulados} />
+                </div>
+
+                {/* Retenção */}
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                    <RetentionWidget topics={topics} />
                 </div>
             </div>
         )}
@@ -86,13 +116,13 @@ export const StatsView = () => {
             {/* Coluna 1: Especialidades */}
             <div className="lg:col-span-1">
               <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                <PieChart size={18} className="text-indigo-500" /> 1º Nível: Especialidades
+                <PieChart size={18} className="text-blue-500" /> 1º Nível: Especialidades
               </h2>
               
               {/* Mobile Select */}
               <div className="lg:hidden mb-6 relative">
                   <select 
-                      className="w-full appearance-none bg-white dark:bg-zinc-800/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold rounded-xl pl-4 pr-10 py-3 outline-none focus:border-indigo-500 shadow-sm"
+                      className="w-full appearance-none bg-white dark:bg-zinc-800/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold rounded-xl pl-4 pr-10 py-3 outline-none focus:border-blue-500 shadow-sm"
                       value={selectedEspecialidade || ''}
                       onChange={(e) => setSelectedEspecialidade(e.target.value)}
                   >
@@ -112,18 +142,18 @@ export const StatsView = () => {
                     onClick={() => setSelectedEspecialidade(esp.name)}
                     className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group ${
                       selectedEspecialidade === esp.name 
-                        ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/30' 
-                        : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30'
+                        ? 'bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30' 
+                        : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        idx < 5 ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/30 dark:text-indigo-300' : 'bg-slate-100 text-slate-500 dark:bg-zinc-700 dark:text-slate-400'
+                        idx < 5 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/30 dark:text-blue-300' : 'bg-slate-100 text-slate-500 dark:bg-zinc-700 dark:text-slate-400'
                       }`}>
                         {idx + 1}
                       </div>
                       <div>
-                        <div className={`text-sm font-bold ${selectedEspecialidade === esp.name ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <div className={`text-sm font-bold ${selectedEspecialidade === esp.name ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                           {esp.name}
                         </div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -132,10 +162,10 @@ export const StatsView = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${selectedEspecialidade === esp.name ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                      <span className={`text-xs font-bold ${selectedEspecialidade === esp.name ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {esp.percentage}%
                       </span>
-                      <ChevronRight size={14} className={`transition-transform ${selectedEspecialidade === esp.name ? 'text-indigo-500 translate-x-1' : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-1'}`} />
+                      <ChevronRight size={14} className={`transition-transform ${selectedEspecialidade === esp.name ? 'text-blue-500 translate-x-1' : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-1'}`} />
                     </div>
                   </button>
                 ))}
@@ -202,7 +232,7 @@ export const StatsView = () => {
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center p-10 bg-slate-50 dark:bg-zinc-800/30 border border-dashed border-slate-200 dark:border-white/10 rounded-3xl">
-                  <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-500 flex items-center justify-center mb-4">
                     <PieChart size={32} />
                   </div>
                   <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">Selecione uma Especialidade</h3>

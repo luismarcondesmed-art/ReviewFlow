@@ -6,7 +6,7 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden pt-24 px-6 pb-12">
                 <div className="max-w-3xl mx-auto prose prose-slate dark:prose-invert">
-                    <button onClick={() => onChangeView('main')} className="mb-8 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">&larr; Voltar</button>
+                    <button onClick={() => onChangeView('main')} className="mb-8 text-blue-600 dark:text-blue-400 font-bold hover:underline">&larr; Voltar</button>
                     <h1>Política de Privacidade</h1>
                     <p>Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
                     <p>No ReviewFlow, a sua privacidade é uma prioridade. Esta política descreve como coletamos, usamos e protegemos suas informações.</p>
@@ -30,7 +30,7 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
         return (
             <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden pt-24 px-6 pb-12">
                 <div className="max-w-3xl mx-auto prose prose-slate dark:prose-invert">
-                    <button onClick={() => onChangeView('main')} className="mb-8 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">&larr; Voltar</button>
+                    <button onClick={() => onChangeView('main')} className="mb-8 text-blue-600 dark:text-blue-400 font-bold hover:underline">&larr; Voltar</button>
                     <h1>Termos de Uso</h1>
                     <p>Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
                     <h2>1. Aceitação dos Termos</h2>
@@ -56,15 +56,15 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
                             <Activity size={20} strokeWidth={2.5}/>
                         </div>
-                        <span className="text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">ReviewFlow</span>
+                        <span className="text-xl font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">ReviewFlow</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-8">
-                        <a href="#features" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Recursos</a>
-                        <a href="#how-it-works" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Como Funciona</a>
-                        <a href="#faq" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">FAQ</a>
+                        <a href="#features" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Recursos</a>
+                        <a href="#how-it-works" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Como Funciona</a>
+                        <a href="#faq" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">FAQ</a>
                     </nav>
                     <button onClick={onStart} className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-slate-900/20 dark:shadow-white/20">
                         Acessar o App
@@ -75,19 +75,19 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
             {/* Hero Section */}
             <section className="pt-40 pb-20 px-6 relative">
                 <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8 border border-indigo-100 dark:border-indigo-500/20">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-widest mb-8 border border-blue-100 dark:border-blue-500/20">
                         <Star size={14} fill="currentColor" />
                         O melhor planejador de estudos médicos
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-8 leading-tight">
                         Domine a medicina com <br className="hidden md:block" />
-                        <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">Repetição Espaçada</span>
+                        <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-blue-500 bg-clip-text text-transparent">Repetição Espaçada</span>
                     </h1>
                     <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
                         O ReviewFlow é a plataforma definitiva para estudantes de medicina e médicos residentes. Organize suas revisões, acompanhe seu desempenho em simulados e otimize seu tempo de estudo com inteligência artificial.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button onClick={onStart} className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2">
+                        <button onClick={onStart} className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-2xl font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2">
                             Começar a Estudar Agora <ChevronRight size={20} />
                         </button>
                     </div>
@@ -110,8 +110,8 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
                             { icon: Database, title: 'Banco de Dados', desc: 'Organize todos os seus temas de estudo, com tags, links para materiais e histórico completo de revisões.' },
                             { icon: Zap, title: 'Otimização de Tempo', desc: 'Tem pouco tempo hoje? Use a função Otimizar para focar apenas nos temas mais críticos e atrasados.' }
                         ].map((feature, i) => (
-                            <div key={i} className="p-8 rounded-3xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/5 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors group">
-                                <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <div key={i} className="p-8 rounded-3xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/5 hover:border-blue-300 dark:hover:border-blue-500/30 transition-colors group">
+                                <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                     <feature.icon size={28} strokeWidth={2} />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{feature.title}</h3>
@@ -188,7 +188,7 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
             <footer className="py-12 px-6 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-[#0a0a0c]">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-2">
-                        <Activity size={20} className="text-indigo-500" />
+                        <Activity size={20} className="text-blue-500" />
                         <span className="font-black text-slate-900 dark:text-white">ReviewFlow</span>
                     </div>
                     <div className="text-sm text-slate-500 dark:text-slate-400 text-center md:text-left">

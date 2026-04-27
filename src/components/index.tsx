@@ -818,7 +818,7 @@ export const FutureLoadWidget = React.memo(({ topics }: { topics: Topic[] }) => 
                             <div className="flex flex-col items-center gap-1.5 sm:gap-2 flex-1 group relative h-full w-full">
                                 <div className="w-full bg-slate-100 dark:bg-white/5 rounded-t-sm sm:rounded-t-md flex items-end justify-center relative overflow-hidden h-full">
                                     <div 
-                                        className={`w-full rounded-t-sm sm:rounded-t-md transition-all duration-500 ${isToday ? 'bg-slate-500' : 'bg-indigo-400 dark:bg-indigo-500/80 group-hover:bg-indigo-500'}`}
+                                        className={`w-full rounded-t-sm sm:rounded-t-md transition-all duration-500 ${isToday ? 'bg-slate-500' : 'bg-blue-400 dark:bg-blue-500/80 group-hover:bg-blue-500'}`}
                                         style={{ height: `${heightPct}%` }}
                                     ></div>
                                 </div>
@@ -977,7 +977,7 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
     const CardContent = () => (
         <div className={`bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm relative group transition-all w-full
             ${isPico 
-                ? 'border-indigo-300 dark:border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.15)] dark:shadow-[0_0_15px_rgba(99,102,241,0.2)]' 
+                ? 'border-blue-300 dark:border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)] dark:shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
                 : 'border-black/5 dark:border-white/5 hover:border-slate-500/30'
             }
         `}>
@@ -1000,19 +1000,22 @@ export const TopicCard = React.memo(({ topic, onReview, onDelete, onEdit }: { to
                             {heatIcon}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{topic.area}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{AREAS.find(a => a.id === topic.area)?.name || topic.area}</span>
                             <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full ${priority.bg} ${priority.text}`}>{priority.label}</span>
                             <span className="text-[9px] font-medium text-slate-400 flex items-center gap-1">
                                 <Clock size={10}/> {lastReviewText}
                             </span>
                         </div>
                         {topic.linkedLessons && topic.linkedLessons.length > 0 && (
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                                {topic.linkedLessons.map((lesson, idx) => (
-                                    <span key={idx} className="text-[9px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/5 truncate max-w-[150px]">
-                                        {lesson.replace(/ \(~\d+q\)$/, '')}
-                                    </span>
-                                ))}
+                            <div className="mt-2 flex flex-col gap-1 w-full">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Aulas do Bloco:</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {topic.linkedLessons.map((lesson, idx) => (
+                                        <span key={idx} className="text-[10px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-200 dark:border-white/10 whitespace-normal text-left">
+                                            {lesson.replace(/ \(~\d+q\)$/, '')}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
