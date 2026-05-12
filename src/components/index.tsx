@@ -2,11 +2,10 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft, Heart } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
 
-export { AdBanner } from './AdBanner';
 export const getAreaIcon = (area: AreaType) => {
     switch (area) {
         case 'clinica': return Stethoscope;
@@ -57,7 +56,7 @@ const getRankInfo = (level: number) => {
 
 
 // --- Compact Level System (Sidebar) ---
-import { calculateStreak } from '../utils';
+import { calculateStreak, calculateHealth } from '../utils';
 
 export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, simulados, userRole }: { totalXP: number, totalQuestions: number, topics: Topic[], simulados: Simulado[], userRole: string }) => {
     const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalXP);
@@ -65,6 +64,7 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
     const RankIcon = rank.icon;
     const [isOpen, setIsOpen] = useState(false);
     const streak = calculateStreak(topics, simulados);
+    const health = calculateHealth(topics);
 
     return (
         <div className="relative">
@@ -74,8 +74,9 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
                 aria-label="Perfil do Usuário"
                 className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-slate-200/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
             >
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-slate-100 shadow-sm`}>
+                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-slate-100 shadow-sm relative`}>
                     <User size={16} fill="currentColor" className="opacity-90"/>
+                    {health < 50 && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-50 dark:border-[#1c1c1e]"></span>}
                 </div>
             </button>
 
@@ -83,8 +84,9 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
             {isOpen && (
                 <div className="absolute top-full left-0 mt-2 w-64 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md`}>
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md relative`}>
                             <RankIcon size={24} fill="currentColor" className="opacity-90"/>
+                            {health < 50 && <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-white dark:border-[#1c1c1e]"></span>}
                         </div>
                         <div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{rank.label}</div>
@@ -94,6 +96,12 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
                     </div>
                     
                     <div className="space-y-3 mb-4">
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
+                            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Heart size={14} className={health > 50 ? "text-emerald-500" : "text-rose-500"} /> Health</span>
+                            <span className={`text-sm font-black flex items-center gap-1 ${health > 50 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                {health}%
+                            </span>
+                        </div>
                         <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-white/5 rounded-lg">
                             <span className="text-xs font-bold text-slate-500">Questões Feitas</span>
                             <span className="text-sm font-black text-slate-800 dark:text-white">{totalQuestions}</span>

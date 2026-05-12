@@ -50,15 +50,25 @@ export const getTodayStr = () => new Date(new Date().getTime() - (new Date().get
 
 export const calculateFSRSNextDate = (accuracy: number, previousIntervalDays: number): string => {
     let multiplier = 1;
-    if (accuracy >= 90) multiplier = 2.5;
-    else if (accuracy >= 75) multiplier = 1.5;
-    else if (accuracy >= 50) multiplier = 1.2;
-    else multiplier = 0.5; // Decrease interval if poor performance
+    
+    // Improved Retention Algorithm inspired by FSRS
+    if (accuracy >= 95) multiplier = 2.8; // Easy
+    else if (accuracy >= 80) multiplier = 2.0; // Good
+    else if (accuracy >= 60) multiplier = 1.4; // Hard
+    else if (accuracy >= 40) multiplier = 0.8; // Again, but somewhat remembered
+    else multiplier = 0.4; // Complete reset
+    
+    // Add slight randomness (Fuzzing) to prevent bunching up of reviews
+    const fuzz = (Math.random() * 0.1) - 0.05; // +/- 5%
+    multiplier += fuzz;
 
     let nextInterval = Math.max(1, Math.round(previousIntervalDays * multiplier));
     
+    // Max interval 180 days to prevent infinite forgetting
+    nextInterval = Math.min(nextInterval, 180);
+    
     const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + nextInterval);
+    nextDate.setDate(nextDate.getDate() + Math.max(1, nextInterval));
     return nextDate.toISOString().split('T')[0];
 };
 
@@ -425,6 +435,20 @@ export const getLevelInfo = (totalXP: number) => {
     const nextLevelXP = ((level + 1) * (level + 1)) * CONSTANT;
     const progress = Math.min(100, Math.max(0, ((totalXP - currentLevelBaseXP) / (nextLevelXP - currentLevelBaseXP)) * 100));
     return { level, currentXP: totalXP, nextLevelXP, progress };
+};
+
+export const calculateHealth = (topics: Topic[]): number => {
+    const today = getTodayStr();
+    let overdueCount = 0;
+    topics.forEach(t => {
+        if (t.deleted) return;
+        t.reviews.forEach(r => {
+            if (!r.done && r.date < today) {
+                overdueCount++;
+            }
+        });
+    });
+    return Math.max(0, 100 - (overdueCount * 5));
 };
 
 export const triggerConfetti = () => { 

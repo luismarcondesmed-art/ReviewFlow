@@ -14,8 +14,8 @@ import {
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
-import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown, AdBanner } from './components';
-import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal, SupportModal } from './modals';
+import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown } from './components';
+import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal, SupportModal, DeepFocusModal } from './modals';
 import { Toaster, toast } from 'sonner';
 
 // --- Lazy Loaded Views for Performance ---
@@ -583,7 +583,11 @@ function AppContent() {
                         <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
                         {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
                         {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
-                        <div className="hidden lg:block mr-6">
+                        <div className="hidden lg:flex items-center gap-3 mr-6">
+                            <button onClick={() => setSupportModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0">
+                                <Heart size={14} className="fill-rose-500/20" />
+                                <span>Apoie</span>
+                            </button>
                             <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} />
                         </div>
                     </div>
@@ -628,10 +632,6 @@ function AppContent() {
                                 </div>
                             )}
                         </div>
-                        <button onClick={() => setSupportModalOpen(true)} className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0 mr-1">
-                            <Heart size={14} className="fill-rose-500/20" />
-                            <span>Ajude o site</span>
-                        </button>
                         <button 
                             onClick={handleSyncClick} 
                             disabled={status === 'syncing' || !syncKey}
@@ -708,7 +708,6 @@ function AppContent() {
 
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col min-h-screen relative pb-12 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
-                <AdBanner userRole={userRole} />
                 
                 {/* Search Overlay (When active) */}
                 {isSearchActive && (

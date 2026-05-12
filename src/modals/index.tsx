@@ -43,6 +43,7 @@ import {
   Settings,
   Sparkles,
   Heart,
+  PlayCircle,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import {
@@ -77,6 +78,7 @@ export const Modal = ({
   children,
   headerContent,
   alignTopOnMobile,
+  fullScreen,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -84,6 +86,7 @@ export const Modal = ({
   children?: React.ReactNode;
   headerContent?: React.ReactNode;
   alignTopOnMobile?: boolean;
+  fullScreen?: boolean;
 }) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -96,7 +99,13 @@ export const Modal = ({
   if (!isOpen) return null;
   return (
     <div
-      className={`fixed inset-0 z-[100] flex ${alignTopOnMobile ? "items-start pt-12 px-4 sm:pt-0 sm:items-center" : "items-end sm:items-center"} justify-center sm:p-4 p-0`}
+      className={`fixed inset-0 z-[100] flex ${
+        fullScreen 
+          ? "items-center justify-center p-0 sm:p-4" 
+          : alignTopOnMobile 
+            ? "items-start pt-12 px-4 sm:pt-0 sm:items-center" 
+            : "items-end sm:items-center"
+      } justify-center sm:p-4 p-0`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -110,7 +119,13 @@ export const Modal = ({
 
       {/* Modal Container: Floating Glass Panel */}
       <div
-        className={`relative w-full max-w-md bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${alignTopOnMobile ? "rounded-[32px]" : "rounded-t-[32px]"} sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}
+        className={`relative w-full max-w-md bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${
+            fullScreen 
+              ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[40px]" 
+              : alignTopOnMobile 
+                ? "rounded-[32px] max-h-[90vh]" 
+                : "rounded-t-[32px] max-h-[90vh]"
+        } sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-black/5 dark:border-white/5 flex justify-between items-center z-10 sticky top-0 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-xl">
@@ -151,28 +166,11 @@ export const SyncAdModal = ({
   onConfirm: () => void;
 }) => {
   const [countdown, setCountdown] = useState(5);
-  const adPushed = useRef(false);
 
   useEffect(() => {
     if (!isOpen) {
       setCountdown(5);
-      adPushed.current = false;
       return;
-    }
-
-    // Initialize AdSense
-    if (!adPushed.current) {
-      try {
-        // @ts-ignore
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        adPushed.current = true;
-      } catch (err: any) {
-        if (err.message && err.message.includes("already have ads")) {
-          adPushed.current = true;
-        } else {
-          console.error("Erro ao carregar o AdSense no modal:", err);
-        }
-      }
     }
 
     const timer = setInterval(() => {
@@ -193,32 +191,38 @@ export const SyncAdModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Sincronização">
       <div className="p-6 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
-          <Cloud size={32} />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-pink-500/30">
+          <Heart size={32} strokeWidth={2.5} />
         </div>
         <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
           Apoie o ReviewFlow
         </h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          Para manter a sincronização gratuita, exibimos este anúncio rápido.
-          Torne-se Premium para remover anúncios!
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          Para manter a sincronização gratuita, considere fazer uma doação. Seu apoio ajuda a manter os servidores online para todos os estudantes!
         </p>
 
-        {/* Ad Container */}
-        <div className="w-full min-h-[250px] bg-slate-100 dark:bg-zinc-900/50 rounded-xl flex items-center justify-center mb-6 overflow-hidden">
-          <ins
-            className="adsbygoogle"
-            style={{
-              display: "block",
-              minWidth: "300px",
-              width: "100%",
-              height: "250px",
-            }}
-            data-ad-client="ca-pub-6526249232306742"
-            data-ad-slot="1876421190"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          ></ins>
+        {/* PIX Container */}
+        <div className="bg-slate-50 dark:bg-black/20 p-5 rounded-2xl border border-slate-200 dark:border-white/10 w-full mb-6">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+               <QRCodeCanvas value="00020126460014br.gov.bcb.pix0124378c679e-d198-46c0-bac6-47c2580ead635204000053039865802BR5913LUIS MARCONDES6009SAO PAULO62140510ReviewFlow63047C44" size={160} level="M" />
+            </div>
+          </div>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Chave PIX (Aleatória)</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-lg p-2.5 text-[11px] text-slate-600 dark:text-slate-300 font-bold break-all select-all">
+              378c679e-d198-46c0-bac6-47c2580ead63
+            </code>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText("378c679e-d198-46c0-bac6-47c2580ead63");
+                alert("Chave PIX copiada!");
+              }}
+              className="w-10 h-10 shrink-0 flex items-center justify-center bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/20"
+            >
+              <ClipboardList size={16} />
+            </button>
+          </div>
         </div>
 
         <button
@@ -2624,3 +2628,72 @@ export const OptimizationInfoModal = ({ isOpen, onClose }: any) => {
     </Modal>
   );
 };
+
+export const DeepFocusModal = ({ isOpen, onClose, dueItems, onReview }: { isOpen: boolean; onClose: () => void; dueItems: any[]; onReview: (id: string, idx: number) => void }) => {
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [isActive, setIsActive] = useState(false);
+  const [mode, setMode] = useState<'focus' | 'break'>('focus');
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((t) => t - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isActive) {
+      setIsActive(false);
+      const nextMode = mode === 'focus' ? 'break' : 'focus';
+      setMode(nextMode);
+      setTimeLeft(nextMode === 'focus' ? 25 * 60 : 5 * 60);
+      try {
+          if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      } catch(e) {}
+    }
+    return () => clearInterval(interval);
+  }, [isActive, timeLeft, mode]);
+
+  const toggleTimer = () => setIsActive(!isActive);
+  const setTimerMode = (newMode: 'focus' | 'break') => {
+      setIsActive(false);
+      setMode(newMode);
+      setTimeLeft(newMode === 'focus' ? 25 * 60 : 5 * 60);
+  };
+
+  const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+  const secs = (timeLeft % 60).toString().padStart(2, '0');
+
+  return (
+    <Modal isOpen={isOpen} onClose={() => { setIsActive(false); onClose(); }} title="Modo Deep Focus" fullScreen={true}>
+      <div className="p-6 flex flex-col items-center">
+        <div className="flex gap-2 bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-xl mb-8">
+            <button onClick={() => setTimerMode('focus')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'focus' ? 'bg-white dark:bg-zinc-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pomodoro (25m)</button>
+            <button onClick={() => setTimerMode('break')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'break' ? 'bg-white dark:bg-zinc-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pausa (5m)</button>
+        </div>
+
+        <div className="relative mb-8 group">
+            <div className={`absolute inset-0 blur-xl opacity-20 group-hover:opacity-30 transition-opacity rounded-full ${mode === 'focus' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
+            <div className={`w-48 h-48 sm:w-64 sm:h-64 rounded-full flex items-center justify-center border-[8px] relative bg-white dark:bg-zinc-900 ${mode === 'focus' ? 'border-blue-100 dark:border-blue-900/40 text-blue-600 dark:text-blue-400' : 'border-emerald-100 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
+                <span className="text-6xl sm:text-7xl font-black tracking-tighter tabular-nums">{mins}:{secs}</span>
+            </div>
+        </div>
+
+        <div className="flex gap-4">
+            <button onClick={toggleTimer} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-95 transition-all ${mode === 'focus' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'}`}>
+                {isActive ? <span className="font-bold text-sm">PAUSE</span> : <PlayCircle size={32} />}
+            </button>
+        </div>
+        
+        {mode === 'focus' && dueItems.length > 0 && (
+            <div className="mt-8 w-full">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 text-center">Foco Atual ({dueItems.length} pendentes)</h3>
+                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group cursor-pointer hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 transition-all font-bold text-sm" onClick={() => onReview(dueItems[0].topic.id, dueItems[0].idx)}>
+                    <div className="truncate pr-4">{dueItems[0].topic.title}</div>
+                    <button className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 rounded-lg shrink-0">Revisar</button>
+                </div>
+            </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+

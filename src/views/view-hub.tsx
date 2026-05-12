@@ -3,12 +3,12 @@ import React, { useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X, LayoutGrid
+    Clock, Activity, Flame, CheckCircle2, ChevronRight, Sun, ArrowUpDown, Filter, PlayCircle, Plus, BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, AlertCircle, Calendar, X, LayoutGrid, BrainCircuit
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, getPerformanceColor, AREAS, getPriorityInfo } from '../utils';
 import { SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, TopicCard, DetailedStatsWidget, FutureLoadWidget, RetentionWidget, AreaStatsWidget, getAreaIcon, WeeklyGoalsWidget } from '../components';
-import { Modal, TodoModal, DailyTodoContent } from '../modals';
+import { Modal, TodoModal, DailyTodoContent, DeepFocusModal } from '../modals';
 
 export const HubView = ({ 
     topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
@@ -24,6 +24,7 @@ export const HubView = ({
 }) => {
     const [isPendingExpanded, setIsPendingExpanded] = useState(false);
     const [isChecklistExpanded, setIsChecklistExpanded] = useState(false);
+    const [deepFocusOpen, setDeepFocusOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     
     // Custom hook for media query
@@ -127,13 +128,26 @@ export const HubView = ({
                                 </div>
                                 
                                 {dueItems.length > 0 && (
-                                    <button 
-                                        onClick={startQuickSession} 
-                                        className="relative z-10 bg-blue-600 dark:bg-blue-500 text-white lg:hover:bg-blue-700 dark:lg:hover:bg-blue-600 shadow-md shadow-blue-500/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 w-auto text-sm md:text-base justify-center"
-                                    >
-                                        <PlayCircle size={18} fill="currentColor" className="text-white" />
-                                        Começar
-                                    </button>
+                                    <div className="relative z-10 flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
+                                        <motion.button 
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => setDeepFocusOpen(true)}
+                                            className="bg-white/80 dark:bg-black/20 border-2 border-blue-100 dark:border-blue-500/30 text-blue-700 dark:text-blue-400 lg:hover:bg-blue-50 dark:lg:hover:bg-white/5 px-4 py-2.5 md:px-5 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors text-sm md:text-base"
+                                        >
+                                            <BrainCircuit size={18} />
+                                            Deep Focus
+                                        </motion.button>
+                                        <motion.button 
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={startQuickSession} 
+                                            className="bg-blue-600 dark:bg-blue-500 text-white lg:hover:bg-blue-700 dark:lg:hover:bg-blue-600 shadow-md shadow-blue-500/20 px-4 py-2.5 md:px-6 md:py-3 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors w-auto text-sm md:text-base"
+                                        >
+                                            <PlayCircle size={18} fill="currentColor" className="text-white" />
+                                            Revisão Rápida
+                                        </motion.button>
+                                    </div>
                                 )}
                             </div>
                             
@@ -274,6 +288,13 @@ export const HubView = ({
                         </div>
                     </div>
             </motion.div>
+
+            <DeepFocusModal 
+                isOpen={deepFocusOpen} 
+                onClose={() => setDeepFocusOpen(false)} 
+                dueItems={dueItems} 
+                onReview={onReview} 
+            />
         </div>
     );
 };
