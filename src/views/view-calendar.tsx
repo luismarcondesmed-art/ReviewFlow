@@ -234,7 +234,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
             {/* Header */}
             <div className="flex flex-row items-center justify-between gap-3 mb-6 px-2">
                 <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-slate-900 dark:bg-white flex items-center justify-center text-white dark:text-black shadow-lg">
+                     <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                          <CalendarCheck size={20} className="lg:w-6 lg:h-6" />
                      </div>
                      <div>
@@ -243,25 +243,24 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                      </div>
                 </div>
                 
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    {/* Mobile View Toggles */}
-                    <div className="lg:hidden relative">
-                        <select 
-                            value={mobileViewMode} 
-                            onChange={(e) => setMobileViewMode(e.target.value as any)}
-                            className="appearance-none bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded-xl pl-2.5 pr-6 py-2 outline-none focus:border-slate-500"
-                        >
-                            <option value="agenda">Agenda</option>
-                            <option value="calendar">Mês</option>
-                            <option value="list">Lista</option>
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
+                <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+                    {/* Mobile View Segmented Control */}
+                    <div className="lg:hidden flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl">
+                        {(['agenda', 'calendar', 'list'] as const).map(mode => (
+                            <button
+                                key={mode}
+                                onClick={() => setMobileViewMode(mode)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${mobileViewMode === mode ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            >
+                                {mode === 'agenda' ? 'Faixa' : mode === 'calendar' ? 'Mês' : 'Lista'}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="flex items-center gap-0.5 lg:gap-2 bg-white dark:bg-[#18181b] p-1 lg:p-1.5 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
-                        <button onClick={handlePrevMonth} className="p-1 lg:p-2 hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"><ChevronLeft size={14}/></button>
-                        <button onClick={handleToday} className="px-1.5 lg:px-3 py-1 text-[9px] lg:text-xs font-black uppercase text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg whitespace-nowrap transition-colors">{new Date(year, month).toLocaleString('pt-BR', { month: 'short' }).replace('.', '')} {year}</button>
-                        <button onClick={handleNextMonth} className="p-1 lg:p-2 hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"><ChevronRight size={14}/></button>
+                    <div className="flex items-center gap-0.5 lg:gap-1 bg-white dark:bg-zinc-900 p-1 rounded-xl border border-slate-200/50 dark:border-white/5 shadow-sm">
+                        <button onClick={handlePrevMonth} className="p-1 lg:p-2 hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"><ChevronLeft size={16}/></button>
+                        <button onClick={handleToday} className="px-2 lg:px-4 py-1 lg:py-1.5 text-[10px] lg:text-sm font-black uppercase text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg whitespace-nowrap transition-colors">{new Date(year, month).toLocaleString('pt-BR', { month: 'short' }).replace('.', '')} {year}</button>
+                        <button onClick={handleNextMonth} className="p-1 lg:p-2 hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"><ChevronRight size={16}/></button>
                     </div>
                 </div>
             </div>

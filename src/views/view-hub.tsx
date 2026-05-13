@@ -246,12 +246,29 @@ export const HubView = ({
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2 space-y-6">
                                 {/* Smart Suggestions */}
-                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm relative overflow-hidden group">
                                     <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Lightbulb size={16} className="text-amber-500"/> Sugestões Inteligentes</h4>
                                     <SmartSuggestions topics={activeTopics} onReview={onReview} />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Retention */}
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><BrainCircuit size={16} className="text-purple-500"/> Retenção Global</h4>
+                                        <div className="h-40">
+                                            <RetentionWidget topics={activeTopics} />
+                                        </div>
+                                    </div>
+                                    {/* Future Load */}
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-slate-500"/> Previsão de Carga</h4>
+                                        <div className="h-40">
+                                            <FutureLoadWidget topics={activeTopics} />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Constância */}
@@ -269,21 +286,20 @@ export const HubView = ({
                             <div className="space-y-6">
                                 {/* Desktop Checklist */}
                                 {isDesktop && (
-                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] shadow-sm overflow-hidden flex flex-col h-[400px]">
+                                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] shadow-sm flex flex-col h-[400px] overflow-hidden">
                                         <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} />
                                     </div>
                                 )}
 
-                                {/* Previsão de Carga */}
-                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm">
-                                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity size={16} className="text-slate-500"/> Previsão de Carga</h4>
-                                    <div className="h-48">
-                                        <FutureLoadWidget topics={activeTopics} />
-                                    </div>
-                                </div>
-
                                 {/* Metas Semanais */}
                                 <WeeklyGoalsWidget config={config} topics={activeTopics} simulados={activeSimulados} />
+
+                                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[32px] p-6 shadow-sm overflow-hidden">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><ClipboardList size={16} className="text-blue-500"/> Simulados</h4>
+                                    </div>
+                                    <SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config?.targetAccuracy || 80} onAdd={onAddSimulado || (() => {})} />
+                                </div>
                             </div>
                         </div>
                     </div>

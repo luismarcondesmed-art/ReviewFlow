@@ -79,6 +79,7 @@ export const Modal = ({
   headerContent,
   alignTopOnMobile,
   fullScreen,
+  hideHeader,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -87,6 +88,7 @@ export const Modal = ({
   headerContent?: React.ReactNode;
   alignTopOnMobile?: boolean;
   fullScreen?: boolean;
+  hideHeader?: boolean;
 }) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -119,36 +121,38 @@ export const Modal = ({
 
       {/* Modal Container: Floating Glass Panel */}
       <div
-        className={`relative w-full max-w-md bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${
+        className={`relative w-full ${fullScreen ? "max-w-md sm:max-w-2xl" : "max-w-md"} bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${
             fullScreen 
-              ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[40px]" 
+              ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[40px] sm:min-h-[500px]" 
               : alignTopOnMobile 
                 ? "rounded-[32px] max-h-[90vh]" 
                 : "rounded-t-[32px] max-h-[90vh]"
         } sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-black/5 dark:border-white/5 flex justify-between items-center z-10 sticky top-0 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <h3
-              id="modal-title"
-              className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight"
+        {!hideHeader && (
+            <div className="px-6 py-5 border-b border-black/5 dark:border-white/5 flex justify-between items-center z-10 sticky top-0 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+                <h3
+                id="modal-title"
+                className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight"
+                >
+                {title}
+                </h3>
+                {headerContent}
+            </div>
+            <button
+                onClick={onClose}
+                aria-label="Fechar"
+                className="p-2 bg-black/5 dark:bg-slate-200/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90"
             >
-              {title}
-            </h3>
-            {headerContent}
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Fechar"
-            className="p-2 bg-black/5 dark:bg-slate-200/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90"
-          >
-            <X size={20} className="text-slate-500 dark:text-slate-300" />
-          </button>
-        </div>
+                <X size={20} className="text-slate-500 dark:text-slate-300" />
+            </button>
+            </div>
+        )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-0 scroll-smooth custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-0 scroll-smooth custom-scrollbar flex flex-col">
           {children}
         </div>
       </div>
@@ -2663,34 +2667,46 @@ export const DeepFocusModal = ({ isOpen, onClose, dueItems, onReview }: { isOpen
   const secs = (timeLeft % 60).toString().padStart(2, '0');
 
   return (
-    <Modal isOpen={isOpen} onClose={() => { setIsActive(false); onClose(); }} title="Modo Deep Focus" fullScreen={true}>
-      <div className="p-6 flex flex-col items-center">
-        <div className="flex gap-2 bg-slate-100 dark:bg-zinc-800 p-1.5 rounded-xl mb-8">
-            <button onClick={() => setTimerMode('focus')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'focus' ? 'bg-white dark:bg-zinc-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pomodoro (25m)</button>
-            <button onClick={() => setTimerMode('break')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'break' ? 'bg-white dark:bg-zinc-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pausa (5m)</button>
+    <Modal isOpen={isOpen} onClose={() => { setIsActive(false); onClose(); }} title="Modo Deep Focus" fullScreen={true} hideHeader={true}>
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-between flex-1 h-full w-full bg-white/50 dark:bg-[#121214]/50 relative">
+        <button onClick={() => { setIsActive(false); onClose(); }} className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90 z-50">
+            <X size={20} className="text-slate-500 dark:text-slate-300" />
+        </button>
+        <div className="flex gap-2 bg-slate-100/80 dark:bg-zinc-800/80 p-1.5 rounded-2xl w-full max-w-[240px] shadow-inner border border-slate-200/50 dark:border-white/5 mx-auto shrink-0 mt-8 sm:mt-4">
+            <button onClick={() => setTimerMode('focus')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${mode === 'focus' ? 'bg-white dark:bg-zinc-700 shadow-md text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Foco</button>
+            <button onClick={() => setTimerMode('break')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${mode === 'break' ? 'bg-white dark:bg-zinc-700 shadow-md text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pausa</button>
         </div>
 
-        <div className="relative mb-8 group">
-            <div className={`absolute inset-0 blur-xl opacity-20 group-hover:opacity-30 transition-opacity rounded-full ${mode === 'focus' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
-            <div className={`w-48 h-48 sm:w-64 sm:h-64 rounded-full flex items-center justify-center border-[8px] relative bg-white dark:bg-zinc-900 ${mode === 'focus' ? 'border-blue-100 dark:border-blue-900/40 text-blue-600 dark:text-blue-400' : 'border-emerald-100 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
-                <span className="text-6xl sm:text-7xl font-black tracking-tighter tabular-nums">{mins}:{secs}</span>
+        <div className="relative group flex justify-center items-center w-full grow my-4">
+            <div className={`absolute inset-0 blur-3xl opacity-20 transition-all duration-700 rounded-full w-56 h-56 sm:w-80 sm:h-80 mx-auto ${isActive ? 'opacity-40 scale-105' : 'opacity-20 scale-100'} ${mode === 'focus' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
+            <div className={`w-56 h-56 sm:w-72 sm:h-72 rounded-full flex flex-col items-center justify-center border-[8px] sm:border-[12px] relative bg-white dark:bg-[#121214] shadow-2xl transition-all duration-500 ${mode === 'focus' ? 'border-blue-50 dark:border-blue-900/40 text-blue-600 dark:text-blue-400' : 'border-emerald-50 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
+                <span className="text-6xl sm:text-8xl font-black tracking-tighter tabular-nums">{mins}:{secs}</span>
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest mt-1 sm:mt-4 opacity-50">{mode === 'focus' ? 'Pomodoro' : 'Descanso'}</span>
             </div>
         </div>
 
-        <div className="flex gap-4">
-            <button onClick={toggleTimer} className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-95 transition-all ${mode === 'focus' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30'}`}>
-                {isActive ? <span className="font-bold text-sm">PAUSE</span> : <PlayCircle size={32} />}
+        <div className="flex gap-4 justify-center w-full shrink-0 mb-6">
+            <button onClick={toggleTimer} className={`w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-all duration-300 ${mode === 'focus' ? 'bg-gradient-to-tr from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-500/30' : 'bg-gradient-to-tr from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-500/30'}`}>
+                {isActive ? <span className="font-black text-xs sm:text-base uppercase tracking-widest">Pausa</span> : <PlayCircle size={32} className="sm:w-12 sm:h-12 ml-1" fill="currentColor" />}
             </button>
         </div>
         
-        {mode === 'focus' && dueItems.length > 0 && (
-            <div className="mt-8 w-full">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 text-center">Foco Atual ({dueItems.length} pendentes)</h3>
-                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5 flex items-center justify-between group cursor-pointer hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-white/10 transition-all font-bold text-sm" onClick={() => onReview(dueItems[0].topic.id, dueItems[0].idx)}>
-                    <div className="truncate pr-4">{dueItems[0].topic.title}</div>
-                    <button className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-1.5 rounded-lg shrink-0">Revisar</button>
+        {mode === 'focus' && dueItems.length > 0 ? (
+            <div className="w-full max-w-sm mx-auto shrink-0 pb-4">
+                <h3 className="text-[10px] sm:text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 text-center">Revisão Sugerida ({dueItems.length})</h3>
+                <div 
+                    className="bg-white dark:bg-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-white/10 flex items-center justify-between group cursor-pointer hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md transition-all font-bold text-xs sm:text-sm" 
+                    onClick={() => {
+                        setIsActive(false);
+                        onReview(dueItems[0].topic.id, dueItems[0].idx);
+                    }}
+                >
+                    <div className="truncate pr-4 flex-1 text-slate-800 dark:text-slate-200">{dueItems[0].topic.title}</div>
+                    <button className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl shrink-0 transition-colors shadow-sm shadow-blue-500/20">Iniciar</button>
                 </div>
             </div>
+        ) : (
+            <div className="w-full max-w-sm mx-auto h-[60px] sm:h-[80px] shrink-0 pb-4"></div>
         )}
       </div>
     </Modal>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban, Bookmark } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban, Bookmark, ClipboardList } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor } from '../utils';
 
@@ -253,36 +253,25 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
     }, [simulados, searchTerm]);
 
     return (
-        <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
+        <div className="h-full flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 animate-scale-in">
             {/* Header: Controls */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 z-20 relative">
-                {/* View Switcher (Dropdown) */}
-                <div className="relative w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 z-20 relative px-2">
+                {/* View Switcher (Segmented Control) */}
+                <div className="w-full sm:w-auto flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl">
                     <button 
-                        onClick={() => setViewMenuOpen(!viewMenuOpen)}
-                        className="w-full sm:w-48 px-4 py-3 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-xl flex items-center justify-between shadow-sm active:scale-95 transition-all"
+                        onClick={() => setActiveTab('topics')}
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'topics' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <Database size={16} className="text-slate-500"/>
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                                {activeTab === 'topics' ? 'Matérias' : 'Simulados'}
-                            </span>
-                        </div>
-                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${viewMenuOpen ? 'rotate-180' : ''}`}/>
+                        <Database size={14}/>
+                        Matérias
                     </button>
-                    
-                    {viewMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
-                            <button onClick={() => { setActiveTab('topics'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
-                                <span>Matérias</span>
-                                {activeTab === 'topics' && <Check size={14} className="text-slate-800 dark:text-white"/>}
-                            </button>
-                            <button onClick={() => { setActiveTab('simulados'); setViewMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between text-slate-700 dark:text-slate-300">
-                                <span>Simulados</span>
-                                {activeTab === 'simulados' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                            </button>
-                        </div>
-                    )}
+                    <button 
+                        onClick={() => setActiveTab('simulados')}
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'simulados' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        <ClipboardList size={14}/>
+                        Simulados
+                    </button>
                 </div>
 
                 {/* Filters & Grouping */}
@@ -292,10 +281,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         <div className="relative flex-1 sm:flex-none">
                             <button 
                                 onClick={() => setGroupMenuOpen(!groupMenuOpen)}
-                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${groupBy !== 'none' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all border ${groupBy !== 'none' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                             >
-                                <LayoutGrid size={16}/>
-                                <span className="hidden sm:inline">Agrupar</span>
+                                <LayoutGrid size={14}/>
+                                <span className="">Agrupar</span>
                             </button>
                             {groupMenuOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
@@ -320,20 +309,20 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         </div>
 
                         {/* View Mode Toggle */}
-                        <div className="relative flex-1 sm:flex-none flex bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl">
+                        <div className="relative flex-1 sm:flex-none flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl">
                             <button 
                                 onClick={() => setViewMode('list')}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                 title="Visualização em Lista"
                             >
-                                <List size={16}/>
+                                <List size={14}/>
                             </button>
                             <button 
                                 onClick={() => setViewMode('kanban')}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                 title="Visualização Kanban"
                             >
-                                <Kanban size={16}/>
+                                <Kanban size={14}/>
                             </button>
                         </div>
 
@@ -341,10 +330,10 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
                         <div className="relative flex-1 sm:flex-none">
                             <button 
                                 onClick={() => setFilterMenuOpen(!filterMenuOpen)}
-                                className={`w-full sm:w-auto px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-all border ${filterArea !== 'all' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200 dark:border-emerald-500/30' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all border ${filterArea !== 'all' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200 dark:border-emerald-500/30 shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                             >
-                                <Filter size={16}/>
-                                <span className="hidden sm:inline">Filtrar</span>
+                                <Filter size={14}/>
+                                <span className="">Filtrar</span>
                             </button>
                             {filterMenuOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-y-auto max-h-60 animate-scale-in z-30 custom-scrollbar">

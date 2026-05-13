@@ -315,68 +315,83 @@ export const CronogramaView = ({
         });
     };
 
+    const expandAll = () => setCollapsedBlocks(new Set());
+    const collapseAll = () => {
+        const allIds = groupedData.map(g => g.id);
+        setCollapsedBlocks(new Set(allIds));
+    };
+
     return (
-        <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-2 rounded-2xl mb-6 flex flex-row gap-2 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-slate-200 dark:border-white/10 items-center">
-                <div className="relative shrink-0">
-                    <button 
-                        onClick={() => setScheduleMenuOpen(!scheduleMenuOpen)}
-                        className="flex items-center gap-2 px-3 py-2.5 bg-slate-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
-                    >
-                        {activeScheduleCode === 'MEDREVIEW' ? 'MedReview 2026' : activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
-                        <ChevronDown size={14} className={`transition-transform ${scheduleMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {scheduleMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-scale-in">
-                            <button 
-                                onClick={() => { onScheduleChange('MEDCOF'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-slate-800 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
-                            >
-                                MedCof Extensivo
-                                {activeScheduleCode === 'MEDCOF' && <Check size={14}/>}
-                            </button>
-                            <button 
-                                onClick={() => { onScheduleChange('ESTRATEGIA'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'ESTRATEGIA' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
-                            >
-                                Estratégia MED
-                                {activeScheduleCode === 'ESTRATEGIA' && <Check size={14}/>}
-                            </button>
-                            <button 
-                                onClick={() => { onScheduleChange('MEDREVIEW'); setScheduleMenuOpen(false); }} 
-                                className={`w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDREVIEW' ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/10' : 'text-slate-700 dark:text-slate-300'}`}
-                            >
-                                MedReview 2026
-                                {activeScheduleCode === 'MEDREVIEW' && <Check size={14}/>}
-                            </button>
-                        </div>
-                    )}
+        <div className="h-full flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 animate-scale-in">
+            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-3 rounded-3xl mb-6 flex flex-col sm:flex-row gap-3 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-slate-200/50 dark:border-white/5 items-center">
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="relative shrink-0 flex-1 sm:flex-none">
+                        <button 
+                            onClick={() => setScheduleMenuOpen(!scheduleMenuOpen)}
+                            className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 w-full sm:w-auto bg-slate-100 dark:bg-zinc-800 rounded-2xl sm:rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                            {activeScheduleCode === 'MEDREVIEW' ? 'MedReview 2026' : activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
+                            <ChevronDown size={14} className={`transition-transform ${scheduleMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {scheduleMenuOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setScheduleMenuOpen(false)}></div>
+                                <div className="absolute top-[calc(100%+8px)] left-0 mt-2 w-full sm:w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-down">
+                                    <button 
+                                        onClick={() => { onScheduleChange('MEDCOF'); setScheduleMenuOpen(false); }} 
+                                        className={`w-full text-left px-5 py-4 sm:py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDCOF' ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/10' : 'text-slate-700 dark:text-slate-300'}`}
+                                    >
+                                        MedCof Extensivo
+                                        {activeScheduleCode === 'MEDCOF' && <Check size={16}/>}
+                                    </button>
+                                    <button 
+                                        onClick={() => { onScheduleChange('ESTRATEGIA'); setScheduleMenuOpen(false); }} 
+                                        className={`w-full text-left px-5 py-4 sm:py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'ESTRATEGIA' ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/10' : 'text-slate-700 dark:text-slate-300'}`}
+                                    >
+                                        Estratégia MED
+                                        {activeScheduleCode === 'ESTRATEGIA' && <Check size={16}/>}
+                                    </button>
+                                    <button 
+                                        onClick={() => { onScheduleChange('MEDREVIEW'); setScheduleMenuOpen(false); }} 
+                                        className={`w-full text-left px-5 py-4 sm:py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${activeScheduleCode === 'MEDREVIEW' ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/10' : 'text-slate-700 dark:text-slate-300'}`}
+                                    >
+                                        MedReview 2026
+                                        {activeScheduleCode === 'MEDREVIEW' && <Check size={16}/>}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
                 
-                <div className="flex-1 relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <div className="flex-1 w-full relative group">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"/>
                     <input 
                         type="text" 
                         placeholder="Filtrar cronograma..." 
                         value={searchLocal}
                         onChange={(e) => setSearchLocal(e.target.value)}
-                        className="w-full h-full bg-slate-50 dark:bg-zinc-800 rounded-xl pl-9 pr-4 text-xs font-bold outline-none border border-transparent focus:border-slate-500/50 transition-all py-2.5 text-slate-800 dark:text-white"
+                        className="w-full h-full bg-slate-100 dark:bg-zinc-800 border border-transparent rounded-2xl sm:rounded-xl pl-10 pr-4 text-sm sm:text-xs font-bold outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all py-3 sm:py-2.5 text-slate-800 dark:text-white"
                     />
                     {searchLocal && (
-                        <button onClick={() => setSearchLocal('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                            <X size={14}/>
+                        <button onClick={() => setSearchLocal('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X size={16}/>
                         </button>
                     )}
                 </div>
-                
-                <button 
-                    onClick={() => setInfoOpen(!infoOpen)}
-                    className={`p-2.5 rounded-xl transition-colors shrink-0 ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
-                    title="Informações do Cronograma"
-                >
-                    <Info size={16} />
-                </button>
+
+                <div className="flex gap-2 shrink-0 self-end sm:self-auto w-full sm:w-auto mt-2 sm:mt-0 justify-end">
+                    <button onClick={expandAll} className="px-3 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Expandir</button>
+                    <button onClick={collapseAll} className="px-3 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Recolher</button>
+                    <button 
+                        onClick={() => setInfoOpen(!infoOpen)}
+                        className={`p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center h-full w-[40px] sm:w-auto ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
+                        title="Informações do Cronograma"
+                    >
+                        <Info size={16} />
+                    </button>
+                </div>
             </div>
 
             {infoOpen && (

@@ -581,15 +581,8 @@ function AppContent() {
                              <Activity size={16} strokeWidth={2.5}/>
                         </div>
                         <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
-                        {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Admin</span>}
-                        {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider mr-4">Futuro Especialista</span>}
-                        <div className="hidden lg:flex items-center gap-3 mr-6">
-                            <button onClick={() => setSupportModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0">
-                                <Heart size={14} className="fill-rose-500/20" />
-                                <span>Apoie</span>
-                            </button>
-                            <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} />
-                        </div>
+                        {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Admin</span>}
+                        {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Futuro Especialista</span>}
                     </div>
                 </div>
                 <div className="flex-1 flex justify-center">
@@ -609,8 +602,8 @@ function AppContent() {
                         })}
                     </nav>
                 </div>
-                <div className="flex items-center justify-end gap-6 w-1/3">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center justify-end gap-5 w-1/3">
+                    <div className="flex items-center gap-2 border-r border-slate-200 dark:border-white/10 pr-5">
                         {/* Add Button (Desktop) */}
                         <div className="relative">
                             <button 
@@ -644,70 +637,74 @@ function AppContent() {
                             <Settings size={18} />
                         </button>
                     </div>
+
+                    {/* Apoie and User icon */}
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setSupportModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0">
+                            <Heart size={14} className="fill-rose-500/20" />
+                            <span>Apoie</span>
+                        </button>
+                        <div className="w-48">
+                            <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} />
+                        </div>
+                    </div>
                 </div>
             </header>
 
             {/* Mobile Top Navigation (Modern & Adapative) */}
-            <div className="lg:hidden fixed top-[env(safe-area-inset-top)] left-0 right-0 z-[80] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
-                <div className="flex items-center justify-between px-4 h-16 relative">
-                    <button onClick={() => { vibration.tick(); setMobileMenuOpen(!mobileMenuOpen); }} className="flex items-center gap-3 -ml-1 p-1 rounded-xl active:scale-95 transition-all text-left">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
-                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 20, strokeWidth: 2.5 })}
-                        </div>
-                        <div className="flex flex-col items-start justify-center">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">ReviewFlow</span>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-base font-black tracking-tight text-slate-800 dark:text-white leading-none">{currentViewTitle}</span>
-                                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${mobileMenuOpen ? 'rotate-180' : ''}`}/>
-                            </div>
-                        </div>
-                    </button>
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/80 dark:bg-[#121214]/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-white/5 pt-[env(safe-area-inset-top)]">
+                <div className="flex items-center justify-between px-4 h-14">
                     <div className="flex items-center gap-2">
-                         <button onClick={() => setSupportModalOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                             <Heart size={18} className="fill-rose-500/20" />
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 18, strokeWidth: 2.5 })}
+                        </div>
+                        <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none">{currentViewTitle}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                         <button onClick={() => setSupportModalOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 active:scale-95 transition-all">
+                             <Heart size={16} className="fill-rose-500/20" />
                          </button>
-                         <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                             <RefreshCw size={18} />
+                         <button onClick={handleSyncClick} disabled={status === 'syncing' || !syncKey} className={`w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 transition-all active:scale-95 ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-600 dark:text-slate-300'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                             <RefreshCw size={16} />
                          </button>
-                         <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
-                             <Settings size={18} />
+                         <button onClick={() => setSettingsOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all">
+                             <Settings size={16} />
                          </button>
                     </div>
-
-                    {/* Dropdown Menu */}
-                    {mobileMenuOpen && (
-                        <>
-                            <div className="fixed inset-0 top-[4rem] bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40" onClick={() => setMobileMenuOpen(false)}></div>
-                            <div className="absolute top-[calc(100%+8px)] left-4 w-64 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-down origin-top-left">
-                                <div className="p-2 space-y-1">
-                                    {NAV_ITEMS.map((item) => {
-                                        const isActive = view === item.id;
-                                        return (
-                                            <button 
-                                                key={item.id} 
-                                                onClick={() => { 
-                                                    vibration.tick(); 
-                                                    setView(item.id as any);
-                                                    setMobileMenuOpen(false);
-                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                }} 
-                                                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${isActive ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 active:bg-slate-100 dark:active:bg-white/10'}`}
-                                            >
-                                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'} />
-                                                <span className={`text-sm ${isActive ? 'font-black' : 'font-bold'}`}>{item.title}</span>
-                                                {isActive && <Check size={16} strokeWidth={3} className="ml-auto" />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </div>
             </div>
 
+            {/* Mobile Bottom Navigation (iOS Style) */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/90 dark:bg-[#121214]/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
+                <nav className="flex items-center justify-around px-2 h-16">
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = view === item.id;
+                        return (
+                            <button 
+                                key={item.id} 
+                                onClick={() => { 
+                                    vibration.tick(); 
+                                    setView(item.id as any);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }} 
+                                className="flex flex-col items-center justify-center w-[60px] h-full gap-1 active:scale-95 transition-all"
+                            >
+                                <item.icon 
+                                    size={22} 
+                                    strokeWidth={isActive ? 2.5 : 2} 
+                                    className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'} 
+                                />
+                                <span className={`text-[10px] leading-none ${isActive ? 'font-bold text-blue-600 dark:text-blue-400' : 'font-medium text-slate-400 dark:text-slate-500'}`}>
+                                    {item.label}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </nav>
+            </div>
+
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-h-screen relative pb-12 pt-[calc(4rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+            <main className="flex-1 flex flex-col min-h-screen relative pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
                 
                 {/* Search Overlay (When active) */}
                 {isSearchActive && (
