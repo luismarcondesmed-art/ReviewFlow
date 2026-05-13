@@ -323,12 +323,12 @@ export const CronogramaView = ({
 
     return (
         <div className="h-full flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 animate-scale-in">
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-3 rounded-3xl mb-6 flex flex-col sm:flex-row gap-3 sticky top-[72px] lg:top-4 z-40 shadow-sm border border-slate-200/50 dark:border-white/5 items-center">
-                <div className="flex gap-2 w-full sm:w-auto">
+            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-3 rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sticky top-[56px] lg:top-4 z-40 shadow-sm border border-slate-200/50 dark:border-white/5">
+                <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
                     <div className="relative shrink-0 flex-1 sm:flex-none">
                         <button 
                             onClick={() => setScheduleMenuOpen(!scheduleMenuOpen)}
-                            className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 w-full sm:w-auto bg-slate-100 dark:bg-zinc-800 rounded-2xl sm:rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+                            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 w-full sm:w-auto bg-slate-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
                         >
                             {activeScheduleCode === 'MEDREVIEW' ? 'MedReview 2026' : activeScheduleCode === 'MEDCOF' ? 'MedCof' : 'Estratégia'}
                             <ChevronDown size={14} className={`transition-transform ${scheduleMenuOpen ? 'rotate-180' : ''}`} />
@@ -363,30 +363,41 @@ export const CronogramaView = ({
                             </>
                         )}
                     </div>
+                    
+                    <div className="flex gap-1 sm:gap-2 shrink-0 sm:hidden">
+                        <button onClick={expandAll} className="px-2.5 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Exp.</button>
+                        <button onClick={collapseAll} className="px-2.5 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Rec.</button>
+                        <button 
+                            onClick={() => setInfoOpen(!infoOpen)}
+                            className={`p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                        >
+                            <Info size={14} />
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="flex-1 w-full relative group">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"/>
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"/>
                     <input 
                         type="text" 
                         placeholder="Filtrar cronograma..." 
                         value={searchLocal}
                         onChange={(e) => setSearchLocal(e.target.value)}
-                        className="w-full h-full bg-slate-100 dark:bg-zinc-800 border border-transparent rounded-2xl sm:rounded-xl pl-10 pr-4 text-sm sm:text-xs font-bold outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all py-3 sm:py-2.5 text-slate-800 dark:text-white"
+                        className="w-full h-full bg-slate-100 dark:bg-zinc-800 border border-transparent rounded-xl pl-9 pr-8 text-xs font-bold outline-none focus:bg-white dark:focus:bg-zinc-900 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all py-2.5 text-slate-800 dark:text-white"
                     />
                     {searchLocal && (
-                        <button onClick={() => setSearchLocal('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                            <X size={16}/>
+                        <button onClick={() => setSearchLocal('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X size={14}/>
                         </button>
                     )}
                 </div>
 
-                <div className="flex gap-2 shrink-0 self-end sm:self-auto w-full sm:w-auto mt-2 sm:mt-0 justify-end">
+                <div className="hidden sm:flex gap-2 shrink-0">
                     <button onClick={expandAll} className="px-3 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Expandir</button>
                     <button onClick={collapseAll} className="px-3 py-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-800 rounded-xl transition-colors">Recolher</button>
                     <button 
                         onClick={() => setInfoOpen(!infoOpen)}
-                        className={`p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center h-full w-[40px] sm:w-auto ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
+                        className={`p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center ${infoOpen ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
                         title="Informações do Cronograma"
                     >
                         <Info size={16} />

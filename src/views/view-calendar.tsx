@@ -8,7 +8,7 @@ import { useCalendar } from '../hooks';
 export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdateTopic, onEditTopic }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig, onUpdateTopic?: (topic: Topic) => void, onEditTopic?: (topic: Topic) => void }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDateStr, setSelectedDateStr] = useState<string>(getTodayStr());
-    const [mobileViewMode, setMobileViewMode] = useState<'agenda' | 'calendar' | 'list'>('agenda'); // agenda = day strip, calendar = grid, list = vertical list
+    const [mobileViewMode, setMobileViewMode] = useState<'calendar' | 'list'>('list'); // calendar = grid with details, list = vertical list
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const year = currentDate.getFullYear();
@@ -53,7 +53,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
             <div 
                 key={cardId} 
                 onClick={() => onEditTopic && topic && onEditTopic(topic)}
-                className={`flex flex-col p-4 bg-white dark:bg-zinc-900/80 rounded-2xl border shadow-sm transition-all gap-3 cursor-pointer ${isListMode ? 'ml-4' : ''}
+                className={`flex flex-col p-4 bg-white dark:bg-zinc-900/80 rounded-2xl border shadow-sm transition-all gap-3 cursor-pointer ${isListMode ? 'ml-1' : ''}
                 ${r.done ? 'border-emerald-200 dark:border-emerald-500/30 opacity-70' : 'border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'}
             `}>
                 <div className="flex items-center justify-between gap-3">
@@ -173,14 +173,9 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
         return false;
     }, [monthData, daysInMonth, year, month, config.examDate]);
 
-    // Scroll to selected date on mobile when month changes (only in agenda mode)
+    // No need to scroll on mobile when picking a date, since details are rendered below.
     useEffect(() => {
-        if (mobileViewMode === 'agenda' && scrollRef.current) {
-            const selectedEl = scrollRef.current.querySelector('[data-selected="true"]');
-            if (selectedEl) {
-                selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-        }
+        // Keeping this for potential future list scrolling, but disabling for now since we removed agenda.
     }, [currentDate, selectedDateStr, mobileViewMode]);
 
     const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
@@ -207,7 +202,6 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                 key={day} 
                 onClick={() => {
                     setSelectedDateStr(dateStr);
-                    if (isMobile) setMobileViewMode('agenda'); // Switch back to details view on click
                 }}
                 className={`aspect-square relative rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 group
                     ${isSelected 
@@ -233,7 +227,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
         <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full">
             {/* Header */}
             <div className="flex flex-row items-center justify-between gap-3 mb-6 px-2">
-                <div className="flex items-center gap-4">
+                <div className="hidden lg:flex items-center gap-4">
                      <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                          <CalendarCheck size={20} className="lg:w-6 lg:h-6" />
                      </div>
@@ -243,16 +237,16 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                      </div>
                 </div>
                 
-                <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+                <div className="flex items-center justify-between lg:justify-end gap-2 lg:gap-3 shrink-0 w-full lg:w-auto">
                     {/* Mobile View Segmented Control */}
                     <div className="lg:hidden flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl">
-                        {(['agenda', 'calendar', 'list'] as const).map(mode => (
+                        {(['list', 'calendar'] as const).map(mode => (
                             <button
                                 key={mode}
                                 onClick={() => setMobileViewMode(mode)}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${mobileViewMode === mode ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${mobileViewMode === mode ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
-                                {mode === 'agenda' ? 'Faixa' : mode === 'calendar' ? 'Mês' : 'Lista'}
+                                {mode === 'calendar' ? 'Mês' : 'Lista'}
                             </button>
                         ))}
                     </div>
@@ -268,52 +262,6 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
             <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
                 {/* Mobile Views */}
                 <div className="lg:hidden flex-1">
-                    {mobileViewMode === 'agenda' && (
-                        <div className="flex overflow-x-auto custom-scrollbar gap-2 pb-2 px-2 snap-x mb-4" ref={scrollRef}>
-                            {Array.from({ length: daysInMonth }).map((_, i) => {
-                                const day = i + 1;
-                                const d = new Date(year, month, day);
-                                const y = d.getFullYear();
-                                const m = String(d.getMonth() + 1).padStart(2, '0');
-                                const dd = String(d.getDate()).padStart(2, '0');
-                                const dateStr = `${y}-${m}-${dd}`;
-
-                                const dayData = monthData[dateStr] || { reviews: [], sims: [] };
-                                const isToday = dateStr === getTodayStr();
-                                const isSelected = selectedDateStr === dateStr;
-                                const hasReviews = dayData.reviews.length > 0;
-                                const hasSims = dayData.sims.length > 0;
-                                const isExam = dateStr === config.examDate;
-                                const dayOfWeek = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-
-                                return (
-                                    <button
-                                        key={day}
-                                        data-selected={isSelected}
-                                        onClick={() => setSelectedDateStr(dateStr)}
-                                        className={`shrink-0 w-14 h-16 rounded-2xl flex flex-col items-center justify-center transition-all snap-center relative
-                                            ${isSelected 
-                                                ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-md scale-105' 
-                                                : 'bg-white dark:bg-zinc-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5'
-                                            }
-                                            ${isToday && !isSelected ? 'border-slate-500/50 border-2' : ''}
-                                        `}
-                                    >
-                                        <span className={`text-[9px] font-bold uppercase opacity-80 ${isSelected ? 'text-slate-300 dark:text-slate-600' : ''}`}>{dayOfWeek}</span>
-                                        <span className="text-lg font-black leading-none mt-0.5">{day}</span>
-                                        
-                                        {/* Indicators */}
-                                        <div className="flex gap-0.5 mt-1 absolute bottom-1.5">
-                                            {hasReviews && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white dark:bg-black' : 'bg-slate-500'}`}></div>}
-                                            {hasSims && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-purple-500'}`}></div>}
-                                            {isExam && !hasReviews && !hasSims && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-amber-500'}`}></div>}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
                     {mobileViewMode === 'calendar' && (
                         <div className="bg-white dark:bg-zinc-900 rounded-[32px] border border-black/5 dark:border-white/5 shadow-sm p-4 mb-4">
                             <div className="grid grid-cols-7 mb-4">
@@ -370,9 +318,9 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-3 pl-2 border-l-2 border-slate-100 dark:border-white/5 ml-5">
+                                            <div className="space-y-3 pl-2 border-l-2 border-slate-100 dark:border-white/5 ml-3">
                                                 {dateStr === config.examDate && (
-                                                     <div className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm ml-4">
+                                                     <div className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-500/20 shadow-sm ml-1">
                                                         <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0"><Flag size={20} fill="currentColor"/></div>
                                                         <div>
                                                             <div className="text-base font-black text-amber-900 dark:text-amber-100 tracking-tight">Dia da Prova</div>
@@ -384,15 +332,15 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                                                     const accuracy = s.totalQuestions > 0 ? Math.round((s.correctCount / s.totalQuestions) * 100) : 0;
                                                     const errors = s.totalQuestions - s.correctCount;
                                                     return (
-                                                        <div key={s.id} className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-500/20 ml-4">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="p-3 bg-white dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-400 shadow-sm"><ClipboardList size={20}/></div>
-                                                                <div>
-                                                                    <div className="text-sm font-bold text-slate-800 dark:text-white">{s.name}</div>
+                                                        <div key={s.id} className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-500/20 ml-1 gap-2 flex-wrap sm:flex-nowrap">
+                                                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                                                <div className="p-3 bg-white dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-400 shadow-sm shrink-0"><ClipboardList size={20}/></div>
+                                                                <div className="min-w-0">
+                                                                    <div className="text-sm font-bold text-slate-800 dark:text-white truncate">{s.name}</div>
                                                                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Simulado • {s.year}</div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex flex-col items-end">
+                                                            <div className="flex flex-col items-start sm:items-end w-full sm:w-auto pl-14 sm:pl-0">
                                                                 <span className={`text-sm font-black ${accuracy >= 80 ? 'text-emerald-500' : accuracy >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{accuracy}%</span>
                                                                 <span className="text-[10px] font-bold text-slate-400">{s.correctCount} acertos • {errors} erros</span>
                                                             </div>
@@ -430,9 +378,9 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                     </div>
                 </div>
 
-                {/* Selected Day Details (Visible on Desktop or when Agenda mode on Mobile) */}
+                {/* Selected Day Details (Visible on Desktop or when Calendar mode on Mobile) */}
                 <div className={`flex-1 lg:w-1/2 xl:w-5/12 flex flex-col min-h-[400px] lg:min-h-0 lg:sticky lg:top-4 lg:h-[calc(100vh-140px)] animate-slide-up
-                    ${mobileViewMode !== 'agenda' && window.innerWidth < 1024 ? 'hidden' : ''}
+                    ${mobileViewMode !== 'calendar' && window.innerWidth < 1024 ? 'hidden' : ''}
                     lg:bg-white/80 lg:dark:bg-zinc-900/80 lg:backdrop-blur-xl lg:rounded-[32px] lg:border lg:border-black/5 lg:dark:border-white/5 lg:shadow-sm lg:overflow-hidden
                 `}>
                     <div className="px-2 lg:px-6 py-4 lg:py-6 lg:border-b lg:border-slate-100 lg:dark:border-white/5 flex justify-between items-start lg:bg-slate-50/50 lg:dark:bg-black/20">

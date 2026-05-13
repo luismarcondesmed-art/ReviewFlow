@@ -198,6 +198,7 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
     const [viewMenuOpen, setViewMenuOpen] = useState(false);
     const [groupMenuOpen, setGroupMenuOpen] = useState(false);
     const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
     const filteredTopics = useMemo(() => {
         return topics.filter(t => !t.deleted).filter(t => {
@@ -276,81 +277,96 @@ export const DatabaseView = ({ topics, onEdit, onDelete, simulados, onEditSimula
 
                 {/* Filters & Grouping */}
                 {activeTab === 'topics' && (
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        {/* Group By */}
-                        <div className="relative flex-1 sm:flex-none">
-                            <button 
-                                onClick={() => setGroupMenuOpen(!groupMenuOpen)}
-                                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all border ${groupBy !== 'none' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                            >
-                                <LayoutGrid size={14}/>
-                                <span className="">Agrupar</span>
-                            </button>
-                            {groupMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-40 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
-                                    <button onClick={() => { setGroupBy('none'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                                        <span>Sem Agrupar</span>
-                                        {groupBy === 'none' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                                    </button>
-                                    <button onClick={() => { setGroupBy('area'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                                        <span>Por Área</span>
-                                        {groupBy === 'area' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                                    </button>
-                                    <button onClick={() => { setGroupBy('tag'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                                        <span>Por Disciplina</span>
-                                        {groupBy === 'tag' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                                    </button>
-                                    <button onClick={() => { setGroupBy('block'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                                        <span>Por Bloco</span>
-                                        {groupBy === 'block' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                    <>
+                        <button 
+                            className="sm:hidden w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
+                            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Filter size={14} className="text-blue-500" />
+                                Personalizar Visão
+                            </div>
+                            <ChevronDown size={16} className={`transition-transform text-slate-400 ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
+                        </button>
 
-                        {/* View Mode Toggle */}
-                        <div className="relative flex-1 sm:flex-none flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl">
-                            <button 
-                                onClick={() => setViewMode('list')}
-                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                title="Visualização em Lista"
-                            >
-                                <List size={14}/>
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('kanban')}
-                                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
-                                title="Visualização Kanban"
-                            >
-                                <Kanban size={14}/>
-                            </button>
-                        </div>
-
-                        {/* Filter Area */}
-                        <div className="relative flex-1 sm:flex-none">
-                            <button 
-                                onClick={() => setFilterMenuOpen(!filterMenuOpen)}
-                                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all border ${filterArea !== 'all' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200 dark:border-emerald-500/30 shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                            >
-                                <Filter size={14}/>
-                                <span className="">Filtrar</span>
-                            </button>
-                            {filterMenuOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-y-auto max-h-60 animate-scale-in z-30 custom-scrollbar">
-                                    <button onClick={() => { setFilterArea('all'); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                                        <span>Todas as Áreas</span>
-                                        {filterArea === 'all' && <Check size={14} className="text-slate-900 dark:text-white"/>}
-                                    </button>
-                                    {AREAS.map(a => (
-                                        <button key={a.id} onClick={() => { setFilterArea(a.id); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 truncate flex items-center justify-between">
-                                            <span>{a.name}</span>
-                                            {filterArea === a.id && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                        <div className={`${mobileFiltersOpen ? 'flex' : 'hidden'} flex-col sm:flex sm:flex-row items-center gap-2 w-full sm:w-auto animate-fade-in`}>
+                            {/* Group By */}
+                            <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
+                                <button 
+                                    onClick={() => setGroupMenuOpen(!groupMenuOpen)}
+                                    className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all border ${groupBy !== 'none' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                >
+                                    <LayoutGrid size={14}/>
+                                    <span className="">Agrupar</span>
+                                </button>
+                                {groupMenuOpen && (
+                                    <div className="absolute left-0 sm:left-auto top-full sm:right-0 mt-2 w-full sm:w-40 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-scale-in z-30">
+                                        <button onClick={() => { setGroupBy('none'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                            <span>Sem Agrupar</span>
+                                            {groupBy === 'none' && <Check size={14} className="text-slate-900 dark:text-white"/>}
                                         </button>
-                                    ))}
-                                </div>
-                            )}
+                                        <button onClick={() => { setGroupBy('area'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                            <span>Por Área</span>
+                                            {groupBy === 'area' && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                        </button>
+                                        <button onClick={() => { setGroupBy('tag'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                            <span>Por Disciplina</span>
+                                            {groupBy === 'tag' && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                        </button>
+                                        <button onClick={() => { setGroupBy('block'); setGroupMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                            <span>Por Bloco</span>
+                                            {groupBy === 'block' && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* View Mode Toggle */}
+                            <div className="relative flex-1 sm:flex-none flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-xl w-full sm:w-auto">
+                                <button 
+                                    onClick={() => setViewMode('list')}
+                                    className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'list' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    title="Visualização em Lista"
+                                >
+                                    <List size={14}/>
+                                    <span className="sm:hidden">Lista</span>
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('kanban')}
+                                    className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                    title="Visualização Kanban"
+                                >
+                                    <Kanban size={14}/>
+                                    <span className="sm:hidden">Kanban</span>
+                                </button>
+                            </div>
+
+                            {/* Filter Area */}
+                            <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
+                                <button 
+                                    onClick={() => setFilterMenuOpen(!filterMenuOpen)}
+                                    className={`w-full sm:w-auto px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all border ${filterArea !== 'all' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200 dark:border-emerald-500/30 shadow-sm' : 'bg-white dark:bg-zinc-900 text-slate-500 border-black/5 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                >
+                                    <Filter size={14}/>
+                                    <span className="">Filtrar</span>
+                                </button>
+                                {filterMenuOpen && (
+                                    <div className="absolute left-0 sm:left-auto top-full right-0 mt-2 w-full sm:w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-xl overflow-y-auto max-h-60 animate-scale-in z-30 custom-scrollbar">
+                                        <button onClick={() => { setFilterArea('all'); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                            <span>Todas as Áreas</span>
+                                            {filterArea === 'all' && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                        </button>
+                                        {AREAS.map(a => (
+                                            <button key={a.id} onClick={() => { setFilterArea(a.id); setFilterMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm sm:text-xs font-bold hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 truncate flex items-center justify-between">
+                                                <span>{a.name}</span>
+                                                {filterArea === a.id && <Check size={14} className="text-slate-900 dark:text-white"/>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
 

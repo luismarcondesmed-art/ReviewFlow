@@ -2668,16 +2668,16 @@ export const DeepFocusModal = ({ isOpen, onClose, dueItems, onReview }: { isOpen
 
   return (
     <Modal isOpen={isOpen} onClose={() => { setIsActive(false); onClose(); }} title="Modo Deep Focus" fullScreen={true} hideHeader={true}>
-      <div className="p-4 sm:p-6 flex flex-col items-center justify-between flex-1 h-full w-full bg-white/50 dark:bg-[#121214]/50 relative">
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-start flex-1 h-full w-full bg-white/50 dark:bg-[#121214]/50 relative pt-12 sm:pt-6">
         <button onClick={() => { setIsActive(false); onClose(); }} className="absolute top-4 right-4 p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-all active:scale-90 z-50">
             <X size={20} className="text-slate-500 dark:text-slate-300" />
         </button>
-        <div className="flex gap-2 bg-slate-100/80 dark:bg-zinc-800/80 p-1.5 rounded-2xl w-full max-w-[240px] shadow-inner border border-slate-200/50 dark:border-white/5 mx-auto shrink-0 mt-8 sm:mt-4">
+        <div className="flex gap-2 bg-slate-100/80 dark:bg-zinc-800/80 p-1.5 rounded-2xl w-full max-w-[240px] shadow-inner border border-slate-200/50 dark:border-white/5 mx-auto shrink-0 mt-4 sm:mt-0 mb-6 sm:mb-8">
             <button onClick={() => setTimerMode('focus')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${mode === 'focus' ? 'bg-white dark:bg-zinc-700 shadow-md text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Foco</button>
             <button onClick={() => setTimerMode('break')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${mode === 'break' ? 'bg-white dark:bg-zinc-700 shadow-md text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>Pausa</button>
         </div>
 
-        <div className="relative group flex justify-center items-center w-full grow my-4">
+        <div className="relative group flex justify-center items-center w-full mb-10 sm:mb-12 shrink-0">
             <div className={`absolute inset-0 blur-3xl opacity-20 transition-all duration-700 rounded-full w-56 h-56 sm:w-80 sm:h-80 mx-auto ${isActive ? 'opacity-40 scale-105' : 'opacity-20 scale-100'} ${mode === 'focus' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
             <div className={`w-56 h-56 sm:w-72 sm:h-72 rounded-full flex flex-col items-center justify-center border-[8px] sm:border-[12px] relative bg-white dark:bg-[#121214] shadow-2xl transition-all duration-500 ${mode === 'focus' ? 'border-blue-50 dark:border-blue-900/40 text-blue-600 dark:text-blue-400' : 'border-emerald-50 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400'}`}>
                 <span className="text-6xl sm:text-8xl font-black tracking-tighter tabular-nums">{mins}:{secs}</span>
@@ -2685,7 +2685,7 @@ export const DeepFocusModal = ({ isOpen, onClose, dueItems, onReview }: { isOpen
             </div>
         </div>
 
-        <div className="flex gap-4 justify-center w-full shrink-0 mb-6">
+        <div className="flex gap-4 justify-center w-full shrink-0 mb-8 sm:mb-10">
             <button onClick={toggleTimer} className={`w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-all duration-300 ${mode === 'focus' ? 'bg-gradient-to-tr from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-blue-500/30' : 'bg-gradient-to-tr from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-emerald-500/30'}`}>
                 {isActive ? <span className="font-black text-xs sm:text-base uppercase tracking-widest">Pausa</span> : <PlayCircle size={32} className="sm:w-12 sm:h-12 ml-1" fill="currentColor" />}
             </button>

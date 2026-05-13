@@ -52,23 +52,26 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
         </div>
 
         {/* Tabs */}
-        <div className="flex p-1 bg-slate-100 dark:bg-zinc-800/50 rounded-2xl mb-8 overflow-x-auto custom-scrollbar">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-slate-100 dark:bg-zinc-800/50 p-1.5 rounded-2xl mb-8">
           <button
             onClick={() => setActiveTab('meu_desempenho')}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'meu_desempenho' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'meu_desempenho' ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'}`}
           >
+            <BarChart2 size={16} />
             Meu Desempenho
           </button>
           <button
             onClick={() => setActiveTab('inep')}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'inep' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'inep' ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'}`}
           >
+            <PieChart size={16} />
             Guia ENAMED
           </button>
           <button
             onClick={() => setActiveTab('provas')}
-            className={`flex-1 min-w-[140px] py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'provas' ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all ${activeTab === 'provas' ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-zinc-700/50'}`}
           >
+            <MapIcon size={16} />
             Provas Semelhantes
           </button>
         </div>
@@ -119,23 +122,8 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
                 <PieChart size={18} className="text-blue-500" /> 1º Nível: Especialidades
               </h2>
               
-              {/* Mobile Select */}
-              <div className="lg:hidden mb-6 relative">
-                  <select 
-                      className="w-full appearance-none bg-white dark:bg-zinc-800/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold rounded-xl pl-4 pr-10 py-3 outline-none focus:border-blue-500 shadow-sm"
-                      value={selectedEspecialidade || ''}
-                      onChange={(e) => setSelectedEspecialidade(e.target.value)}
-                  >
-                      <option value="" disabled>Selecione uma Especialidade</option>
-                      {especialidadesData.map((esp) => (
-                          <option key={esp.name} value={esp.name}>{esp.name} ({esp.percentage}%)</option>
-                      ))}
-                  </select>
-                  <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90"/>
-              </div>
-
-              {/* Desktop List */}
-              <div className="hidden lg:flex lg:flex-col gap-2 overflow-y-auto lg:max-h-[600px] pr-2 custom-scrollbar">
+              {/* Specialty List */}
+              <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] lg:max-h-[600px] pr-2 custom-scrollbar">
                 {especialidadesData.map((esp, idx) => (
                   <button
                     key={esp.name}
@@ -143,17 +131,17 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
                     className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group ${
                       selectedEspecialidade === esp.name 
                         ? 'bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30' 
-                        : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30'
+                        : 'bg-slate-50 dark:bg-zinc-800/50 border-slate-200/50 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        idx < 5 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/30 dark:text-blue-300' : 'bg-slate-100 text-slate-500 dark:bg-zinc-700 dark:text-slate-400'
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                        idx < 5 ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/30 dark:text-blue-300' : 'bg-slate-200 text-slate-500 dark:bg-zinc-700 dark:text-slate-400'
                       }`}>
                         {idx + 1}
                       </div>
-                      <div>
-                        <div className={`text-sm font-bold ${selectedEspecialidade === esp.name ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                      <div className="min-w-0">
+                        <div className={`text-sm font-bold truncate ${selectedEspecialidade === esp.name ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                           {esp.name}
                         </div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -161,7 +149,7 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-xs font-bold ${selectedEspecialidade === esp.name ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {esp.percentage}%
                       </span>
@@ -264,23 +252,8 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
                 />
               </div>
 
-              {/* Mobile Select */}
-              <div className="lg:hidden relative">
-                  <select 
-                      className="w-full appearance-none bg-white dark:bg-zinc-800/50 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-bold rounded-xl pl-4 pr-10 py-3 outline-none focus:border-blue-500 shadow-sm"
-                      value={selectedProva || ''}
-                      onChange={(e) => setSelectedProva(e.target.value)}
-                  >
-                      <option value="" disabled>Selecione uma Prova</option>
-                      {filteredProvas.map((prova) => (
-                          <option key={prova} value={prova}>{prova}</option>
-                      ))}
-                  </select>
-                  <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90"/>
-              </div>
-
-              {/* Desktop List */}
-              <div className="hidden lg:flex lg:flex-col gap-2 overflow-y-auto lg:max-h-[500px] pr-2 custom-scrollbar">
+              {/* Provas List */}
+              <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] lg:max-h-[500px] pr-2 custom-scrollbar">
                 {filteredProvas.length > 0 ? filteredProvas.map((prova) => (
                   <button
                     key={prova}
@@ -288,16 +261,16 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
                     className={`w-full text-left p-3 rounded-xl border transition-all duration-200 flex items-center justify-between group ${
                       selectedProva === prova 
                         ? 'bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30' 
-                        : 'bg-white dark:bg-zinc-800/50 border-slate-100 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30'
+                        : 'bg-slate-50 dark:bg-zinc-800/50 border-slate-200/50 dark:border-white/5 hover:border-blue-200 dark:hover:border-blue-500/30'
                     }`}
                   >
-                    <span className={`text-sm font-bold ${selectedProva === prova ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <span className={`text-sm font-bold truncate ${selectedProva === prova ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                       {prova}
                     </span>
-                    <ChevronRight size={14} className={`transition-transform ${selectedProva === prova ? 'text-blue-500 translate-x-1' : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-1'}`} />
+                    <ChevronRight size={14} className={`shrink-0 transition-transform ${selectedProva === prova ? 'text-blue-500 translate-x-1' : 'text-slate-300 dark:text-slate-600 group-hover:translate-x-1'}`} />
                   </button>
                 )) : (
-                  <div className="text-sm text-slate-500 text-center py-4">Nenhuma prova encontrada.</div>
+                  <div className="text-sm text-slate-500 text-center py-4 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-200/50 dark:border-white/5">Nenhuma prova encontrada.</div>
                 )}
               </div>
             </div>
