@@ -197,14 +197,22 @@ export const HubView = ({
 
     if (deepFocusOpen) {
         return (
+<<<<<<< HEAD
             <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 w-full relative">
+=======
+            <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 max-w-6xl mx-auto w-full relative">
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                 <DeepFocusContent onClose={() => setDeepFocusOpen(false)} dueItems={dueItems} onReview={onReview} />
             </div>
         );
     }
 
     return (
+<<<<<<< HEAD
         <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in w-full relative">
+=======
+        <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 animate-scale-in max-w-6xl mx-auto w-full relative">
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
             <motion.div className="pt-2">
                 <div className="flex flex-col gap-6 animate-fade-in">
                     {/* HUB HERO: Missão do Dia */}
@@ -255,6 +263,7 @@ export const HubView = ({
                                     >
                                         <BrainCircuit size={14}/> Foco Profundo
                                     </button>
+<<<<<<< HEAD
                                     {config.studyLink && (
                                         <a 
                                             href={config.studyLink} 
@@ -280,6 +289,8 @@ export const HubView = ({
                                     >
                                         Ir para Plataforma de Estudos
                                     </a>
+=======
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                                 </div>
                             )}
                         </div>

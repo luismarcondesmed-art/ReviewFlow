@@ -251,6 +251,7 @@ export const calculateEnamedStats = (areaName: string, lessonNames: string[]): {
 
     return { priority, questions: totalQuestions, lessonQuestions };
 };
+<<<<<<< HEAD
 
 // Add getAISummary export to the end
 export const getAILessonSummary = (areaName: string, blockLessons: string[]): string => {
@@ -274,3 +275,5 @@ export const getAILessonSummary = (areaName: string, blockLessons: string[]): st
 
     return `Resumo IA: Priorize os conceitos de alta relevância (Blue/Green) deste bloco de ${areaName}. Tente mapear diagnósticos diferenciais rapidamente da doença abordada para não errar questões de sintomatologia ambígua.`;
 };
+=======
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5

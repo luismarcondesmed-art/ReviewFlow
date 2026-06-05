@@ -49,6 +49,7 @@ const SYSTEM_PARAMS = {
 export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
 export const calculateFSRSNextDate = (accuracy: number, previousIntervalDays: number): string => {
+<<<<<<< HEAD
     // Approximation of DSR (Difficulty, Stability, Retrievability) Model (FSRS v4 inspired)
     // 1. Grade mapping (1-4)
     let grade = 1; // Again
@@ -96,6 +97,28 @@ export const calculateFSRSNextDate = (accuracy: number, previousIntervalDays: nu
     
     const nextDate = new Date();
     nextDate.setDate(nextDate.getDate() + nextInterval);
+=======
+    let multiplier = 1;
+    
+    // Improved Retention Algorithm inspired by FSRS
+    if (accuracy >= 95) multiplier = 2.8; // Easy
+    else if (accuracy >= 80) multiplier = 2.0; // Good
+    else if (accuracy >= 60) multiplier = 1.4; // Hard
+    else if (accuracy >= 40) multiplier = 0.8; // Again, but somewhat remembered
+    else multiplier = 0.4; // Complete reset
+    
+    // Add slight randomness (Fuzzing) to prevent bunching up of reviews
+    const fuzz = (Math.random() * 0.1) - 0.05; // +/- 5%
+    multiplier += fuzz;
+
+    let nextInterval = Math.max(1, Math.round(previousIntervalDays * multiplier));
+    
+    // Max interval 180 days to prevent infinite forgetting
+    nextInterval = Math.min(nextInterval, 180);
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + Math.max(1, nextInterval));
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
     return nextDate.toISOString().split('T')[0];
 };
 

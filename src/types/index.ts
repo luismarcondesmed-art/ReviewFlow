@@ -99,8 +99,11 @@ export interface UserConfig {
     showQuestionCount: boolean;
     showNextTasks: boolean;
   };
+<<<<<<< HEAD
   studyLink?: string; // Custom link to the platform where the user studies
   customReviewIntervals?: number[]; // Global default custom intervals in days (e.g. [1, 7, 30])
+=======
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 }
 
 export interface ScheduleItem {

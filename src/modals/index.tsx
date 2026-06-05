@@ -775,19 +775,26 @@ export const EditTopicModal = ({
       safeTopic.studyDate !== studyDate;
 
     if (needsRegeneration) {
+<<<<<<< HEAD
       let finalCustomSettings = customSettings;
       if (!finalCustomSettings && config && config.customReviewIntervals && config.customReviewIntervals.length > 0) {
         const baseQ = IMPORTANCE_LEVELS.find((i) => i.id === importance)?.baseQ || 20;
         finalCustomSettings = { intervals: config.customReviewIntervals, baseQuestions: baseQ };
       }
 
+=======
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
       const newSchedule = generateSmartSchedule(
         studyDate,
         undefined,
         importance,
         [],
         safeTopic.id,
+<<<<<<< HEAD
         finalCustomSettings,
+=======
+        customSettings,
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
       );
 
       if (isNew) {
@@ -1653,6 +1660,7 @@ export const SettingsModal = ({
                       <option value="MEDREVIEW">MedReview 2026</option>
                     </select>
                   </div>
+<<<<<<< HEAD
                   <div className="space-y-1.5 col-span-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">
                       Link da Plataforma de Estudos (Curssinho)
@@ -1672,6 +1680,9 @@ export const SettingsModal = ({
                   </div>
                 </div>
 
+=======
+                </div>
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                     Modo Escuro
@@ -1748,7 +1759,11 @@ export const SettingsModal = ({
                       className="sr-only peer"
                       checked={tempConfig.useFSRS || false}
                       onChange={(e) =>
+<<<<<<< HEAD
                         setTempConfig((prev: any) => ({
+=======
+                        setTempConfig((prev) => ({
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                           ...prev,
                           useFSRS: e.target.checked,
                         }))
@@ -1762,6 +1777,7 @@ export const SettingsModal = ({
                   (Retrievability), substituindo os atrasos progressivos.
                   Recomendado.
                 </p>
+<<<<<<< HEAD
 
                 <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-white/5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">
@@ -1782,6 +1798,8 @@ export const SettingsModal = ({
                   />
                   <p className="text-[10px] text-slate-500">Substitui o padrão de 5 revisões se o FSRS não estiver ativo ou se quiser começar matérias com outra base.</p>
                 </div>
+=======
+>>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
               </div>
 
               <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
