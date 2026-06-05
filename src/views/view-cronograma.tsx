@@ -8,11 +8,7 @@ import { getAreaTheme, getTodayStr } from '../utils';
 import { MEDCOF_SCHEDULE } from '../services/medcofSchedule';
 import { ESTRATEGIA_SCHEDULE } from '../services/estrategiaSchedule';
 import { MEDREVIEW_SCHEDULE } from '../services/medreviewSchedule';
-<<<<<<< HEAD
 import { calculateEnamedStats, getAILessonSummary } from '../utils/enamedUtils';
-=======
-import { calculateEnamedStats } from '../utils/enamedUtils';
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 
 // --- Helpers ---
 const formatProfessorName = (name: string | undefined) => {
@@ -95,10 +91,7 @@ interface AreaGroupProps {
     onCreateTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number, blockId?: string, tags?: string[]) => void;
     existingTopic?: Topic;
     onUpdateTopic?: (topic: Topic) => void;
-<<<<<<< HEAD
     onEditTopic?: (topic: Topic) => void;
-=======
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 }
 
 const AreaGroup: React.FC<AreaGroupProps> = ({ 
@@ -110,12 +103,8 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
     onBulkComplete,
     onCreateTopic, 
     existingTopic,
-<<<<<<< HEAD
     onUpdateTopic,
     onEditTopic
-=======
-    onUpdateTopic
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 }) => {
     const mappedArea = mapArea(areaName);
     const theme = getAreaTheme(mappedArea);
@@ -188,7 +177,6 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
 
                         {/* Create/Update Topic Button */}
                         <button 
-<<<<<<< HEAD
                             onClick={(e) => {
                                 if (topicStatus === 'created' && existingTopic && onEditTopic) {
                                     e.stopPropagation();
@@ -197,9 +185,6 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                                     handleCreateClick(e);
                                 }
                             }}
-=======
-                            onClick={handleCreateClick}
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm 
                                 ${topicStatus === 'created' 
                                     ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' 
@@ -207,11 +192,7 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                                 }`}
                         >
                             {topicStatus === 'created' ? <Check size={12}/> : <Plus size={12}/>}
-<<<<<<< HEAD
                             {topicStatus === 'created' ? 'Ver Matéria' : 'Criar Matéria'}
-=======
-                            {topicStatus === 'created' ? 'Matéria Criada' : 'Criar Matéria'}
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                         </button>
                     </div>
                 </div>
@@ -226,7 +207,6 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                         />
                     ))}
                 </div>
-<<<<<<< HEAD
 
                 {/* Dica da IA para Revisões (Apenas Estilo Visual) */}
                 <div className="mt-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 p-3 rounded-xl flex items-start gap-2.5">
@@ -240,8 +220,6 @@ const AreaGroup: React.FC<AreaGroupProps> = ({
                         </p>
                     </div>
                 </div>
-=======
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
             </div>
         </div>
     );
@@ -255,12 +233,8 @@ export const CronogramaView = ({
     onScheduleChange,
     onCreateAggregatedTopic,
     existingTopics,
-<<<<<<< HEAD
     onUpdateTopic,
     onEditTopic
-=======
-    onUpdateTopic
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 }: { 
     scheduleProgress: ScheduleProgress, 
     setScheduleProgress: React.Dispatch<React.SetStateAction<ScheduleProgress>>, 
@@ -269,12 +243,8 @@ export const CronogramaView = ({
     onScheduleChange: (s: 'MEDCOF' | 'ESTRATEGIA' | 'MEDREVIEW') => void,
     onCreateAggregatedTopic: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number) => void,
     existingTopics: Topic[],
-<<<<<<< HEAD
     onUpdateTopic?: (topic: Topic) => void,
     onEditTopic?: (topic: Topic) => void
-=======
-    onUpdateTopic?: (topic: Topic) => void
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
 }) => {
     const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(() => {
         const saved = localStorage.getItem('reviewflow_collapsed_blocks');
@@ -555,10 +525,7 @@ export const CronogramaView = ({
                                                     onCreateTopic={onCreateAggregatedTopic}
                                                     existingTopic={existing}
                                                     onUpdateTopic={onUpdateTopic}
-<<<<<<< HEAD
                                                     onEditTopic={onEditTopic}
-=======
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                                                 />
                                             );
                                         })}

@@ -143,7 +143,6 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
                     <div className="text-4xl font-black text-red-600 dark:text-red-400">{metrics.wrong}</div>
                 </div>
             </div>
-<<<<<<< HEAD
 
             <div className="mb-8">
                 <div className="bg-slate-900 dark:bg-zinc-900 shadow-xl overflow-hidden rounded-[32px] p-8 relative flex flex-col lg:flex-row gap-8 items-center border border-slate-800 dark:border-white/5">
@@ -193,8 +192,6 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
                     </div>
                 </div>
             </div>
-=======
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
         </div>
     );
 };

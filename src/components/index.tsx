@@ -82,11 +82,7 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
 
             {/* Popover / Dropdown */}
             {isOpen && (
-<<<<<<< HEAD
                 <div className="absolute top-full right-0 lg:left-0 lg:right-auto mt-2 w-64 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-[100]">
-=======
-                <div className="absolute top-full left-0 mt-2 w-64 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-50">
->>>>>>> f71e79ffd4dd38d111ba5f8a2e672154ded765f5
                     <div className="flex items-center gap-3 mb-4">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md relative`}>
                             <RankIcon size={24} fill="currentColor" className="opacity-90"/>
