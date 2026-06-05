@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft, Heart } from 'lucide-react';
+import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft, Heart, Microscope, Award, Activity, GraduationCap } from 'lucide-react';
 import { Topic, Simulado, AreaType } from '../types';
 import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
 
@@ -46,11 +46,17 @@ export const Tooltip = ({ children, content, className = "relative inline-flex i
 
 // --- Helper: Get Rank Name ---
 const getRankInfo = (level: number) => {
-    if (level < 10) return { label: 'Estudante', icon: BookOpen, color: 'text-slate-400', bg: 'from-slate-700 to-slate-900' };
-    if (level < 20) return { label: 'Interno', icon: Star, color: 'text-slate-400', bg: 'from-slate-600 to-slate-900' };
-    if (level < 30) return { label: 'Residente', icon: Medal, color: 'text-amber-400', bg: 'from-amber-600 to-amber-900' };
-    if (level < 50) return { label: 'Especialista', icon: Trophy, color: 'text-emerald-400', bg: 'from-emerald-600 to-emerald-900' };
-    return { label: 'Chefe de Serviço', icon: Crown, color: 'text-purple-400', bg: 'from-purple-600 to-purple-900' };
+    if (level < 10) return { label: 'Calouro', icon: BookOpen, color: 'text-slate-400', bg: 'from-slate-700 to-slate-900' };
+    if (level < 20) return { label: 'Estudante', icon: Microscope, color: 'text-indigo-400', bg: 'from-indigo-600 to-indigo-900' };
+    if (level < 30) return { label: 'Ciclo Clínico', icon: Stethoscope, color: 'text-cyan-400', bg: 'from-cyan-600 to-cyan-900' };
+    if (level < 40) return { label: 'Interno', icon: Activity, color: 'text-teal-400', bg: 'from-teal-600 to-teal-900' };
+    if (level < 50) return { label: 'R1', icon: Star, color: 'text-amber-400', bg: 'from-amber-600 to-amber-900' };
+    if (level < 60) return { label: 'R2', icon: Medal, color: 'text-orange-400', bg: 'from-orange-600 to-orange-900' };
+    if (level < 70) return { label: 'R3', icon: Award, color: 'text-rose-400', bg: 'from-rose-600 to-rose-900' };
+    if (level < 80) return { label: 'Especialista', icon: Trophy, color: 'text-emerald-400', bg: 'from-emerald-600 to-emerald-900' };
+    if (level < 90) return { label: 'Preceptor', icon: Crown, color: 'text-fuchsia-400', bg: 'from-fuchsia-600 to-fuchsia-900' };
+    if (level < 100) return { label: 'Chefe de Clínica', icon: Zap, color: 'text-purple-400', bg: 'from-purple-600 to-purple-900' };
+    return { label: 'Chefe de Serviço', icon: Crown, color: 'text-violet-400', bg: 'from-violet-600 to-violet-900' };
 };
 
 
@@ -65,9 +71,21 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
     const [isOpen, setIsOpen] = useState(false);
     const streak = calculateStreak(topics, simulados);
     const health = calculateHealth(topics);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Fechar ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             {/* Trigger Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
@@ -82,7 +100,7 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
 
             {/* Popover / Dropdown */}
             {isOpen && (
-                <div className="absolute top-full right-0 lg:left-0 lg:right-auto mt-2 w-64 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-[100]">
+                <div className="absolute top-full right-0 mt-2 w-64 origin-top-right p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-[100]">
                     <div className="flex items-center gap-3 mb-4">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md relative`}>
                             <RankIcon size={24} fill="currentColor" className="opacity-90"/>
