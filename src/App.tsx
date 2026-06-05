@@ -1,0 +1,926 @@
+
+import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
+    Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
+    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle, BrainCircuit, Heart
+} from 'lucide-react';
+import { 
+    AreaType, Topic, Simulado, ImportanceType
+} from './types';
+import { 
+    AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateFSRSNextDate, calculateStreak, getLevelInfo
+} from './utils';
+import { useSync, useVibration } from './hooks';
+import { NotificationService } from './services/notificationService';
+import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown } from './components';
+import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal, SupportModal, DeepFocusModal } from './modals';
+import { Toaster, toast } from 'sonner';
+
+// --- Lazy Loaded Views for Performance ---
+const HubView = lazy(() => import('./views/view-hub').then(module => ({ default: module.HubView })));
+const CalendarView = lazy(() => import('./views/view-calendar').then(module => ({ default: module.CalendarView })));
+const DatabaseView = lazy(() => import('./views/view-database').then(module => ({ default: module.DatabaseView })));
+const SimuladosView = lazy(() => import('./views/view-simulados').then(module => ({ default: module.SimuladosView })));
+const CronogramaView = lazy(() => import('./views/view-cronograma').then(module => ({ default: module.CronogramaView })));
+const StatsView = lazy(() => import('./views/view-stats').then(module => ({ default: module.StatsView })));
+const LandingView = lazy(() => import('./views/view-landing').then(module => ({ default: module.LandingView })));
+
+// --- Loading Skeleton ---
+const LoadingSpinner = () => (
+    <div className="flex flex-col h-full w-full items-center justify-center p-10 gap-4 animate-fade-in">
+        <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-slate-100 dark:border-white/10"></div>
+            <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-slate-500 border-t-transparent animate-spin"></div>
+        </div>
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Carregando</span>
+    </div>
+);
+
+// --- Error Boundary ---
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+    constructor(props: {children: React.ReactNode}) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("Uncaught error:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="min-h-screen bg-slate-50 dark:bg-[#141415] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
+                        <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">Ops, algo deu errado!</h1>
+                        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+                            Ocorreu um erro inesperado. Tente recarregar a página ou limpar os dados locais se o problema persistir.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button 
+                                onClick={() => window.location.reload()} 
+                                className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors"
+                            >
+                                Recarregar Página
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    localStorage.clear();
+                                    window.location.reload();
+                                }} 
+                                className="w-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                            >
+                                Limpar Dados e Recarregar
+                            </button>
+                        </div>
+                        {this.state.error && (
+                            <div className="mt-6 p-3 bg-slate-100 dark:bg-black/50 rounded-lg text-left overflow-auto max-h-32">
+                                <p className="text-xs font-mono text-slate-600 dark:text-slate-400 break-all">
+                                    {this.state.error.toString()}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+function AppContent() {
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole } = useSync();
+    const vibration = useVibration();
+    
+    // UI State
+    const [hasStarted, setHasStarted] = useState(() => localStorage.getItem('reviewflow_has_started') === 'true');
+    const [landingView, setLandingView] = useState<'main' | 'privacy' | 'terms'>('main');
+    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'stats'>('list');
+    const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
+    const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
+    
+    // Initialize Notification Service
+    useEffect(() => {
+        if (config) {
+            NotificationService.getInstance().startService(config);
+        }
+        return () => {
+            NotificationService.getInstance().stopService();
+        };
+    }, [config]);
+
+    // PWA Install State
+    const [installPrompt, setInstallPrompt] = useState<any>(null);
+    
+    // Global Search State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    
+    // Filter & Sort State for HubView
+    const [sortOrder, setSortOrder] = useState<string>('area');
+    const [filterArea, setFilterArea] = useState<string>('all');
+    
+    // Mobile Navigation
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Modals
+    const [addModalOpen, setAddModalOpen] = useState(false);
+    const [editTopic, setEditTopic] = useState<Topic | null>(null);
+    const [reviewData, setReviewData] = useState<{tId: string, rIdx: number} | null>(null);
+    const [historyEditData, setHistoryEditData] = useState<{tId: string, rIdx: number} | null>(null);
+    
+    const [simuladoModalOpen, setSimuladoModalOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
+    const [optimizationInfoOpen, setOptimizationInfoOpen] = useState(false);
+    const [tutorialOpen, setTutorialOpen] = useState(false);
+    const [syncAdOpen, setSyncAdOpen] = useState(false);
+    const [supportModalOpen, setSupportModalOpen] = useState(false);
+    
+    const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
+
+    const handleSyncClick = () => {
+        if (userRole === 'free') {
+            setSyncAdOpen(true);
+        } else {
+            syncNow(true);
+        }
+    };
+
+    useEffect(() => {
+        const root = window.document.documentElement;
+        const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
+        localStorage.setItem('theme', themeMode);
+    }, [themeMode]);
+
+    // Focus search when activated
+    useEffect(() => {
+        if (isSearchActive && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchActive]);
+
+    // PWA Install Prompt Listener
+    useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault();
+            setInstallPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    // Daily Login Bonus
+    useEffect(() => {
+        if (!loaded) return;
+        const todayStr = getTodayStr();
+        const lastLogin = localStorage.getItem('reviewflow_last_login');
+        if (lastLogin !== todayStr) {
+            localStorage.setItem('reviewflow_last_login', todayStr);
+            setConfig(prev => ({ ...prev, bonusXP: (prev.bonusXP || 0) + 50 }));
+            setTimeout(() => {
+                triggerConfetti();
+                toast.success('+50 XP!', { description: 'Bônus de login diário!' });
+            }, 1000);
+        }
+    }, [loaded]);
+
+    // PWA Badges
+    useEffect(() => {
+        const today = getTodayStr();
+        const pending = topics.reduce((acc, t) => {
+            if (t.deleted) return acc;
+            return acc + t.reviews.filter(r => r.date <= today && !r.done).length;
+        }, 0);
+        if ('setAppBadge' in navigator) {
+            (navigator as any).setAppBadge(pending).catch(() => {});
+        }
+    }, [topics]);
+
+    // Auto Optimize
+    useEffect(() => {
+        if (loaded && hasStarted && config.isPremium && config.autoOptimize) {
+            const today = getTodayStr();
+            if (config.lastAutoOptimization !== today) {
+                const result = optimizeSchedule(topics, config);
+                if (result.changes.length > 0) {
+                    setTopics(result.topics);
+                    toast.success("Agenda otimizada automaticamente!", { description: `${result.changes.length} revisões ajustadas.` });
+                }
+                setConfig(prev => ({ ...prev, lastAutoOptimization: today }));
+            }
+        }
+    }, [loaded, hasStarted, config?.isPremium, config?.autoOptimize, config?.lastAutoOptimization]);
+
+    const handleInstallApp = async () => {
+        if (!installPrompt) return;
+        installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setInstallPrompt(null);
+        }
+    };
+
+    const activeTopics = useMemo(() => topics.filter(t => !t.deleted), [topics]);
+    const activeSimulados = useMemo(() => simulados.filter(s => !s.deleted), [simulados]);
+
+    const filteredTopics = useMemo(() => {
+        let result = activeTopics;
+        
+        if (filterArea !== 'all') {
+            result = result.filter(t => t.area === filterArea);
+        }
+
+        if (searchTerm) {
+            const lower = searchTerm.toLowerCase();
+            result = result.filter(t => t.title.toLowerCase().includes(lower));
+        }
+
+        result.sort((a, b) => {
+             if (sortOrder === 'date') return (b.updatedAt || 0) - (a.updatedAt || 0);
+             if (sortOrder === 'priority') {
+                 const pMap: any = { high: 3, medium: 2, low: 1 };
+                 return (pMap[b.importance] || 1) - (pMap[a.importance] || 1);
+             }
+             if (sortOrder === 'questions') {
+                 const getQ = (t: Topic) => t.reviews.filter(r => r.done).reduce((acc, r) => acc + r.total, 0);
+                 return getQ(b) - getQ(a);
+             }
+             return 0;
+        });
+        
+        return result;
+    }, [activeTopics, filterArea, searchTerm, sortOrder]);
+
+    const stats = useMemo(() => {
+        const totalQ = activeTopics.reduce((acc, t) => acc + t.reviews.filter(r => r.done).reduce((s, r) => s + r.total, 0), 0);
+        const totalAnswered = totalQ + activeSimulados.reduce((acc, s) => acc + (s.totalQuestions || 0), 0);
+        const streak = calculateStreak(activeTopics, activeSimulados);
+        const totalXP = totalAnswered * 10 + streak * 50 + (config.bonusXP || 0);
+        return { totalAnswered, totalXP };
+    }, [activeTopics, activeSimulados, config.bonusXP]);
+
+    // Level up celebration
+    const prevLevelRef = useRef(1);
+    const hasLoadedRef = useRef(false);
+
+    useEffect(() => {
+        // Reset level tracking when account changes
+        hasLoadedRef.current = false;
+    }, [syncKey]);
+
+    useEffect(() => {
+        if (!loaded) return;
+
+        const currentLevel = getLevelInfo(stats.totalXP).level;
+        
+        if (!hasLoadedRef.current) {
+            prevLevelRef.current = currentLevel;
+            hasLoadedRef.current = true;
+            return;
+        }
+
+        if (currentLevel > prevLevelRef.current) {
+            triggerConfetti();
+            toast.success(`Nível ${currentLevel} Alcançado!`, {
+                description: 'Parabéns pela sua dedicação! Continue assim.',
+                icon: '🎉',
+            });
+            prevLevelRef.current = currentLevel;
+        } else if (currentLevel < prevLevelRef.current) {
+            // Se o nível caiu (ex: trocou de conta ou limpou dados), atualiza a referência
+            prevLevelRef.current = currentLevel;
+        }
+    }, [stats.totalXP, loaded, syncKey]);
+
+    // --- Actions ---
+    const handleDeleteTopic = (id: string) => {
+        const deletionTimestamp = Date.now() + 1000;
+        setTopics(prev => prev.map(t => t.id === id ? { ...t, deleted: true, deletedAt: null, updatedAt: deletionTimestamp } : t));
+        setEditTopic(null);
+        vibration.success();
+    };
+
+    const handleDeleteSimulado = (id: string) => {
+        const deletionTimestamp = Date.now() + 1000;
+        setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, deletedAt: null, updatedAt: deletionTimestamp } : s));
+        setSimuladoModalOpen(false);
+        setEditingSimulado(null);
+        vibration.success();
+    };
+
+    const handleAddTopic = (t: Topic) => {
+        const newTopicId = generateId();
+        const reviews = generateSmartSchedule(t.studyDate, config.examDate, t.importance, topics, newTopicId);
+        const newTopic: Topic = { ...t, id: newTopicId, reviews: reviews, deleted: false, updatedAt: Date.now() };
+        setTopics(prev => [newTopic, ...prev]);
+        setAddModalOpen(false);
+        vibration.success();
+    };
+
+    const handleCreateAggregatedTopic = useCallback((title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions?: number, blockId?: string, tags?: string[]) => {
+        const existing = topics.find(t => t.title === title && !t.deleted);
+        
+        if (existing) {
+            const hasDifficultLesson = lessons.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+            const updatedReviews = existing.reviews.map(r => {
+                if (r.done) return r;
+                // If it wasn't difficult before but is now, we should increase it
+                // To be safe, we just recalculate
+                let nextTargetQ = calculateNextLoad(existing.importance, null, r.type, null, existing.reviews[0].targetQ);
+                if (hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                return { ...r, targetQ: nextTargetQ };
+            });
+
+            const updated: Topic = {
+                ...existing,
+                linkedLessons: lessons,
+                hasDifficultLesson,
+                source: blockId || existing.source,
+                tags: tags || existing.tags,
+                reviews: updatedReviews,
+                updatedAt: Date.now()
+            };
+            setTopics(prev => prev.map(t => t.id === existing.id ? updated : t));
+            vibration.success();
+            alert("Matéria atualizada com as novas aulas do bloco!");
+        } else {
+            const newTopicId = generateId();
+            // Pass baseQuestions as overrideBaseQuestions to maintain AI schedule
+            let reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, undefined, baseQuestions);
+            
+            const hasDifficultLesson = lessons.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+            if (hasDifficultLesson) {
+                reviews = reviews.map(r => ({ ...r, targetQ: Math.ceil(r.targetQ * 1.1) }));
+            }
+
+            const newTopic: Topic = {
+                id: newTopicId,
+                title,
+                area,
+                subarea: tags && tags.length > 0 ? tags[0] : 'Cronograma',
+                importance: priority,
+                studyDate: getTodayStr(),
+                reviews,
+                linkedLessons: lessons,
+                hasDifficultLesson,
+                source: blockId,
+                tags: tags,
+                deleted: false,
+                updatedAt: Date.now()
+            };
+            setTopics(prev => [newTopic, ...prev]);
+            triggerConfetti();
+            vibration.success();
+        }
+    }, [topics, config.examDate]);
+
+    const handleUpdateTopic = (updated: Topic) => {
+        const old = topics.find(t => t.id === updated.id);
+        let reviews = updated.reviews;
+        const baseQ = old ? old.reviews[0].targetQ : undefined;
+        if (old && old.studyDate !== updated.studyDate) {
+             if (confirm("Recalcular cronograma devido à mudança de data?")) {
+                 reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, undefined, baseQ);
+             } else { updated.studyDate = old.studyDate; }
+        } else if (old && old.importance !== updated.importance) {
+            reviews = reviews.map(r => {
+                if (r.done) return r;
+                let nextTargetQ = calculateNextLoad(updated.importance, null, r.type, null, baseQ);
+                if (updated.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                return { ...r, targetQ: nextTargetQ };
+            });
+        }
+        const finalTopic = { ...updated, reviews, updatedAt: Date.now() };
+        setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
+        vibration.success();
+    };
+
+    const handleReviewSubmit = (data: { correct: number; total: number; difficulty: string; timeSpent?: number }) => {
+        if (!reviewData) return;
+        const { correct, total, difficulty, timeSpent } = data;
+        setTopics(prev => prev.map(t => {
+            if (t.id !== reviewData.tId) return t;
+            const newReviews = [...t.reviews];
+            const acc = total > 0 ? Math.round((correct/total)*100) : 0;
+            
+            newReviews[reviewData.rIdx] = { 
+                ...newReviews[reviewData.rIdx], 
+                done: true, 
+                correct, 
+                total, 
+                difficulty: difficulty as any, 
+                completedAt: new Date().toISOString(),
+                timeSpent
+            };
+            
+            if (config.useFSRS) {
+                // Calculate next interval based on FSRS
+                let previousInterval = 1;
+                if (reviewData.rIdx > 0) {
+                    const currDate = new Date(newReviews[reviewData.rIdx].date);
+                    const prevDate = new Date(newReviews[reviewData.rIdx - 1].date);
+                    previousInterval = Math.max(1, Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24)));
+                }
+                
+                const nextDateStr = calculateFSRSNextDate(acc, previousInterval);
+                const nextType = `R${newReviews.length}` as any;
+                
+                let nextTargetQ = calculateNextLoad(t.importance, difficulty, nextType, acc/100, newReviews[0].targetQ);
+                if (t.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+
+                newReviews.push({
+                    type: nextType,
+                    date: nextDateStr,
+                    label: `Revisão ${newReviews.length}`,
+                    done: false,
+                    correct: 0,
+                    total: 0,
+                    targetQ: nextTargetQ
+                });
+            } else if (reviewData.rIdx + 1 < newReviews.length) {
+                const baseQ = t.reviews[0].targetQ;
+                const hasDifficultLesson = t.linkedLessons?.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
+                let nextTargetQ = calculateNextLoad(t.importance, difficulty, newReviews[reviewData.rIdx+1].type, acc/100, baseQ);
+                if (hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
+                newReviews[reviewData.rIdx+1].targetQ = nextTargetQ;
+            }
+            return { ...t, reviews: newReviews, updatedAt: Date.now() };
+        }));
+        setReviewData(null);
+        vibration.complete();
+        triggerConfetti();
+        toast.success(`+${total * 10} XP!`, { description: 'Revisão concluída com sucesso!' });
+    };
+
+    const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
+        if (!historyEditData) return;
+        setTopics(prev => prev.map(t => {
+            if (t.id !== historyEditData.tId) return t;
+            const newReviews = [...t.reviews];
+            if (newReviews[historyEditData.rIdx]) {
+                newReviews[historyEditData.rIdx] = { ...newReviews[historyEditData.rIdx], date: data.date, correct: data.correct, total: data.total };
+            }
+            return { ...t, reviews: newReviews, updatedAt: Date.now() };
+        }));
+        setHistoryEditData(null);
+        vibration.success();
+    };
+
+    const handleSaveSimulado = (newS: Simulado) => {
+        const sWithId = { ...newS, id: newS.id || generateId(), updatedAt: Date.now() };
+        if (editingSimulado) {
+            setSimulados(prev => prev.map(s => s.id === editingSimulado.id ? sWithId : s));
+        } else {
+            setSimulados(prev => [...prev, sWithId]);
+        }
+
+        // Update hasDifficultLesson on topics
+        if (newS.difficultyLessons && newS.difficultyLessons.length > 0) {
+            setTopics(prev => prev.map(t => {
+                const hasDifficult = t.linkedLessons?.some(l => newS.difficultyLessons?.includes(l));
+                if (hasDifficult && !t.hasDifficultLesson) {
+                    return { ...t, hasDifficultLesson: true, updatedAt: Date.now() };
+                }
+                return t;
+            }));
+        }
+
+        setSimuladoModalOpen(false);
+        setEditingSimulado(null);
+        vibration.success();
+        triggerConfetti();
+        toast.success(`+${(newS.totalQuestions || 100) * 10} XP!`, { description: 'Simulado salvo com sucesso!' });
+    };
+
+    const runOptimization = () => {
+        const result = optimizeSchedule(topics, config);
+        if (result.changes.length === 0) { alert("Nenhuma otimização necessária."); return; }
+        setOptimizationResult(result);
+        setSettingsOpen(false);
+    };
+    
+    const applyOptimization = () => {
+        if (optimizationResult) {
+            setTopics(optimizationResult.topics);
+            setOptimizationResult(null);
+            vibration.success();
+        }
+    };
+
+    const handleExport = () => {
+        const data = { version: 1, date: new Date().toISOString(), topics, simulados, config };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `reviewflow-backup-${getTodayStr()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); vibration.success();
+    };
+
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const data = JSON.parse(ev.target?.result as string);
+                if (data.topics) setTopics(data.topics);
+                if (data.simulados) setSimulados(data.simulados);
+                if (data.config) setConfig(data.config);
+                alert('Importado!'); setSettingsOpen(false); vibration.success();
+            } catch (err) { alert('Erro.'); vibration.error(); }
+        };
+        reader.readAsText(file);
+    };
+
+    if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-transparent"><Activity size={40} className="animate-spin text-slate-500"/></div>;
+
+    const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
+    const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
+
+    const NAV_ITEMS = [
+        { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
+        { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
+        { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
+        { id: 'database', label: 'Acervo', icon: Database, title: 'Acervo de Estudos' },
+        { id: 'stats', label: 'Estatísticas', icon: PieChart, title: 'Estatísticas ENAMED' },
+    ];
+
+    const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
+
+    if (!hasStarted) {
+        return (
+            <Suspense fallback={<LoadingSpinner />}>
+                <LandingView 
+                    currentView={landingView}
+                    onChangeView={setLandingView}
+                    onStart={() => {
+                        localStorage.setItem('reviewflow_has_started', 'true');
+                        setHasStarted(true);
+                    }} 
+                />
+            </Suspense>
+        );
+    }
+
+    return (
+        <div 
+            className="min-h-[100dvh] bg-transparent text-slate-800 dark:text-slate-300 flex flex-col font-sans overflow-x-hidden selection:bg-slate-500/30 touch-manipulation"
+        >
+            <Toaster position="top-center" richColors />
+            
+            {/* --- MINIMALIST TOP NAVIGATION (DESKTOP) --- */}
+            <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-white/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-white/5 backdrop-blur-2xl sticky top-0 z-50">
+                <div className="flex items-center gap-12 w-1/3">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('list')}>
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                             <Activity size={16} strokeWidth={2.5}/>
+                        </div>
+                        <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
+                        {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Admin</span>}
+                        {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Futuro Especialista</span>}
+                    </div>
+                </div>
+                <div className="flex-1 flex justify-center">
+                    <nav className="flex items-center gap-2">
+                        {NAV_ITEMS.map(item => {
+                            const isActive = view === item.id;
+                            return (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => setView(item.id as any)}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${isActive ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-50 dark:lg:hover:bg-white/5'}`}
+                                >
+                                    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                                    {item.label}
+                                </button>
+                            )
+                        })}
+                    </nav>
+                </div>
+                <div className="flex items-center justify-end gap-5 w-1/3">
+                    <div className="flex items-center gap-2 border-r border-slate-200 dark:border-white/10 pr-5">
+                        {/* Add Button (Desktop) */}
+                        <div className="relative">
+                            <button 
+                                onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
+                                className="w-9 h-9 bg-blue-600 dark:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-md shadow-blue-500/20 lg:hover:scale-105 active:scale-90 transition-all duration-300"
+                            >
+                                <Plus size={18} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
+                            </button>
+                            {desktopNewMenuOpen && (
+                                <div className="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-2 animate-scale-in z-50">
+                                    <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center"><BookOpen size={16}/></div>
+                                        Novo Tema
+                                    </button>
+                                    <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><ClipboardList size={16}/></div>
+                                        Novo Simulado
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <button 
+                            onClick={handleSyncClick} 
+                            disabled={status === 'syncing' || !syncKey}
+                            className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${status === 'syncing' ? 'text-blue-500 animate-spin' : 'text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white lg:hover:bg-slate-100 dark:lg:hover:bg-white/10'} ${!syncKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Sincronizar agora"
+                        >
+                            <RefreshCw size={18} />
+                        </button>
+                        <button onClick={() => setSettingsOpen(true)} className="w-9 h-9 flex items-center justify-center text-slate-500 lg:hover:text-slate-800 dark:lg:hover:text-white rounded-full lg:hover:bg-slate-100 dark:lg:hover:bg-white/10 transition-all">
+                            <Settings size={18} />
+                        </button>
+                    </div>
+
+                    {/* Apoie and User icon */}
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setSupportModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 lg:hover:bg-rose-100 dark:lg:hover:bg-rose-500/20 rounded-full font-bold text-xs transition-colors shrink-0">
+                            <Heart size={14} className="fill-rose-500/20" />
+                            <span>Apoie</span>
+                        </button>
+                        <div className="w-48">
+                            <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} />
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Mobile Top Navigation (Modern & Adapative) */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/80 dark:bg-[#121214]/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-white/5 pt-[env(safe-area-inset-top)]">
+                <div className="flex items-center justify-between px-4 h-14">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 18, strokeWidth: 2.5 })}
+                        </div>
+                        <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none">{currentViewTitle}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                         <div className="relative">
+                             <button onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white active:scale-95 transition-all">
+                                 <Plus size={16} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
+                             </button>
+                             {desktopNewMenuOpen && (
+                                <div className="absolute top-full right-0 mt-3 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-2 animate-scale-in z-50">
+                                    <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center"><BookOpen size={16}/></div>
+                                        Novo Tema
+                                    </button>
+                                    <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><ClipboardList size={16}/></div>
+                                        Novo Simulado
+                                    </button>
+                                </div>
+                             )}
+                         </div>
+                         <button onClick={() => setIsSearchActive(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all">
+                             <Search size={16} />
+                         </button>
+                         <button onClick={() => setSettingsOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all">
+                             <Settings size={16} />
+                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Bottom Navigation (iOS Style) */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/90 dark:bg-[#121214]/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
+                <nav className="flex items-center justify-around px-2 h-16 relative">
+                    {NAV_ITEMS.map((item, index) => {
+                        const isActive = view === item.id;
+                        return (
+                            <React.Fragment key={item.id}>
+                                <button 
+                                    onClick={() => { 
+                                        vibration.tick(); 
+                                        setView(item.id as any);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }} 
+                                    className="flex flex-col items-center justify-center w-[60px] h-full gap-0.5 active:scale-95 transition-all"
+                                >
+                                    <item.icon 
+                                        size={22} 
+                                        strokeWidth={isActive ? 2.5 : 2} 
+                                        className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'} 
+                                    />
+                                    <span className={`text-[10px] leading-none ${isActive ? 'font-bold text-blue-600 dark:text-blue-400' : 'font-medium text-slate-400 dark:text-slate-500'}`}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            </React.Fragment>
+                        );
+                    })}
+                </nav>
+            </div>
+
+            {/* Main Content Area */}
+            <main className="flex-1 flex flex-col min-h-screen relative pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 max-w-7xl mx-auto w-full px-4 lg:px-8">
+                
+                {/* Search Overlay (When active) */}
+                {isSearchActive && (
+                    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 backdrop-blur-xl animate-fade-in flex flex-col p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="flex-1 bg-slate-100 dark:bg-white/10 rounded-2xl flex items-center px-4 py-3">
+                                <Search className="text-slate-400 mr-3" size={20} />
+                                <input 
+                                    ref={searchInputRef}
+                                    type="text" 
+                                    placeholder="O que você procura?"
+                                    className="w-full bg-transparent outline-none text-base font-semibold text-slate-800 dark:text-white placeholder-slate-400"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} className="p-1 rounded-full bg-slate-200 dark:bg-white/20">
+                                        <X size={14} className="text-slate-500 dark:text-slate-300"/>
+                                    </button>
+                                )}
+                            </div>
+                            <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="font-bold text-slate-500 dark:text-slate-400">
+                                Cancelar
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            {/* Search results would go here if we wanted a dedicated search UI, 
+                                but currently search filters the views. 
+                                So we just show a hint or recent searches. */}
+                            <div className="text-center text-slate-400 text-sm mt-10">
+                                <Search size={48} className="mx-auto mb-4 opacity-20"/>
+                                <p>Digite para buscar em {currentViewTitle}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex-1 w-full">
+                    <Suspense fallback={<LoadingSpinner />}>
+                        {view === 'list' && (
+                            <HubView 
+                                topics={activeTopics} 
+                                simulados={activeSimulados}
+                                config={config}
+                                dailyNotes={dailyNotes}
+                                setDailyNotes={setDailyNotes}
+                                onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
+                                onEditTopic={(id) => {
+                                    const t = topics.find(topic => topic.id === id);
+                                    if(t) setEditTopic(t);
+                                }}
+                                onDeleteTopic={handleDeleteTopic}
+                                searchTerm={searchTerm}
+                                sortOrder={sortOrder}
+                                setSortOrder={setSortOrder}
+                                filterArea={filterArea}
+                                setFilterArea={setFilterArea}
+                                onAddSimulado={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
+                            />
+                        )}
+                        {view === 'calendar' && <CalendarView topics={activeTopics} simulados={activeSimulados} onOpenReview={(id, idx) => setReviewData({tId: id, rIdx: idx})} config={config} onUpdateTopic={handleUpdateTopic} onEditTopic={(t) => setEditTopic(t)} />}
+                        
+                        {view === 'database' && (
+                            <DatabaseView 
+                                topics={activeTopics} 
+                                onEdit={(t) => setEditTopic(t)} 
+                                onDelete={handleDeleteTopic}
+                                simulados={activeSimulados}
+                                onEditSimulado={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }}
+                                onDeleteSimulado={handleDeleteSimulado}
+                                config={config}
+                                searchTerm={searchTerm}
+                            />
+                        )}
+                        
+                        {view === 'simulados' && <SimuladosView simulados={activeSimulados} topics={activeTopics} config={config} onDelete={handleDeleteSimulado} onEdit={(s) => { setEditingSimulado(s); setSimuladoModalOpen(true); }} searchTerm={searchTerm} />}
+
+                        {view === 'cronograma' && (
+                            <CronogramaView 
+                                scheduleProgress={scheduleProgress} 
+                                setScheduleProgress={setScheduleProgress} 
+                                config={config} 
+                                searchTerm={searchTerm} 
+                                onScheduleChange={(schedule) => {
+                                    setConfig(prev => ({ ...prev, activeSchedule: schedule }));
+                                    vibration.tick();
+                                }}
+                                onCreateAggregatedTopic={handleCreateAggregatedTopic}
+                                existingTopics={activeTopics}
+                                onUpdateTopic={handleUpdateTopic}
+                            />
+                        )}
+
+                        {view === 'stats' && <StatsView topics={activeTopics} simulados={activeSimulados} />}
+                    </Suspense>
+                </div>
+            </main>
+
+            {/* Modals */}
+            <EditTopicModal 
+                isOpen={addModalOpen} 
+                onClose={() => setAddModalOpen(false)} 
+                topic={null} 
+                onSave={handleAddTopic}
+                config={config} 
+            />
+
+            <EditTopicModal 
+                isOpen={!!editTopic} 
+                onClose={() => setEditTopic(null)} 
+                topic={editTopic} 
+                onSave={handleUpdateTopic} 
+                onDelete={handleDeleteTopic}
+                onEditReview={(rIdx) => editTopic && setHistoryEditData({tId: editTopic.id, rIdx})} 
+                config={config} 
+            />
+
+            <SimuladoModal 
+                isOpen={simuladoModalOpen} 
+                onClose={() => setSimuladoModalOpen(false)} 
+                simulado={editingSimulado} 
+                onSave={handleSaveSimulado} 
+                onDelete={handleDeleteSimulado}
+                topics={topics} 
+            />
+
+            <SettingsModal 
+                isOpen={settingsOpen} 
+                onClose={() => setSettingsOpen(false)} 
+                config={config} 
+                onSaveConfig={(c) => { setConfig(c); vibration.success(); }}
+                syncKey={syncKey}
+                onSaveKey={setSyncKey}
+                onExport={handleExport}
+                onImport={handleImport}
+                themeMode={themeMode}
+                setThemeMode={setThemeMode}
+                runOptimization={runOptimization}
+                onShowOptimizationInfo={() => setOptimizationInfoOpen(true)}
+                status={status}
+                installPrompt={installPrompt}
+                onInstallApp={handleInstallApp}
+                onOpenTutorial={() => { setSettingsOpen(false); setTutorialOpen(true); }}
+            />
+
+            <ReviewModal 
+                isOpen={!!reviewData} 
+                onClose={() => setReviewData(null)} 
+                topic={currentReviewTopic} 
+                reviewIdx={reviewData?.rIdx ?? null} 
+                onSubmit={handleReviewSubmit}
+                targetAccuracy={config.targetAccuracy}
+                onEditTopic={() => {
+                    setReviewData(null);
+                    if (currentReviewTopic) setEditTopic(currentReviewTopic);
+                }}
+            />
+
+            <EditReviewHistoryModal
+                isOpen={!!historyEditData}
+                onClose={() => setHistoryEditData(null)}
+                topic={historyEditTopic}
+                reviewIdx={historyEditData?.rIdx ?? null}
+                onSave={handleHistoryEdit}
+            />
+
+            <OptimizationResultModal 
+                isOpen={!!optimizationResult} 
+                onClose={() => setOptimizationResult(null)} 
+                onConfirm={applyOptimization}
+                changes={optimizationResult?.changes || []} 
+            />
+
+            <OptimizationInfoModal
+                isOpen={optimizationInfoOpen}
+                onClose={() => setOptimizationInfoOpen(false)}
+            />
+
+            <SupportModal 
+                isOpen={supportModalOpen}
+                onClose={() => setSupportModalOpen(false)}
+            />
+
+            <TutorialModal 
+                isOpen={tutorialOpen}
+                onClose={() => setTutorialOpen(false)}
+            />
+
+            <SyncAdModal
+                isOpen={syncAdOpen}
+                onClose={() => setSyncAdOpen(false)}
+                onConfirm={() => syncNow(true)}
+            />
+        </div>
+    );
+}
+
+export function App() {
+    return (
+        <ErrorBoundary>
+            <AppContent />
+        </ErrorBoundary>
+    );
+}

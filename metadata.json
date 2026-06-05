@@ -1,0 +1,5 @@
+{
+  "name": "Reviewflow 3.0",
+  "description": "A high-performance spaced repetition study planner for medical students, featuring progress tracking, analytics, and offline-first capabilities.",
+  "requestFramePermissions": []
+}

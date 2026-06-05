@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ReviewFlow • Medical Plan</title>
+    <meta name="description" content="Planejador de estudos com Repetição Espaçada automática para estudantes de medicina. Organize revisões e simulados.">
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6526249232306742" crossorigin="anonymous"></script>
+
+    <!-- Performance Optimizations -->
+    <link rel="preconnect" href="https://esm.sh" crossorigin>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://reviewflow.vercel.app/">
+    <meta property="og:title" content="ReviewFlow • Medical Plan">
+    <meta property="og:description" content="Estude medicina com inteligência. Repetição espaçada automática e métricas de desempenho.">
+    <meta property="og:image" content="/icon-512.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="ReviewFlow • Medical Plan">
+    <meta property="twitter:description" content="Estude medicina com inteligência. Repetição espaçada automática e métricas de desempenho.">
+    <meta property="twitter:image" content="/icon-512.png">
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f4f7">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+    
+    <!-- iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ReviewFlow">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
+    <!-- Windows Support -->
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    <meta name="msapplication-TileImage" content="/icon-192.png">
+
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#1e293b', 950: '#020617' },
+                        zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' }
+                    },
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    animation: {
+                        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { 
+            --glass-border: rgba(255,255,255,0.4); 
+            --glass-bg: rgba(255,255,255,0.65); 
+            --bg-gradient: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.08), transparent 25%);
+        }
+        .dark { 
+            --glass-border: rgba(255,255,255,0.08); 
+            --glass-bg: rgba(20,20,23,0.65); 
+            --bg-gradient: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%), radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            background-color: #f8fafc;
+            background-image: var(--bg-gradient);
+            background-attachment: fixed;
+        }
+        .dark body {
+            background-color: #0f172a;
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; } 
+        @media (min-width: 1024px) {
+            ::-webkit-scrollbar { width: 6px; }
+            ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+            .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+        }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); }
+        
+        /* Safe Area Utilities for iOS */
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+
+        /* Hide number input spinners */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-[#f2f2f7] dark:bg-black text-slate-900 dark:text-slate-100 transition-colors duration-500 overflow-x-hidden selection:bg-blue-500/30">
+    <!-- Decorative background elements -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div class="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-cyan-400/20 dark:bg-cyan-600/15 blur-[120px]"></div>
+        <div class="absolute top-[10%] -right-[10%] w-[50%] h-[50%] rounded-full bg-blue-400/20 dark:bg-blue-600/15 blur-[120px]"></div>
+        <div class="absolute -bottom-[20%] left-[10%] w-[70%] h-[70%] rounded-full bg-emerald-400/15 dark:bg-emerald-600/10 blur-[120px]"></div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+</body>
+</html>
