@@ -85,7 +85,7 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
     }, []);
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative flex justify-end" ref={dropdownRef}>
             {/* Trigger Button */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
@@ -109,7 +109,7 @@ export const UserStatsDropdown = React.memo(({ totalXP, totalQuestions, topics, 
                         <div>
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{rank.label}</div>
                             <div className="text-lg font-black text-slate-800 dark:text-slate-200">Nível {level}</div>
-                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">{userRole === 'admin' ? 'Administrador' : userRole === 'premium' ? 'Premium' : 'Usuário'}</div>
+                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">{userRole === 'admin' ? 'Administrador' : userRole === 'colaborador' ? 'Colaborador' : 'Usuário'}</div>
                         </div>
                     </div>
                     

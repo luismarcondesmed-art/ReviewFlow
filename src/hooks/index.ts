@@ -75,20 +75,29 @@ export const useSync = () => {
       if (!syncKey || !loaded || isSyncingRef.current) return;
       
       const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+      const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
       const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-      const hasUnlimitedSync = adminKeys.includes(syncKey) || premiumKeys.includes(syncKey);
+      
+      let uRole = 'usuario';
+      if (adminKeys.includes(syncKey)) uRole = 'admin';
+      else if (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) uRole = 'colaborador';
       
       const lastSyncTimeStr = localStorage.getItem('reviewflow_last_sync_time');
       const now = Date.now();
       
-      if (manual && !hasUnlimitedSync && lastSyncTimeStr) {
+      if (manual && lastSyncTimeStr) {
           const lastSyncTime = parseInt(lastSyncTimeStr, 10);
           const timeDiffMinutes = (now - lastSyncTime) / (1000 * 60);
           
-          if (timeDiffMinutes < 30) {
-              alert(`A sincronização gratuita é limitada a uma vez a cada 30 minutos. Tente novamente em ${Math.ceil(30 - timeDiffMinutes)} minutos.\n\nTorne-se um "Futuro Especialista" para sincronizações ilimitadas!`);
+          if (uRole === 'usuario' && timeDiffMinutes < 30) {
+              alert(`Sua conta permite sincronização a cada 30 minutos. Tente novamente em ${Math.ceil(30 - timeDiffMinutes)} min.`);
               return;
           }
+          if (uRole === 'colaborador' && timeDiffMinutes < 5) {
+              alert(`Como colaborador, você pode sincronizar a cada 5 minutos. Tente novamente em ${Math.ceil(5 - timeDiffMinutes)} min.`);
+              return;
+          }
+          // Admin has no manual restriction
       }
       
       try {
@@ -237,17 +246,25 @@ export const useSync = () => {
       if (!loaded || !syncKey) return;
       
       const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+      const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
       const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-      const hasUnlimitedSync = adminKeys.includes(syncKey) || premiumKeys.includes(syncKey);
       
-      if (hasUnlimitedSync) {
-          // Debounce auto-sync to avoid spamming Firebase
+      let uRole = 'usuario';
+      if (adminKeys.includes(syncKey)) uRole = 'admin';
+      else if (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) uRole = 'colaborador';
+      
+      // Removed the aggressive 2s auto-sync for all changes.
+      // Instead, we just mark as online and let manual sync handle most things.
+      // We can do a single auto-sync on load, or a very long debounced one (e.g. 5 minutes) for admins.
+      
+      setStatus('online');
+      
+      if (uRole === 'admin') {
+          // Sync every 5 minutes for admins automatically to prevent loss, but not every keystroke
           const timeout = setTimeout(() => {
               syncNow(false);
-          }, 2000);
+          }, 300000); 
           return () => clearTimeout(timeout);
-      } else {
-          setStatus('online'); // Assume online, but require manual sync
       }
   }, [loaded, syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
 
@@ -264,8 +281,9 @@ export const useSync = () => {
   }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, loaded]);
 
   const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
+  const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
   const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-  const userRole = adminKeys.includes(syncKey) ? 'admin' : premiumKeys.includes(syncKey) ? 'premium' : 'free';
+  const userRole = adminKeys.includes(syncKey) ? 'admin' : (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) ? 'colaborador' : 'usuario';
 
   return { 
     topics, setTopics, 

@@ -146,8 +146,16 @@ function AppContent() {
     const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
 
     const handleSyncClick = () => {
-        if (userRole === 'free') {
-            setSyncAdOpen(true);
+        if (userRole === 'usuario') {
+            const lastSyncTimeStr = localStorage.getItem('reviewflow_last_sync_time');
+            if (lastSyncTimeStr) {
+                const timeDiffMinutes = (Date.now() - parseInt(lastSyncTimeStr, 10)) / (1000 * 60);
+                if (timeDiffMinutes < 30) {
+                    setSyncAdOpen(true);
+                    return;
+                }
+            }
+            syncNow(true);
         } else {
             syncNow(true);
         }
@@ -582,7 +590,7 @@ function AppContent() {
                         </div>
                         <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent mr-4">ReviewFlow</h1>
                         {userRole === 'admin' && <span className="hidden lg:block px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Admin</span>}
-                        {userRole === 'premium' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Futuro Especialista</span>}
+                        {userRole === 'colaborador' && <span className="hidden lg:block px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Colaborador</span>}
                     </div>
                 </div>
                 <div className="flex-1 flex justify-center">
@@ -810,6 +818,9 @@ function AppContent() {
                                 onCreateAggregatedTopic={handleCreateAggregatedTopic}
                                 existingTopics={activeTopics}
                                 onUpdateTopic={handleUpdateTopic}
+                                onEditTopic={(topic) => {
+                                    setEditTopic(topic);
+                                }}
                             />
                         )}
 
