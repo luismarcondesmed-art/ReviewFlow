@@ -1,0 +1,8 @@
+{
+  "name": "Reviewflow 3.0",
+  "description": "A high-performance spaced repetition study planner for medical students and public exams, featuring progress tracking, analytics, and AI question generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
