@@ -18,7 +18,7 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
     const { institutions, years, metrics, filteredSimuladosForChart } = useAnalytics(topics, simulados, { period, typeFilter, areaFilter, simInstitution, simYear });
 
     return (
-        <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in">
+        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in">
              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
                 <div className="space-y-1 hidden sm:block">
                     <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-3"><Activity size={28} className="text-slate-500"/> Estatísticas</h3>

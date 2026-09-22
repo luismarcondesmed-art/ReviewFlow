@@ -103,7 +103,7 @@ export const Modal = ({
         fullScreen 
           ? "items-center justify-center p-0 sm:p-4" 
           : alignTopOnMobile 
-            ? "items-start pt-12 px-4 sm:pt-0 sm:items-center" 
+            ? "items-start pt-3 px-2 sm:px-4 sm:pt-0 sm:items-center" 
             : "items-end sm:items-center"
       } justify-center sm:p-4 p-0`}
       role="dialog"
@@ -119,13 +119,13 @@ export const Modal = ({
 
       {/* Modal Container: Floating Glass Panel */}
       <div
-        className={`relative w-full ${fullScreen ? "max-w-md sm:max-w-2xl" : "max-w-md"} bg-white/90 dark:bg-[#121214]/90 backdrop-blur-xl ${
+        className={`relative w-full ${fullScreen ? "max-w-md sm:max-w-2xl" : "max-w-md"} bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl ${
             fullScreen 
-              ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[40px] sm:min-h-[500px]" 
+              ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[36px] sm:min-h-[500px]" 
               : alignTopOnMobile 
-                ? "rounded-[32px] max-h-[90vh]" 
-                : "rounded-t-[32px] max-h-[90vh]"
-        } sm:rounded-[40px] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col sm:max-h-[85vh] animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}
+                ? "rounded-[28px] sm:rounded-[36px] max-h-[92dvh] sm:max-h-[85vh]" 
+                : "rounded-t-[28px] sm:rounded-[36px] max-h-[88dvh] sm:max-h-[85vh] pb-[env(safe-area-inset-bottom)]"
+        } shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8)] flex flex-col animate-slide-up sm:animate-scale-in border border-white/40 dark:border-white/10 overflow-hidden ring-1 ring-black/5 dark:ring-white/5`}
       >
         {/* Header */}
         {!hideHeader && (

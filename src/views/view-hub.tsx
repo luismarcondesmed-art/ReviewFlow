@@ -235,14 +235,14 @@ export const HubView = ({
 
     if (deepFocusOpen) {
         return (
-            <div ref={containerRef} className="flex flex-col gap-6 h-full pb-32 lg:pb-0 w-full relative">
+            <div ref={containerRef} className="flex flex-col gap-6 min-h-full pb-4 lg:pb-0 w-full relative">
                 <DeepFocusContent onClose={() => setDeepFocusOpen(false)} dueItems={dueItems} onReview={onReview} />
             </div>
         );
     }
 
     return (
-        <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 h-full pb-32 lg:pb-6 animate-scale-in w-full relative">
+        <div ref={containerRef} className="flex flex-col gap-4 sm:gap-6 min-h-full pb-4 lg:pb-6 animate-scale-in w-full relative">
             
             {/* 1. TOP HEADER & INTEGRATED ACTION STRIP */}
             <div className="bg-white dark:bg-zinc-900 border border-slate-200/90 dark:border-white/10 rounded-2xl sm:rounded-[24px] p-3.5 sm:p-5 shadow-xs flex flex-col gap-3">

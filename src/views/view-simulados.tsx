@@ -18,7 +18,7 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
     }, [simulados, searchTerm]);
 
     return (
-        <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in gap-6">
+        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in gap-6">
              <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                     <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-3"><ClipboardList size={28} className="text-purple-500"/> Simulados</h3>

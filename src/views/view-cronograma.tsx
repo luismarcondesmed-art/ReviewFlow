@@ -612,10 +612,10 @@ export const CronogramaView = ({
     };
 
     return (
-        <div className="h-full flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 animate-scale-in">
+        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in">
             
             {/* Top Toolbar */}
-            <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-3 rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sticky top-[56px] lg:top-4 z-40 shadow-sm border border-slate-200/50 dark:border-white/5">
+            <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-3 rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sticky top-0 sm:top-2 lg:top-4 z-30 shadow-xs border border-slate-200/60 dark:border-white/5">
                 <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
                     <div className="relative shrink-0 flex-1 sm:flex-none">
                         <button 
@@ -628,8 +628,8 @@ export const CronogramaView = ({
                         
                         {scheduleMenuOpen && (
                             <>
-                                <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setScheduleMenuOpen(false)}></div>
-                                <div className="absolute top-[calc(100%+8px)] left-0 mt-2 w-full sm:w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-slide-down p-1.5 space-y-1">
+                                <div className="fixed inset-0 z-[85]" onClick={() => setScheduleMenuOpen(false)}></div>
+                                <div className="absolute top-[calc(100%+8px)] left-0 mt-2 w-full sm:w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl z-[90] overflow-hidden animate-slide-down p-1.5 space-y-1">
                                     <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                         Residência Médica
                                     </div>

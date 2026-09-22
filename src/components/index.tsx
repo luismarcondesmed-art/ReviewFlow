@@ -88,7 +88,9 @@ export const UserStatsDropdown = React.memo(({
     simulados, 
     userRole,
     userIcon = 'user',
-    onSelectUserIcon
+    onSelectUserIcon,
+    dropPosition = 'up',
+    size = 'md'
 }: { 
     totalXP: number; 
     totalQuestions: number; 
@@ -97,6 +99,8 @@ export const UserStatsDropdown = React.memo(({
     userRole: string;
     userIcon?: string;
     onSelectUserIcon?: (icon: string) => void;
+    dropPosition?: 'up' | 'down';
+    size?: 'sm' | 'md';
 }) => {
     const { level, currentXP, nextLevelXP, progress } = getLevelInfo(totalXP);
     const rank = getRankInfo(level);
@@ -136,16 +140,18 @@ export const UserStatsDropdown = React.memo(({
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label="Perfil do Usuário"
                 title="Meu Perfil e Estatísticas"
-                className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10 ring-2 ring-blue-500/30' : 'bg-slate-50 dark:bg-slate-200/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                className={`flex items-center justify-center ${size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'} rounded-full transition-all duration-300 border ${isOpen ? 'bg-white/10 border-white/10 ring-2 ring-blue-500/30' : 'bg-slate-50 dark:bg-slate-200/5 border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-white/10'}`}
             >
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-slate-100 shadow-sm relative`}>
-                    <CurrentAvatarIcon size={16} fill="currentColor" className="opacity-95"/>
+                <div className={`${size === 'sm' ? 'w-7 h-7' : 'w-8 h-8'} rounded-full bg-gradient-to-br ${rank.bg} flex items-center justify-center text-slate-100 shadow-sm relative`}>
+                    <CurrentAvatarIcon size={size === 'sm' ? 14 : 16} fill="currentColor" className="opacity-95"/>
                 </div>
             </button>
 
             {/* Popover / Dropdown */}
             {isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-72 origin-bottom-left p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-[100]">
+                <>
+                    <div className="fixed inset-0 z-[95]" onClick={() => { setIsOpen(false); setShowIconPicker(false); }} />
+                    <div className={`absolute ${dropPosition === 'down' ? 'top-full right-0 mt-2 origin-top-right' : 'bottom-full left-0 mb-2 origin-bottom-left'} w-72 p-4 bg-white dark:bg-[#1c1c1e] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scale-in z-[100]`}>
                     <div className="flex items-center gap-3 mb-4">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${rank.bg} flex items-center justify-center text-white shadow-md relative`}>
                             <CurrentAvatarIcon size={24} fill="currentColor" className="opacity-95"/>
@@ -222,6 +228,7 @@ export const UserStatsDropdown = React.memo(({
                         <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">v{APP_VERSION}</span>
                     </div>
                 </div>
+                </>
             )}
         </div>
     );

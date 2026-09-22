@@ -224,7 +224,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
     };
 
     return (
-        <div className="h-full flex flex-col pb-32 lg:pb-0 animate-scale-in w-full">
+        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in w-full">
             {/* Header */}
             <div className="flex flex-row items-center justify-between gap-3 mb-6 px-2">
                 <div className="hidden lg:flex items-center gap-4">

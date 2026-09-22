@@ -128,8 +128,8 @@ export const FafipaQuestionModal: React.FC<FafipaQuestionModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-start justify-center p-3 sm:p-6 pt-4 sm:pt-10 overflow-y-auto">
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] my-auto sm:my-0 animate-scale-up">
+        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 pt-2 sm:pt-6 overflow-y-auto">
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[88vh] my-1 sm:my-4 animate-scale-up">
                 
                 {/* Header */}
                 <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-800/40">

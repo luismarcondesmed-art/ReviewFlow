@@ -300,7 +300,7 @@ export const DatabaseView = ({
     }, [simulados, searchTerm]);
 
     return (
-        <div className="h-full flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 animate-scale-in">
+        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in">
             {/* Header: Controls */}
             <div className="flex flex-col gap-3 mb-6 z-20 relative px-1">
                 {/* Track Selector Bar (Concurso vs Residência) */}
@@ -492,14 +492,14 @@ export const DatabaseView = ({
                                     className="overflow-x-auto custom-scrollbar overflow-y-visible"
                                     onPointerDownCapture={(e) => e.stopPropagation()}
                                 >
-                                    <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
+                                    <table className="w-full text-left border-collapse">
                                         <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
                                             <tr>
-                                                <th className={`p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest ${groupBy === 'none' ? 'rounded-tl-[24px]' : ''}`}>Matéria</th>
-                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-44">Modalidade & Área</th>
-                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-28">Progresso</th>
-                                                <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-20">Nota</th>
-                                                <th className={`p-4 text-right w-16 ${groupBy === 'none' ? 'rounded-tr-[24px]' : ''}`}></th>
+                                                <th className={`p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest ${groupBy === 'none' ? 'rounded-tl-[24px]' : ''}`}>Matéria</th>
+                                                <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-44">Modalidade & Área</th>
+                                                <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-20 sm:w-28">Progresso</th>
+                                                <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-14 sm:w-20">Nota</th>
+                                                <th className={`p-3 sm:p-4 text-right w-10 sm:w-16 ${groupBy === 'none' ? 'rounded-tr-[24px]' : ''}`}></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -766,14 +766,14 @@ export const DatabaseView = ({
                             className="overflow-x-auto custom-scrollbar"
                             onPointerDownCapture={(e) => e.stopPropagation()}
                         >
-                            <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-full">
+                            <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50/50 dark:bg-black/20 sticky top-0 backdrop-blur-sm z-10">
                                     <tr>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Simulado</th>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-32">Ano</th>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-32">Data</th>
-                                        <th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-24">Nota</th>
-                                        <th className="p-4 text-right w-16"></th>
+                                        <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Simulado</th>
+                                        <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:table-cell w-32">Ano</th>
+                                        <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-24 sm:w-32">Data</th>
+                                        <th className="p-3 sm:p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-16 sm:w-24">Nota</th>
+                                        <th className="p-3 sm:p-4 text-right w-10 sm:w-16"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">

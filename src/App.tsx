@@ -674,37 +674,68 @@ function AppContent() {
             </aside>
 
             {/* Mobile Top Navigation (Modern & Adapative) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/80 dark:bg-[#121214]/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-white/5 pt-[env(safe-area-inset-top)]">
-                <div className="flex items-center justify-between px-4 h-14">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
-                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 18, strokeWidth: 2.5 })}
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/90 dark:bg-[#121214]/90 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 pt-[env(safe-area-inset-top)]">
+                <div className="flex items-center justify-between px-3.5 h-14">
+                    <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
+                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 17, strokeWidth: 2.5 })}
                         </div>
-                        <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none">{currentViewTitle}</span>
+                        <span className="text-base font-black tracking-tight text-slate-900 dark:text-white leading-none truncate">{currentViewTitle}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                         {/* Quick Add Button */}
                          <div className="relative">
-                             <button onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-600 text-white active:scale-95 transition-all">
+                             <button 
+                                onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
+                                aria-label="Criar Novo"
+                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white active:scale-95 transition-all shadow-xs"
+                             >
                                  <Plus size={16} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
                              </button>
                              {desktopNewMenuOpen && (
-                                <div className="absolute top-full right-0 mt-3 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-2 animate-scale-in z-50">
-                                    <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center"><BookOpen size={16}/></div>
-                                        Novo Tema
-                                    </button>
-                                    <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
-                                        <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center"><ClipboardList size={16}/></div>
-                                        Novo Simulado
-                                    </button>
-                                </div>
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setDesktopNewMenuOpen(false)} />
+                                    <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-1.5 animate-scale-in z-50 space-y-0.5">
+                                        <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0"><BookOpen size={14}/></div>
+                                            <span>Novo Tema</span>
+                                        </button>
+                                        <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                                            <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0"><ClipboardList size={14}/></div>
+                                            <span>Novo Simulado</span>
+                                        </button>
+                                    </div>
+                                </>
                              )}
                          </div>
-                         <button onClick={() => setIsSearchActive(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all">
-                             <Search size={16} />
+
+                         <button 
+                            onClick={() => setIsSearchActive(true)} 
+                            aria-label="Pesquisar"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+                         >
+                             <Search size={15} />
                          </button>
-                         <button onClick={() => setSettingsOpen(true)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all">
-                             <Settings size={16} />
+
+                         {/* Mobile User Profile Trigger */}
+                         <UserStatsDropdown 
+                             totalXP={stats.totalXP} 
+                             totalQuestions={stats.totalAnswered} 
+                             topics={topics} 
+                             simulados={simulados} 
+                             userRole={userRole}
+                             userIcon={config.userIcon}
+                             onSelectUserIcon={(newIcon) => setConfig(prev => ({ ...prev, userIcon: newIcon }))}
+                             dropPosition="down"
+                             size="sm"
+                         />
+
+                         <button 
+                            onClick={() => setSettingsOpen(true)} 
+                            aria-label="Configurações"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+                         >
+                             <Settings size={15} />
                          </button>
                     </div>
                 </div>
@@ -752,7 +783,7 @@ function AppContent() {
                         <PanelLeftOpen size={17} />
                     </button>
                 )}
-                <main className="flex-1 overflow-y-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12 pt-[calc(3.5rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 px-4 lg:px-8">
+                <main className="flex-1 overflow-y-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12 pt-[calc(4.25rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 px-3 sm:px-4 lg:px-8">
                     <div className="max-w-6xl mx-auto w-full h-full">
                         {/* Search Overlay (When active) */}
                 {isSearchActive && (
