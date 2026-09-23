@@ -1,7 +1,41 @@
 import { ImportanceType } from '../types';
 
 export const calculateEnamedStats = (areaName: string, lessonNames: string[]) => {
-    // Generic logic for finding priority and questions
+    const isPortugues = areaName.toLowerCase().includes('portugu') || lessonNames.some(l => l.toLowerCase().includes('portugu'));
+    
+    // Regra específica para Língua Portuguesa (10 a 20 questões por prioridade)
+    if (isPortugues) {
+        const text = lessonNames.join(' ').toLowerCase();
+        let priority: ImportanceType = 'medium';
+        let baseQ = 15; // Média padrão: 15 questões
+
+        if (
+            text.includes('sintaxe') || 
+            text.includes('concordância') || 
+            text.includes('regência') || 
+            text.includes('crase') || 
+            text.includes('coesão') || 
+            text.includes('reescrita') || 
+            text.includes('interpretação') ||
+            text.includes('vozes')
+        ) {
+            priority = 'high';
+            baseQ = 20; // Alta prioridade: 20 questões
+        } else if (text.includes('literatura')) {
+            priority = 'low';
+            baseQ = 10; // Baixa prioridade: 10 questões
+        }
+
+        const lessonQuestions = lessonNames.map(() => baseQ);
+
+        return {
+            priority,
+            questions: baseQ,
+            lessonQuestions
+        };
+    }
+
+    // Generic logic for other subjects
     let baseQ = 25;
     let priority: ImportanceType = 'medium';
 

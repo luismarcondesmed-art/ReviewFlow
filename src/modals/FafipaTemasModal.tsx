@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { 
     X, Search, BookOpen, BrainCircuit, Target, CheckCircle2, 
-    Sparkles, ArrowRight, ShieldCheck, Stethoscope, Filter, Calendar
+    Sparkles, ArrowRight, ShieldCheck, Stethoscope, Filter, Calendar, Plus
 } from 'lucide-react';
 import { FAFIPA_METADATA, FAFIPA_TEMAS, FAFIPA_SCHEDULE } from '../services/fafipaSchedule';
-import { ScheduleProgress } from '../types';
+import { ScheduleProgress, AreaType, ImportanceType } from '../types';
+import { toast } from 'sonner';
 
 interface FafipaTemasModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface FafipaTemasModalProps {
     scheduleProgress: ScheduleProgress;
     onSelectTemaFilter?: (filterText: string) => void;
     onOpenQuestions?: (topicName: string) => void;
+    onCreateTopic?: (title: string, area: AreaType, lessons: string[], priority: ImportanceType, baseQuestions: number, blockId?: string, tags?: string[]) => void;
 }
 
 export const FafipaTemasModal: React.FC<FafipaTemasModalProps> = ({
@@ -19,11 +21,66 @@ export const FafipaTemasModal: React.FC<FafipaTemasModalProps> = ({
     onClose,
     scheduleProgress,
     onSelectTemaFilter,
-    onOpenQuestions
+    onOpenQuestions,
+    onCreateTopic
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDisciplina, setSelectedDisciplina] = useState<string>('todas');
     const [selectedSemana, setSelectedSemana] = useState<string>('todas');
+
+    // Configuração de prioridade e meta de questões (10 a 20 Qs para português)
+    const getTemaConfig = (tema: typeof FAFIPA_TEMAS[0]): { priority: ImportanceType; baseQ: number } => {
+        const isPort = tema.disciplina.toLowerCase().includes('portugu');
+        if (tema.prioridade === 'alta') {
+            return { priority: 'high', baseQ: 20 };
+        }
+        if (tema.prioridade === 'baixa') {
+            return { priority: 'low', baseQ: 10 };
+        }
+        return { priority: 'medium', baseQ: isPort ? 15 : 15 };
+    };
+
+    const handleAddTemaToCalendar = (tema: typeof FAFIPA_TEMAS[0]) => {
+        if (!onCreateTopic) return;
+        const { priority, baseQ } = getTemaConfig(tema);
+        const aulas = FAFIPA_SCHEDULE.filter(item => item.temaId === tema.id).map(i => i.aula);
+        const mappedArea: AreaType = tema.disciplina.toLowerCase().includes('portugu') ? 'idiomas' 
+            : tema.disciplina.toLowerCase().includes('matem') ? 'exatas'
+            : tema.disciplina.toLowerCase().includes('legis') ? 'humanas'
+            : 'tecnico';
+        
+        onCreateTopic(
+            `${tema.disciplina}: ${tema.grupo}`,
+            mappedArea,
+            aulas.length > 0 ? aulas : [tema.conteudo],
+            priority,
+            baseQ,
+            'FAFIPA - Concurso Médico',
+            [tema.disciplina, tema.grupo]
+        );
+        toast.success(`"${tema.grupo}" adicionado ao calendário (${baseQ} questões por revisão)!`);
+    };
+
+    const handleAddAllPortugueseToCalendar = () => {
+        if (!onCreateTopic) return;
+        const portugueseTemas = FAFIPA_TEMAS.filter(t => t.disciplina.toLowerCase().includes('portugu'));
+        let count = 0;
+        portugueseTemas.forEach(tema => {
+            const { priority, baseQ } = getTemaConfig(tema);
+            const aulas = FAFIPA_SCHEDULE.filter(item => item.temaId === tema.id).map(i => i.aula);
+            onCreateTopic(
+                `Português: ${tema.grupo}`,
+                'idiomas',
+                aulas.length > 0 ? aulas : [tema.conteudo],
+                priority,
+                baseQ,
+                'FAFIPA / Concursos Médicos',
+                ['Português', tema.grupo]
+            );
+            count++;
+        });
+        toast.success(`${count} temas de Português adicionados ao calendário com 10 a 20 questões conforme a prioridade!`);
+    };
 
     // Estatísticas de conclusão por tema
     const temaStats = useMemo(() => {
@@ -150,8 +207,20 @@ export const FafipaTemasModal: React.FC<FafipaTemasModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-400 dark:text-zinc-500">
-                        Mostrando <strong className="text-slate-700 dark:text-slate-200">{filteredTemas.length}</strong> de 56 temas
+                    <div className="flex items-center gap-2">
+                        {onCreateTopic && (
+                            <button
+                                onClick={handleAddAllPortugueseToCalendar}
+                                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                title="Adicionar todos os temas de Português com 10 a 20 questões conforme a prioridade"
+                            >
+                                <Sparkles size={13} />
+                                <span>+ Temas Português (10-20 Qs no Calendário)</span>
+                            </button>
+                        )}
+                        <div className="text-[11px] text-slate-400 dark:text-zinc-500 hidden sm:block">
+                            Mostrando <strong className="text-slate-700 dark:text-slate-200">{filteredTemas.length}</strong> de 56 temas
+                        </div>
                     </div>
                 </div>
 
@@ -272,7 +341,18 @@ export const FafipaTemasModal: React.FC<FafipaTemasModalProps> = ({
                                         </div>
 
                                         {/* Ações */}
-                                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0 flex-wrap justify-end">
+                                            {onCreateTopic && (
+                                                <button
+                                                    onClick={() => handleAddTemaToCalendar(tema)}
+                                                    className="h-8 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-emerald-200/50 dark:border-emerald-800/40"
+                                                    title={`Adicionar tema ao calendário com meta de ${getTemaConfig(tema).baseQ} questões`}
+                                                >
+                                                    <Calendar size={13} />
+                                                    <span>+ Calendário ({getTemaConfig(tema).baseQ} Qs)</span>
+                                                </button>
+                                            )}
+
                                             {onSelectTemaFilter && (
                                                 <button
                                                     onClick={() => {
@@ -283,7 +363,7 @@ export const FafipaTemasModal: React.FC<FafipaTemasModalProps> = ({
                                                     title="Filtrar aulas deste tema no cronograma principal"
                                                 >
                                                     <Filter size={13} />
-                                                    <span>Ver no Cronograma</span>
+                                                    <span>Ver Aulas</span>
                                                 </button>
                                             )}
 

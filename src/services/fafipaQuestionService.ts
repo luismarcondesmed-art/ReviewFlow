@@ -1,4 +1,5 @@
 import { ImportanceType } from '../types';
+import { PORTUGUESE_QUESTION_BANK } from './portugueseBankData';
 
 export interface FafipaQuestion {
     id: string;
@@ -26,9 +27,10 @@ export interface TopicAnalysis {
     commonTraps: string[];
 }
 
-// Banco robusto com estilo autêntico da banca Fundação FAFIPA
+// Banco robusto com estilo autêntico da banca Fundação FAFIPA e Concursos Médicos
 const CURATED_FAFIPA_BANK: Record<string, FafipaQuestion[]> = {
     portugues: [
+        ...PORTUGUESE_QUESTION_BANK,
         {
             id: 'fafipa-port-01',
             topic: 'Língua Portuguesa - Concordância e Regência',
@@ -348,8 +350,40 @@ export class FafipaQuestionService {
         const topicNorm = topic.toLowerCase();
         let pool: FafipaQuestion[] = [];
 
-        if (topicNorm.includes('portugu') || topicNorm.includes('texto') || topicNorm.includes('crase') || topicNorm.includes('sintaxe')) {
+        if (
+            topicNorm.includes('portugu') || 
+            topicNorm.includes('texto') || 
+            topicNorm.includes('crase') || 
+            topicNorm.includes('sintaxe') ||
+            topicNorm.includes('concordância') ||
+            topicNorm.includes('regência') ||
+            topicNorm.includes('ortografia') ||
+            topicNorm.includes('morfologia') ||
+            topicNorm.includes('semântica') ||
+            topicNorm.includes('verbo') ||
+            topicNorm.includes('coesão') ||
+            topicNorm.includes('interpretação') ||
+            topicNorm.includes('gênero')
+        ) {
             pool = CURATED_FAFIPA_BANK.portugues;
+            
+            // Priorizar questões do subtema específico se houver correspondência
+            const matchedBySubtopic = pool.filter(q => {
+                const qText = `${q.topic} ${q.enunciado}`.toLowerCase();
+                if (topicNorm.includes('crase') && qText.includes('crase')) return true;
+                if (topicNorm.includes('concordância') && qText.includes('concordância')) return true;
+                if ((topicNorm.includes('regência') || topicNorm.includes('preposição')) && (qText.includes('regência') || qText.includes('preposição'))) return true;
+                if (topicNorm.includes('verbo') && (qText.includes('verbo') || qText.includes('passiva'))) return true;
+                if (topicNorm.includes('ortografia') && (qText.includes('ortografia') || qText.includes('acento') || qText.includes('hífen'))) return true;
+                if ((topicNorm.includes('coesão') || topicNorm.includes('conectivo')) && (qText.includes('coesão') || qText.includes('conectivo') || qText.includes('pronome'))) return true;
+                if ((topicNorm.includes('semântica') || topicNorm.includes('sentido')) && (qText.includes('semântica') || qText.includes('sinônim') || qText.includes('inferência'))) return true;
+                if ((topicNorm.includes('tipologia') || topicNorm.includes('gênero') || topicNorm.includes('interpretação')) && (qText.includes('narrativ') || qText.includes('discurso') || qText.includes('interpretação') || qText.includes('texto'))) return true;
+                return false;
+            });
+
+            if (matchedBySubtopic.length > 0) {
+                pool = matchedBySubtopic;
+            }
         } else if (topicNorm.includes('matem') || topicNorm.includes('racioc') || topicNorm.includes('porcentagem') || topicNorm.includes('probabilidade')) {
             pool = CURATED_FAFIPA_BANK.matematica;
         } else if (topicNorm.includes('criança') || topicNorm.includes('pediat') || topicNorm.includes('puericult') || topicNorm.includes('exantem')) {

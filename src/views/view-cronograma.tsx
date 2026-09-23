@@ -1086,6 +1086,9 @@ export const CronogramaView = ({
                 onOpenQuestions={(topicName) => {
                     handleOpenQuestions(topicName);
                 }}
+                onCreateTopic={(title, area, lessons, priority, baseQ, blockId, tags) => {
+                    onCreateAggregatedTopic(title, area, lessons, priority, baseQ, blockId, tags);
+                }}
             />
 
         </div>
