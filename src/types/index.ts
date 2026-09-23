@@ -114,6 +114,10 @@ export interface ScheduleItem {
   aula: string; // Represents the Topic/Subject
   professor?: string; // Optional
   importancia?: 'Azul' | 'Verde' | 'Amarelo' | 'Vermelho' | 'Roxo' | string; // Optional
+  semana?: number; // 0 = estudo contínuo, 1-14 = semana de foco no cronograma
+  grupo?: string; // Grupo temático do edital
+  conteudo?: string; // Detalhamento programático da banca
+  temaId?: number; // ID do tema no edital FAFIPA
 }
 
 export interface ScheduleProgress {

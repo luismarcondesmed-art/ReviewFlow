@@ -1,20 +1,50 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { CalendarCheck, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Flag, BookOpen, CheckCircle2, Calendar as CalendarIcon, Clock, Link as LinkIcon, ExternalLink, Plus, List, Grid } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Flag, BookOpen, CheckCircle2, Calendar as CalendarIcon, Clock, Link as LinkIcon, ExternalLink, Plus, List, Grid, ListFilter } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
-import { getTodayStr, getAreaTheme, formatDate } from '../utils';
+import { getTodayStr, getAreaTheme, formatDate, getTopicTrack } from '../utils';
 import { useCalendar } from '../hooks';
 
 export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdateTopic, onEditTopic }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig, onUpdateTopic?: (topic: Topic) => void, onEditTopic?: (topic: Topic) => void }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDateStr, setSelectedDateStr] = useState<string>(getTodayStr());
     const [mobileViewMode, setMobileViewMode] = useState<'calendar' | 'list'>('list'); // calendar = grid with details, list = vertical list
+    const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'simulados'>('all');
+    const [trackFilter, setTrackFilter] = useState<'all' | 'concurso' | 'residencia'>('all');
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
     const { monthData, daysInMonth, firstDay } = useCalendar(topics, simulados, currentDate, config.examDate);
+
+    // Apply non-sticky status and track filters to calendar month data
+    const filteredMonthData = useMemo(() => {
+        const result: Record<string, { reviews: any[], sims: any[] }> = {};
+        for (const [dateStr, val] of Object.entries(monthData)) {
+            let revs = val.reviews;
+            let sms = val.sims;
+
+            if (trackFilter !== 'all') {
+                revs = revs.filter((r: any) => {
+                    const topic = topics.find(t => t.id === r.topicId);
+                    return topic ? getTopicTrack(topic) === trackFilter : true;
+                });
+            }
+
+            if (filterStatus === 'pending') {
+                revs = revs.filter((r: any) => !r.done);
+                sms = [];
+            } else if (filterStatus === 'completed') {
+                revs = revs.filter((r: any) => r.done);
+            } else if (filterStatus === 'simulados') {
+                revs = [];
+            }
+
+            result[dateStr] = { reviews: revs, sims: sms };
+        }
+        return result;
+    }, [monthData, filterStatus, trackFilter, topics]);
 
     const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
@@ -167,11 +197,11 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
              const dd = String(d.getDate()).padStart(2, '0');
              const s = `${y}-${m}-${dd}`;
              
-             const data = monthData[s];
+             const data = filteredMonthData[s];
              if (data && (data.reviews.length > 0 || data.sims.length > 0 || s === config.examDate)) return true;
         }
         return false;
-    }, [monthData, daysInMonth, year, month, config.examDate]);
+    }, [filteredMonthData, daysInMonth, year, month, config.examDate]);
 
     // No need to scroll on mobile when picking a date, since details are rendered below.
     useEffect(() => {
@@ -185,12 +215,12 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
         setSelectedDateStr(getTodayStr());
     };
 
-    const selectedDayData = monthData[selectedDateStr] || { reviews: [], sims: [] };
+    const selectedDayData = filteredMonthData[selectedDateStr] || { reviews: [], sims: [] };
     const isSelectedExam = selectedDateStr === config.examDate;
 
     // Helper to render grid day
     const renderGridDay = (day: number, dateStr: string, isMobile: boolean = false) => {
-        const dayData = monthData[dateStr] || { reviews: [], sims: [] };
+        const dayData = filteredMonthData[dateStr] || { reviews: [], sims: [] };
         const isToday = dateStr === getTodayStr();
         const isSelected = selectedDateStr === dateStr;
         const hasReviews = dayData.reviews.length > 0;
@@ -226,7 +256,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
     return (
         <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in w-full">
             {/* Header */}
-            <div className="flex flex-row items-center justify-between gap-3 mb-6 px-2">
+            <div className="flex flex-row items-center justify-between gap-3 mb-4 px-2">
                 <div className="hidden lg:flex items-center gap-4">
                      <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                          <CalendarCheck size={20} className="lg:w-6 lg:h-6" />
@@ -256,6 +286,97 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                         <button onClick={handleToday} className="px-2 lg:px-4 py-1 lg:py-1.5 text-[10px] lg:text-sm font-black uppercase text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg whitespace-nowrap transition-colors">{new Date(year, month).toLocaleString('pt-BR', { month: 'short' }).replace('.', '')} {year}</button>
                         <button onClick={handleNextMonth} className="p-1 lg:p-2 hover:bg-slate-50 dark:hover:bg-white/10 rounded-lg text-slate-500 dark:text-slate-400 transition-colors"><ChevronRight size={16}/></button>
                     </div>
+                </div>
+            </div>
+
+            {/* Filtros da Agenda / Calendário (Compacto e baseado em ícones) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 px-0.5 relative z-10">
+                <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-zinc-800/80 rounded-xl border border-slate-200/50 dark:border-white/5">
+                    <button
+                        onClick={() => setFilterStatus('all')}
+                        title="Todas as atividades"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                            filterStatus === 'all'
+                                ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <ListFilter size={12} />
+                        <span>Todas</span>
+                    </button>
+                    <button
+                        onClick={() => setFilterStatus('pending')}
+                        title="Revisões pendentes"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                            filterStatus === 'pending'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <Clock size={12} />
+                        <span>Pendentes</span>
+                    </button>
+                    <button
+                        onClick={() => setFilterStatus('completed')}
+                        title="Revisões concluídas"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                            filterStatus === 'completed'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <CheckCircle2 size={12} />
+                        <span>Concluídas</span>
+                    </button>
+                    <button
+                        onClick={() => setFilterStatus('simulados')}
+                        title="Simulados agendados"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+                            filterStatus === 'simulados'
+                                ? 'bg-purple-600 text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <ClipboardList size={12} />
+                        <span>Simulados</span>
+                    </button>
+                </div>
+
+                {/* Filtro por Trilha de Estudo (FAFIPA vs Residência) */}
+                <div className="flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-zinc-800/80 rounded-xl border border-slate-200/50 dark:border-white/5">
+                    <button
+                        onClick={() => setTrackFilter('all')}
+                        title="Todas as trilhas"
+                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            trackFilter === 'all'
+                                ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-xs'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                        }`}
+                    >
+                        Geral
+                    </button>
+                    <button
+                        onClick={() => setTrackFilter('concurso')}
+                        title="Concurso FAFIPA"
+                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            trackFilter === 'concurso'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                        }`}
+                    >
+                        🎯 FAFIPA
+                    </button>
+                    <button
+                        onClick={() => setTrackFilter('residencia')}
+                        title="Residência Médica"
+                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            trackFilter === 'residencia'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+                        }`}
+                    >
+                        🩺 Residência
+                    </button>
                 </div>
             </div>
 
@@ -299,13 +420,13 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                                     const m = String(d.getMonth() + 1).padStart(2, '0');
                                     const dd = String(d.getDate()).padStart(2, '0');
                                     const dateStr = `${y}-${m}-${dd}`;
-                                    const dayData = monthData[dateStr];
+                                    const dayData = filteredMonthData[dateStr];
 
                                     if (!dayData || (dayData.reviews.length === 0 && dayData.sims.length === 0 && dateStr !== config.examDate)) return null;
 
                                     return (
                                         <div key={dateStr} className="space-y-3">
-                                            <div className="flex items-center gap-3 sticky top-0 bg-slate-50 dark:bg-[#0a0a0a] py-2 z-10">
+                                            <div className="flex items-center gap-3 py-2">
                                                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 font-black text-lg shadow-sm">
                                                     {day}
                                                 </div>
@@ -379,7 +500,7 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                 </div>
 
                 {/* Selected Day Details (Visible on Desktop or when Calendar mode on Mobile) */}
-                <div className={`flex-1 lg:w-1/2 xl:w-5/12 flex flex-col min-h-[400px] lg:min-h-0 lg:sticky lg:top-4 lg:h-[calc(100vh-140px)] animate-slide-up
+                <div className={`flex-1 lg:w-1/2 xl:w-5/12 flex flex-col min-h-[400px] lg:min-h-0 relative lg:h-[calc(100vh-140px)] animate-slide-up
                     ${mobileViewMode !== 'calendar' && window.innerWidth < 1024 ? 'hidden' : ''}
                     lg:bg-white/80 lg:dark:bg-zinc-900/80 lg:backdrop-blur-xl lg:rounded-[32px] lg:border lg:border-black/5 lg:dark:border-white/5 lg:shadow-sm lg:overflow-hidden
                 `}>

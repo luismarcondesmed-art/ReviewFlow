@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban, Bookmark, ClipboardList, GraduationCap, Stethoscope, Compass, Sparkles, BookOpen as BookIcon } from 'lucide-react';
+import { Database, Search, ArrowDown, ChevronDown, ChevronUp, BarChart3, Edit, Trash2, LayoutGrid, Check, Filter, List, Kanban, Bookmark, ClipboardList, GraduationCap, Stethoscope, Compass, Sparkles, BookOpen } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { AREAS, formatDate, getPerformanceBgLight, getPerformanceColor, getTopicTrack, getTrackBadgeInfo, getAreaTheme } from '../utils';
 
@@ -302,42 +302,45 @@ export const DatabaseView = ({
     return (
         <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in">
             {/* Header: Controls */}
-            <div className="flex flex-col gap-3 mb-6 z-20 relative px-1">
+            <div className="flex flex-col gap-2.5 mb-5 z-20 relative px-1">
                 {/* Track Selector Bar (Concurso vs Residência) */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-zinc-900 p-2 sm:p-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white dark:bg-zinc-900 p-2 sm:p-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xs">
                     <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar p-0.5">
                         <button
                             onClick={() => setTrackFilter('all')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                            title="Todas as matérias cadastradas"
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                                 trackFilter === 'all' 
                                     ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs' 
                                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                             }`}
                         >
-                            <span>Todas as Matérias</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${trackFilter === 'all' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900 font-black' : 'bg-slate-200 dark:bg-white/10 text-slate-500'}`}>{trackCounts.all}</span>
+                            <span>Geral</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${trackFilter === 'all' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900 font-bold' : 'bg-slate-200 dark:bg-white/10 text-slate-500'}`}>{trackCounts.all}</span>
                         </button>
                         <button
                             onClick={() => setTrackFilter('concurso')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                            title="Concurso FAFIPA"
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                                 trackFilter === 'concurso' 
                                     ? 'bg-emerald-600 text-white shadow-xs' 
                                     : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
                             }`}
                         >
-                            <span>🎯 Concurso FAFIPA</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${trackFilter === 'concurso' ? 'bg-emerald-700 text-white font-black' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}`}>{trackCounts.concurso}</span>
+                            <span>🎯 FAFIPA</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${trackFilter === 'concurso' ? 'bg-black/20 text-white font-bold' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'}`}>{trackCounts.concurso}</span>
                         </button>
                         <button
                             onClick={() => setTrackFilter('residencia')}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                            title="Residência Médica"
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                                 trackFilter === 'residencia' 
                                     ? 'bg-indigo-600 text-white shadow-xs' 
                                     : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20'
                             }`}
                         >
-                            <span>🩺 Residência Médica</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${trackFilter === 'residencia' ? 'bg-indigo-700 text-white font-black' : 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'}`}>{trackCounts.residencia}</span>
+                            <span>🩺 Residência</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${trackFilter === 'residencia' ? 'bg-black/20 text-white font-bold' : 'bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300'}`}>{trackCounts.residencia}</span>
                         </button>
                     </div>
 
@@ -346,17 +349,17 @@ export const DatabaseView = ({
                         <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl">
                             <button 
                                 onClick={() => setActiveTab('topics')}
-                                className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === 'topics' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${activeTab === 'topics' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 <Database size={13}/>
-                                Matérias
+                                <span>Matérias</span>
                             </button>
                             <button 
                                 onClick={() => setActiveTab('simulados')}
-                                className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === 'simulados' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${activeTab === 'simulados' ? 'bg-white dark:bg-[#2c2c2e] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 <ClipboardList size={13}/>
-                                Simulados
+                                <span>Simulados</span>
                             </button>
                         </div>
                     </div>
@@ -365,10 +368,10 @@ export const DatabaseView = ({
                 {/* Sub-bar: View controls and filters */}
                 {activeTab === 'topics' && (
                     <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-400 dark:text-slate-500">
-                                Mostrando <span className="text-slate-800 dark:text-slate-200 font-extrabold">{filteredTopics.length}</span> matérias
-                            </span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            <BookOpen size={13} className="text-slate-400" />
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{filteredTopics.length}</span>
+                            <span>{filteredTopics.length === 1 ? 'matéria' : 'matérias'}</span>
                         </div>
 
                         <div className="flex items-center gap-2">

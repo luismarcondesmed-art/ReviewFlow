@@ -1,4 +1,470 @@
+// ============================================================================
+// CRONOGRAMA INTEGRADO FAFIPA - CONCURSO MÉDICO (ESF / CLÍNICO GERAL)
+// Baseado nos editais de Foz do Iguaçu, Ivaiporã, Mirador, Coronel Vivida,
+// Cruz Machado, Paula Freitas, Siqueira Campos e Quitandinha.
+// ============================================================================
+
 import { ScheduleItem } from '../types';
+
+export const FAFIPA_METADATA = {
+    "banca": "FAFIPA",
+    "cargo_referencia": "Médico (ESF/Clínico Geral) - baseado nos editais de Foz do Iguaçu, Ivaiporã, Mirador, Coronel Vivida e correlatos",
+    "gerado_em": "2026-09-22",
+    "aviso_incidencia": "Não foram localizados dados públicos com contagem quantitativa de questões por tema em provas anteriores da FAFIPA para cargos médicos. O campo 'prioridade' é uma estimativa qualitativa baseada no perfil documentado da banca (fidelidade ao conteúdo programático do edital, forte peso em interpretação de texto, cobrança literal de legislação e peso elevado para conhecimentos específicos da área de saúde), não em estatística de provas.",
+    "legenda_semana": "0 = estudo contínuo/recorrente ao longo de todo o ciclo; 1-14 = semana de foco principal no cronograma sugerido",
+    "total_temas": 56
+};
+
+export const FAFIPA_TEMAS = [
+    {
+        "id": 1,
+        "disciplina": "Português",
+        "grupo": "Interpretação de texto",
+        "conteudo": "Compreensão global, ideia central, inferências, relações intra/intertextuais, efeitos de sentido",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 2,
+        "disciplina": "Português",
+        "grupo": "Gêneros, tipos e linguagem",
+        "conteudo": "Gêneros e tipologias textuais, funções da linguagem, variação linguística",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 3,
+        "disciplina": "Português",
+        "grupo": "Coesão, coerência e reescrita",
+        "conteudo": "Mecanismos de coesão/coerência, reescrita e reorganização de períodos",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 4,
+        "disciplina": "Português",
+        "grupo": "Semântica",
+        "conteudo": "Sinônimos/antônimos, conotação/denotação, homonímia/paronímia",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 5,
+        "disciplina": "Português",
+        "grupo": "Fonologia e ortografia",
+        "conteudo": "Acentuação, emprego do que/se, uso dos porquês, dígrafos",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 6,
+        "disciplina": "Português",
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 7,
+        "disciplina": "Português",
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 8,
+        "disciplina": "Português",
+        "grupo": "Literatura",
+        "conteudo": "Prosa e poesia, autores e obras, figuras de linguagem",
+        "semana": 0,
+        "prioridade": "baixa"
+    },
+    {
+        "id": 9,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Base numérica",
+        "conteudo": "Operações, MMC/MDC, conjuntos numéricos, polinômios",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 10,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Razão e proporção",
+        "conteudo": "Razão, proporção, regra de três simples/composta, porcentagem",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 11,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Matemática financeira",
+        "conteudo": "Juros simples e compostos, sistema monetário",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 12,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Equações e funções",
+        "conteudo": "1º e 2º grau, sistemas lineares, função afim/quadrática/exponencial",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 13,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Sequências",
+        "conteudo": "PA e PG, sequências numéricas e de figuras",
+        "semana": 0,
+        "prioridade": "baixa"
+    },
+    {
+        "id": 14,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Conjuntos e lógica",
+        "conteudo": "Proposições, tabela-verdade, silogismos, diagramas lógicos",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 15,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Contagem e probabilidade",
+        "conteudo": "Análise combinatória, probabilidade",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 16,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Estatística",
+        "conteudo": "Média, moda, mediana, leitura de gráficos e tabelas",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 17,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Geometria",
+        "conteudo": "Plana, espacial e analítica básica",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 18,
+        "disciplina": "Matemática/RLM",
+        "grupo": "Situações-problema",
+        "conteudo": "Problemas do cotidiano com números",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 19,
+        "disciplina": "Informática",
+        "grupo": "Fundamentos",
+        "conteudo": "Hardware, periféricos, software",
+        "semana": 0,
+        "prioridade": "baixa"
+    },
+    {
+        "id": 20,
+        "disciplina": "Informática",
+        "grupo": "Sistema operacional",
+        "conteudo": "Windows 8/10/11, atalhos, gerenciamento de arquivos",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 21,
+        "disciplina": "Informática",
+        "grupo": "Aplicativos",
+        "conteudo": "Word, Excel, Outlook, PowerPoint",
+        "semana": 0,
+        "prioridade": "alta"
+    },
+    {
+        "id": 22,
+        "disciplina": "Informática",
+        "grupo": "Internet",
+        "conteudo": "Navegadores, e-mail, armazenamento em nuvem",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 23,
+        "disciplina": "Informática",
+        "grupo": "Segurança",
+        "conteudo": "Segurança na internet e de dados",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 24,
+        "disciplina": "Informática",
+        "grupo": "Outros",
+        "conteudo": "Impressoras; IA generativa (ChatGPT, Copilot, Gemini) - tema recente",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 25,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Constituição Federal",
+        "conteudo": "Títulos I, II, III (art. 18/19, 29/30, 37-41), IV",
+        "semana": 1,
+        "prioridade": "alta"
+    },
+    {
+        "id": 26,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "semana": 2,
+        "prioridade": "alta"
+    },
+    {
+        "id": 27,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Administração Pública",
+        "conteudo": "Modelos de administração pública, funções administrativas",
+        "semana": 2,
+        "prioridade": "media"
+    },
+    {
+        "id": 28,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Atualidades",
+        "conteudo": "Política, economia, saúde, sociedade, tecnologia (conforme edital)",
+        "semana": 0,
+        "prioridade": "media"
+    },
+    {
+        "id": 29,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "História e Geografia",
+        "conteudo": "Escala municipal, estadual, nacional (ver edital)",
+        "semana": 14,
+        "prioridade": "baixa"
+    },
+    {
+        "id": 30,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Políticas públicas",
+        "conteudo": "Habitação, cidadania, saúde, educação ambiental",
+        "semana": 1,
+        "prioridade": "media"
+    },
+    {
+        "id": 31,
+        "disciplina": "Legislação/Gerais",
+        "grupo": "Linguagem regional",
+        "conteudo": "Significado de palavras e termos regionais",
+        "semana": 14,
+        "prioridade": "baixa"
+    },
+    {
+        "id": 32,
+        "disciplina": "Medicina",
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "semana": 1,
+        "prioridade": "alta"
+    },
+    {
+        "id": 33,
+        "disciplina": "Medicina",
+        "grupo": "Prevenção e ciclos de vida",
+        "conteudo": "Rastreio de câncer, imunização do adulto, saúde do homem/idoso, planejamento familiar",
+        "semana": 13,
+        "prioridade": "alta"
+    },
+    {
+        "id": 34,
+        "disciplina": "Medicina",
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "semana": 3,
+        "prioridade": "alta"
+    },
+    {
+        "id": 35,
+        "disciplina": "Medicina",
+        "grupo": "Endócrino e metabólico",
+        "conteudo": "DM e complicações, tireoide, obesidade, distúrbios HE/ácido-básicos",
+        "semana": 4,
+        "prioridade": "alta"
+    },
+    {
+        "id": 36,
+        "disciplina": "Medicina",
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "semana": 5,
+        "prioridade": "alta"
+    },
+    {
+        "id": 37,
+        "disciplina": "Medicina",
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "semana": 6,
+        "prioridade": "media-alta"
+    },
+    {
+        "id": 38,
+        "disciplina": "Medicina",
+        "grupo": "Cirurgia e pediatria digestiva",
+        "conteudo": "Trauma abdominal, obstrução intestinal e dor abdominal na criança",
+        "semana": 6,
+        "prioridade": "media"
+    },
+    {
+        "id": 39,
+        "disciplina": "Medicina",
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "semana": 12,
+        "prioridade": "media-alta"
+    },
+    {
+        "id": 40,
+        "disciplina": "Medicina",
+        "grupo": "Hematologia e oncologia",
+        "conteudo": "Anemias, linfadenopatia, leucemias e linfomas",
+        "semana": 12,
+        "prioridade": "media"
+    },
+    {
+        "id": 41,
+        "disciplina": "Medicina",
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "semana": 7,
+        "prioridade": "alta"
+    },
+    {
+        "id": 42,
+        "disciplina": "Medicina",
+        "grupo": "Neurologia",
+        "conteudo": "Cefaleias, epilepsia, AVC, síndromes demenciais, tontura/vertigem",
+        "semana": 10,
+        "prioridade": "alta"
+    },
+    {
+        "id": 43,
+        "disciplina": "Medicina",
+        "grupo": "Psiquiatria",
+        "conteudo": "Depressão, ansiedade, transtornos do sono, alcoolismo, risco de suicídio",
+        "semana": 11,
+        "prioridade": "alta"
+    },
+    {
+        "id": 44,
+        "disciplina": "Medicina",
+        "grupo": "Reumatologia e osteomuscular",
+        "conteudo": "Artrite reumatoide, gota, osteoartrite, espondiloartropatias, lombalgia",
+        "semana": 11,
+        "prioridade": "media"
+    },
+    {
+        "id": 45,
+        "disciplina": "Medicina",
+        "grupo": "Urgência e ciências básicas",
+        "conteudo": "Emergências médicas, anatomia/fisiologia/bioquímica básicas (checar se o edital específico cobra)",
+        "semana": 13,
+        "prioridade": "media"
+    },
+    {
+        "id": 46,
+        "disciplina": "Medicina",
+        "grupo": "Estrutura da cobrança",
+        "conteudo": "Padrão transversal: epidemiologia, dx diferencial, tratamento e profilaxia de cada tema",
+        "semana": 14,
+        "prioridade": "alta"
+    },
+    {
+        "id": 47,
+        "disciplina": "Medicina",
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "semana": 8,
+        "prioridade": "alta"
+    },
+    {
+        "id": 48,
+        "disciplina": "Medicina",
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "semana": 9,
+        "prioridade": "alta"
+    },
+    {
+        "id": 49,
+        "disciplina": "Medicina",
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "semana": 12,
+        "prioridade": "media"
+    },
+    {
+        "id": 50,
+        "disciplina": "Medicina",
+        "grupo": "Vigilância e proteção",
+        "conteudo": "Notificação compulsória (SINAN), Lei Maria da Penha, ECA e Estatuto do Idoso",
+        "semana": 12,
+        "prioridade": "media"
+    },
+    {
+        "id": 51,
+        "disciplina": "Legislação municipal",
+        "grupo": "Cruz Machado",
+        "conteudo": "Lei Orgânica; Lei Complementar 1/2006 (Estatuto do Servidor)",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    },
+    {
+        "id": 52,
+        "disciplina": "Legislação municipal",
+        "grupo": "Coronel Vivida",
+        "conteudo": "LC 071 (Estatuto dos Servidores); LC 073 (PCCR)",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    },
+    {
+        "id": 53,
+        "disciplina": "Legislação municipal",
+        "grupo": "Foz do Iguaçu",
+        "conteudo": "Estatuto do Servidor - LC 17/93",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    },
+    {
+        "id": 54,
+        "disciplina": "Legislação municipal",
+        "grupo": "Paula Freitas",
+        "conteudo": "Lei Orgânica; LC 2.095/2013 (RJU)",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    },
+    {
+        "id": 55,
+        "disciplina": "Legislação municipal",
+        "grupo": "Siqueira Campos",
+        "conteudo": "Estatuto dos Servidores; Lei Orgânica municipal",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    },
+    {
+        "id": 56,
+        "disciplina": "Legislação municipal",
+        "grupo": "Quitandinha",
+        "conteudo": "História, geografia, economia e trabalho do município",
+        "semana": 2,
+        "prioridade": "verificar_edital"
+    }
+];
 
 const generateId = (item: { bloco: string; aula: string; disciplina: string }) => {
     return `fafipa-${item.bloco}-${item.disciplina}-${item.aula}`
@@ -7,1418 +473,2377 @@ const generateId = (item: { bloco: string; aula: string; disciplina: string }) =
         .toLowerCase();
 };
 
-const RAW_DATA = [
-    // ==========================================
-    // LÍNGUA PORTUGUESA
-    // ==========================================
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Interpretação de texto", 
-        aula: "Interpretação de Texto: Compreensão global, ideia central, ponto de vista e linha argumentativa", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Interpretação de texto", 
-        aula: "Estrutura Textual: Relações intratextuais, intertextualidade, parágrafos e efeitos de sentido", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Gêneros e Tipologia", 
-        aula: "Tipologias Textuais: Narração, Dissertação, Descrição, Injunção e Exposição", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Gêneros e Tipologia", 
-        aula: "Gêneros Textuais e Funções Sociais: Níveis de linguagem e variação linguística", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Gêneros e Tipologia", 
-        aula: "Funções da Linguagem: Emotiva, Referencial, Conativa, Metalinguística, Fática e Poética", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Coesão e Coerência", 
-        aula: "Mecanismos de Coesão Referencial e Sequencial (Conectivos e Anáforas)", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Coesão e Coerência", 
-        aula: "Reescrita de Frases, Substituição de Termos e Correção Gramatical", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Semântica", 
-        aula: "Semântica: Sinônimos, Antônimos, Homônimos e Parônimos", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Semântica", 
-        aula: "Sentido Próprio e Figurado: Denotação, Conotação e Polissemia", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Fonologia e Ortografia", 
-        aula: "Fonologia: Encontros Vocálicos, Consonantais, Dígrafos e Divisão Silábica", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Fonologia e Ortografia", 
-        aula: "Ortografia Oficial e Novas Regras do Acordo Ortográfico", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Fonologia e Ortografia", 
-        aula: "Acentuação Gráfica: Proparoxítonas, Paroxítonas, Oxítonas e Hiatos", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfossintaxe", 
-        aula: "Emprego das Partículas 'Que' e 'Se' (Conjunção, Pronome e Partícula Apassivadora)", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfossintaxe", 
-        aula: "Emprego dos Porquês (porque, por que, por quê, porquê) e Palavras Homófonas", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfologia", 
-        aula: "Classes de Palavras Nominais: Substantivo, Adjetivo, Artigo e Numeral", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfologia", 
-        aula: "Pronomes: Classificação, Emprego e Colocação Pronominal (Próclise, Ênclise e Mesóclise)", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfologia", 
-        aula: "Verbos: Tempos, Modos, Vozes Verbais e Correlação Temporal", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Morfologia", 
-        aula: "Conectivos Gramaticais: Conjunções Coordenativas, Subordinativas e Preposições", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Sintaxe da Oração", 
-        aula: "Termos Essenciais e Integrantes: Sujeito, Predicado, Objeto Direto/Indireto e Complemento Nominal", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Sintaxe da Oração", 
-        aula: "Termos Acessórios da Oração: Adjunto Adnominal, Adjunto Adverbial, Aposto e Vocativo", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Sintaxe do Período", 
-        aula: "Orações Coordenadas: Assindéticas e Sindéticas (Aditivas, Adversativas, Alternativas, Conclusivas, Explicativas)", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Sintaxe do Período", 
-        aula: "Orações Subordinadas: Substantivas, Adjetivas e Adverbiais", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Concordância e Regência", 
-        aula: "Concordância Verbal: Regra Geral e Casos Especiais mais Frequentes em Concurso", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Concordância e Regência", 
-        aula: "Concordância Nominal: Regras Gerais e Expressões Especiais", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Concordância e Regência", 
-        aula: "Regência Verbal e Regência Nominal de Verbos/Nomes Clássicos da FAFIPA", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Concordância e Regência", 
-        aula: "Crase: Casos Obrigatórios, Proibidos e Facultativos", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Pontuação", 
-        aula: "Pontuação: Emprego da Vírgula (Proibições e Obrigatoriedades)", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Língua Portuguesa", 
-        disciplina: "Estilística", 
-        aula: "Figuras de Linguagem: Metáfora, Metonímia, Antítese, Paradoxo, Hipérbole e Ironia", 
-        professor: "FAFIPA / Português", 
-        grandeArea: "Língua Portuguesa", 
-        importancia: "Verde" 
-    },
-
-    // ==========================================
-    // MATEMÁTICA E RACIOCÍNIO LÓGICO
-    // ==========================================
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Aritmética Básica", 
-        aula: "Operações Fundamentais com Números Inteiros, Decimais e Frações", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Aritmética Básica", 
-        aula: "Potenciação, Radiciação e Notação Científica", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Aritmética Básica", 
-        aula: "Múltiplos, Divisores, Critérios de Divisibilidade, MMC e MDC", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Conjuntos", 
-        aula: "Teoria dos Conjuntos: Operações, Diagramas de Venn e Cardinalidade", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Proporcionalidade", 
-        aula: "Razão, Proporção e Divisão Proporcional (Direta e Inversa)", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Proporcionalidade", 
-        aula: "Regra de Três Simples e Composta", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Proporcionalidade", 
-        aula: "Porcentagem: Variação Percentual, Lucro, Descontos e Aumentos Sucessivos", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Matemática Financeira", 
-        aula: "Juros Simples: Fórmulas, Taxas e Montante", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Matemática Financeira", 
-        aula: "Juros Compostos: Aplicações Práticas e Comparativo com Juros Simples", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Álgebra e Equações", 
-        aula: "Equações e Sistemas do 1º Grau aplicados a Problemas", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Álgebra e Equações", 
-        aula: "Equações do 2º Grau (Fórmula de Bhaskara, Soma e Produto)", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Geometria", 
-        aula: "Geometria Plana: Perímetro e Área de Figuras Planas (Triângulos, Retângulos e Círculos)", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Geometria", 
-        aula: "Teorema de Pitágoras e Relações Trigonométricas Básicas no Triângulo Retângulo", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Geometria", 
-        aula: "Geometria Espacial: Volume e Capacidade de Prismas, Cubos e Cilindros", 
-        professor: "FAFIPA / Matemática", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Lógica Proposicional", 
-        aula: "Proposições Simples, Compostas e Conectivos Lógicos (E, OU, SE...ENTÃO, SE E SOMENTE SE)", 
-        professor: "FAFIPA / RLM", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Lógica Proposicional", 
-        aula: "Tabela-Verdade, Tautologia, Contradição e Equivalências Lógicas Clássicas", 
-        professor: "FAFIPA / RLM", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Lógica Proposicional", 
-        aula: "Negação de Proposições Compostas e Leis de De Morgan", 
-        professor: "FAFIPA / RLM", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Matemática e RLM", 
-        disciplina: "Sequências e Raciocínio", 
-        aula: "Sequências Lógicas: Numéricas, Geométricas e de Palavras", 
-        professor: "FAFIPA / RLM", 
-        grandeArea: "Matemática e RLM", 
-        importancia: "Amarelo" 
-    },
-
-    // ==========================================
-    // INFORMÁTICA
-    // ==========================================
-    { 
-        bloco: "Informática", 
-        disciplina: "Hardware e Software", 
-        aula: "Conceitos de Informática: Hardware, Processador, Memórias (RAM/ROM) e Periféricos", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Sistemas Operacionais", 
-        aula: "Windows 10 e 11: Gerenciador de Arquivos, Pastas, Extensões e Atalhos Principais", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Editor de Texto", 
-        aula: "Microsoft Word: Formatação de Fontes, Parágrafos, Quebras e Mala Direta", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Planilhas Eletrônicas", 
-        aula: "Microsoft Excel: Fórmulas Básicas (SOMA, MÉDIA, SE, PROCV, CONT.SE) e Células Relativas/Absolutas", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Apresentações", 
-        aula: "Microsoft PowerPoint: Transições, Animações e Modos de Apresentação", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Internet e Navegação", 
-        aula: "Navegadores Web (Chrome, Edge, Firefox): Abas, Histórico, Favoritos e Navegação Anônima", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Correio e Nuvem", 
-        aula: "Correio Eletrônico: Campos (Para, Cc, Cco), Protocolos (POP3, IMAP, SMTP) e Anexos", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Correio e Nuvem", 
-        aula: "Armazenamento em Nuvem e Backup: Google Drive, OneDrive e Sincronização", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Verde" 
-    },
-    { 
-        bloco: "Informática", 
-        disciplina: "Segurança da Informação", 
-        aula: "Segurança da Informação: Malware (Vírus, Worm, Ransomware, Phishing) e Firewall/Antivírus", 
-        professor: "FAFIPA / Informática", 
-        grandeArea: "Informática", 
-        importancia: "Vermelho" 
-    },
-
-    // ==========================================
-    // LEGISLAÇÃO E ADMINISTRAÇÃO PÚBLICA
-    // ==========================================
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Constituição Federal", 
-        aula: "CF/88: Princípios Fundamentais e Direitos Individuais e Coletivos (Art. 5º)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Constituição Federal", 
-        aula: "CF/88: Direitos Sociais e Nacionalidade (Arts. 6º a 13)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Constituição Federal", 
-        aula: "CF/88: Organização do Estado e Autonomia dos Municípios (Arts. 18, 29 e 30)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Constituição Federal", 
-        aula: "CF/88: Da Administração Pública e Servidores Públicos (Arts. 37 a 41 - LIMPE)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Leis Federais", 
-        aula: "Lei de Improbidade Administrativa (Lei 8.429/1992 com alterações da Lei 14.230/2021)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Leis Federais", 
-        aula: "Lei de Acesso à Informação - LAI (Lei 12.527/2011)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Leis Federais", 
-        aula: "Estatuto da Criança e do Adolescente - ECA (Lei 8.069/1990: Direitos Fundamentais)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Leis Federais", 
-        aula: "Estatuto da Pessoa Idosa (Lei 10.741/2003: Direitos Fundamentais e Crimes)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Legislação e Adm. Pública", 
-        disciplina: "Leis Federais", 
-        aula: "LGPD - Lei Geral de Proteção de Dados (Lei 13.709/2018: Princípios e Tratamento no Poder Público)", 
-        professor: "FAFIPA / Legislação", 
-        grandeArea: "Legislação e Adm. Pública", 
-        importancia: "Amarelo" 
-    },
-
-    // ==========================================
-    // MEDICINA: ATENÇÃO BÁSICA E CLÍNICA MÉDICA
-    // ==========================================
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "SUS e Saúde Coletiva", 
-        aula: "SUS na CF/88 (Arts. 196 a 200) e Leis Orgânicas da Saúde (Lei 8.080/90 e Lei 8.142/90)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "SUS e Saúde Coletiva", 
-        aula: "Evolução Histórica das Normas Operacionais do SUS: NOB/91, NOB/93, NOB/96 e NOAS-SUS", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "SUS e Saúde Coletiva", 
-        aula: "Política Nacional de Atenção Básica (PNAB 2017) e Estratégia Saúde da Família (ESF)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Ética e Bioética Médica", 
-        aula: "Código de Ética Médica: Princípios Fundamentais, Autonomia, Relação Médico-Paciente e Deveres", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Ética e Bioética Médica", 
-        aula: "Documentos Médicos: Prontuário, Sigilo Profissional, Atestados e Declaração de Óbito", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Medicina Preventiva", 
-        aula: "Rastreamento de Neoplasias Malignas na APS (Mama, Colo Uterino, Cólon e Próstata)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Medicina Preventiva", 
-        aula: "Calendário Vacinal do Adulto e Idoso (PNI/SBIm) e Imunizações Especiais (CRIE)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Medicina Preventiva", 
-        aula: "Abordagem e Cessação do Tabagismo e Manejo do Alcoolismo na Atenção Primária", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Saúde do Idoso", 
-        aula: "Avaliação Geriátrica Ampla (AGA), Síndrome da Fragilidade, Quedas e Polifarmácia no Idoso", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Hipertensão Arterial Sistêmica (HAS): Diagnóstico, Metas Pressóricas e Terapia Farmacológica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Dislipidemias: Estratificação de Risco Cardiovascular e Metas de Tratamento com Estatinas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Abordagem da Dor Torácica e Síndromes Coronarianas Agudas (IAM com e sem supra de ST)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Insuficiência Cardíaca: Diagnóstico Clínico, Critérios de Framingham, NYHA e Terapia Quádrupla", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Valvopatias e Febre Reumática: Critérios de Jones, Profilaxia Primária e Secundária", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia", 
-        aula: "Síncope e Hipotensão Postural: Diagnóstico Diferencial e Estratificação de Risco", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia e Emergência", 
-        aula: "Princípios de Eletrocardiograma (ECG): Ritmo, Eixo, Sobrecargas Atriais/Ventriculares e Isquemia", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia e Emergência", 
-        aula: "Taquiarritmias e Bradiarritmias: Manejo da Fibrilação Atrial, Flutter, TSV e Bloqueios AV", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cardiologia e Emergência", 
-        aula: "Parada Cardiorrespiratória (PCR): Protocolo ACLS/BLS para Ritmos Chocáveis e Não Chocáveis", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia", 
-        aula: "Diabetes Mellitus: Critérios Diagnósticos, Metas de HbA1c e Manejo Não Insulínico na APS", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia", 
-        aula: "Insulinoterapia no Diabetes e Complicações Agudas (Cetoacidose Diabética e EHH)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia", 
-        aula: "Hipotireoidismo e Hipertireoidismo: Diagnóstico Laboratorial, Doença de Hashimoto e Graves", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia", 
-        aula: "Nódulos Tireoidianos: Classificação de Bethesda, USG e Indicação de PAAF", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia e Metabologia", 
-        aula: "Síndrome Metabólica e Obesidade: Critérios Clínicos e Abordagem Terapêutica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Endocrinologia e Metabologia", 
-        aula: "Distúrbios Hidroeletrolíticos (Sódio e Potássio) e Equilíbrio Ácido-Básico", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Pneumologia", 
-        aula: "Asma Brônquica no Adulto: Diagnóstico Clínico-Espirométrico, Classificação GINA e Crise Aguda", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Pneumologia", 
-        aula: "DPOC: Diagnóstico Espirométrico, Critérios GOLD e Manejo de Exacerbações Agudas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Pneumologia", 
-        aula: "Pneumonia Adquirida na Comunidade (PAC): Escore CURB-65, Diagnóstico e Antibioticoterapia Empírica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Pneumologia", 
-        aula: "Tuberculose Pulmonar: Baciloscopia, TRM-TB, Esquema RIPE e Acompanhamento na Atenção Básica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Pneumologia", 
-        aula: "Trombose Venosa Profunda (TVP) e Tromboembolismo Pulmonar (TEP): Escore de Wells e Conduta", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Doença do Refluxo Gastroesofágico (DRGE), Esofagites e Esôfago de Barrett", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Dispepsia Funcional, Gastrites e Terapia de Erradicação do Helicobacter pylori", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Doença Ulcerosa Péptica e Complicações: Hemorragia Digestiva Alta (HDA) e Perfuração", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia e Hepatologia", 
-        aula: "Hepatites Virais (A, B e C): Marcadores Sorológicos, Profilaxia e Tratamento", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia e Hepatologia", 
-        aula: "Cirrose Hepática e Hipertensão Portal: Manejo de Ascite, PBE, Encefalopatia e Varizes Esofágicas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia e Hepatologia", 
-        aula: "Doença Hepática Esteatótica (Esteatose/EHNA) e Abordagem de Nódulos Hepáticos", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia e Cirurgia Geral", 
-        aula: "Litíase Biliar e Complicações: Colelitíase, Colecistite Aguda, Coledocolitíase e Colangite Aguda", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Pancreatite Aguda e Crônica: Etiologias, Critérios de Ranson e Manejo Clínico", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Diarreia Aguda Infecciosa no Adulto: Reidratação, Critérios para Antibióticos e Alarme", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Diarreia Crônica, Síndrome do Intestino Irritável (SII) e Doenças Inflamatórias Intestinais (Crohn e RCUI)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Gastroenterologia", 
-        aula: "Parasitoses Intestinais Mais Frequentes no Brasil: Diagnóstico e Tratamento na APS", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Medicina: Atenção Básica e Clínica", 
-        disciplina: "Cirurgia e Proctologia", 
-        aula: "Doenças Orificiais (Hemorroidas, Fissura Anal, Abscessos) e Hérnias da Parede Abdominal", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Atenção Básica e Clínica", 
-        importancia: "Vermelho" 
-    },
-
-    // ==========================================
-    // MEDICINA: ESPECIALIDADES E URGÊNCIA
-    // ==========================================
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Nefrologia e Urologia", 
-        aula: "Infecções do Trato Urinário (ITU): Cistite Aguda, Pielonefrite e ITU Recorrente", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Nefrologia e Urologia", 
-        aula: "Hiperplasia Prostática Benigna (HPB) e Nefrolitíase (Cólica Nefrética Aguda)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Nefrologia", 
-        aula: "Lesão Renal Aguda (LRA) e Doença Renal Crônica (DRC): Critérios KDIGO e Manejo Conservador", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Nefrologia", 
-        aula: "Síndromes Glomerulares: Síndrome Nefrítica vs. Síndrome Nefrótica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Hematologia", 
-        aula: "Anemias Microcíticas e Hipocrômicas: Diagnóstico Diferencial entre Ferropriva, Doença Crônica e Talassemia", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Hematologia", 
-        aula: "Anemias Macrocíticas (Megaloblástica por B12/Folato) e Anemias Hemolíticas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Hematologia e Oncologia", 
-        aula: "Abordagem das Linfadenopatias e Suspeita de Neoplasias Hematológicas (Leucemias e Linfomas)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Azul" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Hematologia", 
-        aula: "Distúrbios da Coagulação e Hemostasia: Trombocitopenias, Hemofilias e Coagulopatias", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia", 
-        aula: "Antibioticoterapia Racional e Manejo de Resistência Bacteriana na Atenção Básica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia", 
-        aula: "Infecções Sexualmente Transmissíveis (ISTs): Sífilis (Primária, Secundária e Latente) e Corrimentos Uretrais", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia", 
-        aula: "Infecção pelo HIV/AIDS: Diagnóstico, Profilaxias PEP/PrEP e Infecções Oportunistas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia", 
-        aula: "Hanseníase e Leishmaniose Tegumentar/Visceral: Diagnóstico, Notificação e Tratamento", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia", 
-        aula: "Arboviroses (Dengue, Chikungunya, Zika): Classificação de Risco, Prova do Laço e Manejo Clínico", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Infectologia e Urgência", 
-        aula: "Acidentes por Animais Peçonhentos: Ofídico (Bothrops, Crotalus), Escorpiônico e Aracnídico", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Dermatologia Sanitária", 
-        aula: "Dermatologia na APS: Piodermites, Micoses Superficiais, Escabiose e Eczemas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Dermatologia e Alergologia", 
-        aula: "Lesões Pré-Malignas e Câncer de Pele (Melanoma, CBC, CEC) e Regra do ABCDE", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Dermatologia e Alergologia", 
-        aula: "Urticária, Angioedema e Choque Anafilático: Reconhecimento e Uso Imediato de Adrenalina IM", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Neurologia", 
-        aula: "Cefaleias Primárias (Enxaqueca, Tensional, Salvas) e Sinais de Alarme (Red Flags)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Neurologia", 
-        aula: "Acidente Vascular Cerebral (AVC Isquêmico e Hemorrágico): Janela de Trombólise e Escala NIHSS", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Neurologia", 
-        aula: "Crises Epilépticas e Epilepsia: Manejo na Urgência, Estado de Mal Epiléptico e Anticonvulsivantes", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Neurologia", 
-        aula: "Síndromes Demenciais (Doença de Alzheimer, Demência Vascular) e Diagnóstico Diferencial de Tontura e Vertigem", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Psiquiatria", 
-        aula: "Depressão Maior e Transtornos de Ansiedade (TAG, Transtorno do Pânico): Diagnóstico e Farmacoterapia", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Psiquiatria", 
-        aula: "Dependência Química, Abstinência Alcoólica e Manejo de Crises Psiquiátricas / Risco de Suicídio", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Psiquiatria", 
-        aula: "Transtorno Afetivo Bipolar e Psicoses: Diagnóstico Diferencial e Condutas", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Reumatologia", 
-        aula: "Monoartrites e Poliartrites: Abordagem da Artrite Séptica, Artrite Reumatoide e Artropatia por Gota", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Reumatologia", 
-        aula: "Lúpus Eritematoso Sistêmico (LES) e Síndrome do Anticorpo Antifosfolípide (SAF)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Reumatologia e Ortopedia", 
-        aula: "Lombalgia e Cervicopatia na APS: Sinais de Alarme, Hérnia Discal e Tratamento", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Reumatologia", 
-        aula: "Osteoartrite e Fibromialgia: Diagnóstico Clínico e Estratégia de Manejo da Dor Crônica", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Cirurgia e Trauma", 
-        aula: "Atendimento Inicial ao Politraumatizado: Protocolo ATLS (ABCDE do Trauma)", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Vermelho" 
-    },
-    { 
-        bloco: "Medicina: Especialidades e Urgência", 
-        disciplina: "Cirurgia e Trauma", 
-        aula: "Traumatismo Abdominal Fechado e Penetrante: FAST, Lavado Peritoneal e Indicações de Laparotomia", 
-        professor: "FAFIPA / Medicina", 
-        grandeArea: "Medicina: Especialidades e Urgência", 
-        importancia: "Amarelo" 
-    },
-
-    // ==========================================
-    // SAÚDE DA CRIANÇA
-    // ==========================================
+const RAW_DATA: Omit<ScheduleItem, 'id'>[] = [
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Puericultura",
-        aula: "Crescimento Infantil e Curvas da OMS: Peso, Estatura, IMC e Perímetro Cefálico",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Interpretação de texto",
+        "aula": "Interpretação de Texto: Compreensão global, ideia central, ponto de vista e linha argumentativa",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Azul",
+        "semana": 0,
+        "grupo": "Interpretação de texto",
+        "conteudo": "Compreensão global, ideia central, inferências, relações intra/intertextuais, efeitos de sentido",
+        "temaId": 1
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Puericultura",
-        aula: "Marcos do Desenvolvimento Neuropsicomotor (DNPM) nos Primeiros 2 Anos de Vida",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Interpretação de texto",
+        "aula": "Estrutura Textual: Relações intratextuais, intertextualidade, parágrafos e efeitos de sentido",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Azul",
+        "semana": 0,
+        "grupo": "Interpretação de texto",
+        "conteudo": "Compreensão global, ideia central, inferências, relações intra/intertextuais, efeitos de sentido",
+        "temaId": 1
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Nutrição e Vacinação",
-        aula: "Aleitamento Materno (Vantagens, Técnica e Dificuldades) e Alimentação Complementar Saudável",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Gêneros e Tipologia",
+        "aula": "Tipologias Textuais: Narração, Dissertação, Descrição, Injunção e Exposição",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Gêneros, tipos e linguagem",
+        "conteudo": "Gêneros e tipologias textuais, funções da linguagem, variação linguística",
+        "temaId": 2
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Nutrição e Vacinação",
-        aula: "Calendário Vacinal da Criança (PNI): Vacinas aos 2, 3, 4, 5, 6, 9 e 12 Meses",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Gêneros e Tipologia",
+        "aula": "Gêneros Textuais e Funções Sociais: Níveis de linguagem e variação linguística",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Gêneros, tipos e linguagem",
+        "conteudo": "Gêneros e tipologias textuais, funções da linguagem, variação linguística",
+        "temaId": 2
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Infectopediatria",
-        aula: "Doenças Exantemáticas na Infância: Sarampo, Rubéola, Varicela e Escarlatina",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Gêneros e Tipologia",
+        "aula": "Funções da Linguagem: Emotiva, Referencial, Conativa, Metalinguística, Fática e Poética",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Gêneros, tipos e linguagem",
+        "conteudo": "Gêneros e tipologias textuais, funções da linguagem, variação linguística",
+        "temaId": 2
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Infectopediatria",
-        aula: "Exantema Súbito (Roséola), Eritema Infeccioso e Doença Mão-Pé-Boca",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Coesão e Coerência",
+        "aula": "Mecanismos de Coesão Referencial e Sequencial (Conectivos e Anáforas)",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Coesão, coerência e reescrita",
+        "conteudo": "Mecanismos de coesão/coerência, reescrita e reorganização de períodos",
+        "temaId": 3
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Gastroenterologia Pediátrica",
-        aula: "Diarreia Aguda e Desidratação na Criança: Avaliação e Manejo dos Planos A, B e C da OMS",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Coesão e Coerência",
+        "aula": "Reescrita de Frases, Substituição de Termos e Correção Gramatical",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Coesão, coerência e reescrita",
+        "conteudo": "Mecanismos de coesão/coerência, reescrita e reorganização de períodos",
+        "temaId": 3
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Pneumopediatria",
-        aula: "Infecções Respiratórias Agudas na Infância: Resfriado, Faringoamigdalite, Crupe Viral e Epiglotite",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Semântica",
+        "aula": "Semântica: Sinônimos, Antônimos, Homônimos e Parônimos",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Semântica",
+        "conteudo": "Sinônimos/antônimos, conotação/denotação, homonímia/paronímia",
+        "temaId": 4
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Pneumopediatria",
-        aula: "Bronquiolite Viral Aguda (BVA), Asma na Criança e Síndrome do Lactente Sibilante",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Semântica",
+        "aula": "Sentido Próprio e Figurado: Denotação, Conotação e Polissemia",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Semântica",
+        "conteudo": "Sinônimos/antônimos, conotação/denotação, homonímia/paronímia",
+        "temaId": 4
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Neonatologia e Triagens",
-        aula: "Triagens Neonatais no SUS: Teste do Pezinho, Olhinho, Coraçãozinho, Orelhinha e Linguinha",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Amarelo"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Fonologia e Ortografia",
+        "aula": "Fonologia: Encontros Vocálicos, Consonantais, Dígrafos e Divisão Silábica",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Fonologia e ortografia",
+        "conteudo": "Acentuação, emprego do que/se, uso dos porquês, dígrafos",
+        "temaId": 5
     },
     {
-        bloco: "Saúde da Criança",
-        disciplina: "Prevenção e Cuidados",
-        aula: "Desnutrição Infantil, Anemia Ferropriva e Prevenção de Acidentes e Intoxicações na Infância",
-        professor: "FAFIPA / Pediatria",
-        grandeArea: "Saúde da Criança",
-        importancia: "Amarelo"
-    },
-
-    // ==========================================
-    // SAÚDE DA MULHER
-    // ==========================================
-    {
-        bloco: "Saúde da Mulher",
-        disciplina: "Obstetrícia",
-        aula: "Assistência ao Pré-Natal de Baixo Risco: Rotina de Consultas, Exames Laboratoriais e Suplementações",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Fonologia e Ortografia",
+        "aula": "Ortografia Oficial e Novas Regras do Acordo Ortográfico",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Fonologia e ortografia",
+        "conteudo": "Acentuação, emprego do que/se, uso dos porquês, dígrafos",
+        "temaId": 5
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Obstetrícia",
-        aula: "Síndromes Hipertensivas na Gestação: Pré-Eclâmpsia, Eclâmpsia e Sulfatação no Parto",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Fonologia e Ortografia",
+        "aula": "Acentuação Gráfica: Proparoxítonas, Paroxítonas, Oxítonas e Hiatos",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Fonologia e ortografia",
+        "conteudo": "Acentuação, emprego do que/se, uso dos porquês, dígrafos",
+        "temaId": 5
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Obstetrícia",
-        aula: "Diabetes Mellitus Gestacional (DMG) e Infecções na Gravidez (ITU, Toxoplasmose e Sífilis Gestacional)",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfossintaxe",
+        "aula": "Emprego das Partículas 'Que' e 'Se' (Conjunção, Pronome e Partícula Apassivadora)",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Obstetrícia",
-        aula: "Sangramentos da Primeira Metade da Gravidez: Abortamento, Gravidez Ectópica e Doença Trofoblástica",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfossintaxe",
+        "aula": "Emprego dos Porquês (porque, por que, por quê, porquê) e Palavras Homófonas",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Obstetrícia",
-        aula: "Sangramentos da Segunda Metade da Gravidez: Placenta Prévia vs. Descolamento Prematuro de Placenta (DPP)",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfologia",
+        "aula": "Classes de Palavras Nominais: Substantivo, Adjetivo, Artigo e Numeral",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Ginecologia Preventiva",
-        aula: "Rastreamento do Câncer de Colo do Útero (Diretrizes do INCA / Citologia Oncótica) e Câncer de Mama",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Azul"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfologia",
+        "aula": "Pronomes: Classificação, Emprego e Colocação Pronominal (Próclise, Ênclise e Mesóclise)",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Ginecologia Geral",
-        aula: "Sangramento Uterino Anormal (SUA): Sistema de Classificação PALM-COEIN e Diagnóstico",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfologia",
+        "aula": "Verbos: Tempos, Modos, Vozes Verbais e Correlação Temporal",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Ginecologia Geral",
-        aula: "Climatério e Menopausa: Sintomas Vasomotores e Indicações de Terapia de Reposição Hormonal (TRH)",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Morfologia",
+        "aula": "Conectivos Gramaticais: Conjunções Coordenativas, Subordinativas e Preposições",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Morfologia",
+        "conteudo": "Classes de palavras, flexão de nomes e verbos, formação de palavras",
+        "temaId": 6
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Ginecologia Geral",
-        aula: "Vulvovaginites: Diagnóstico Diferencial Clínico e Microscópico (Vaginose Bacteriana, Candidíase e Tricomoníase)",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Sintaxe da Oração",
+        "aula": "Termos Essenciais e Integrantes: Sujeito, Predicado, Objeto Direto/Indireto e Complemento Nominal",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Saúde da Mulher",
-        disciplina: "Ginecologia Geral",
-        aula: "Cervicites e Doença Inflamatória Pélvica (DIP): Critérios Diagnósticos e Manejo Clínico",
-        professor: "FAFIPA / GO",
-        grandeArea: "Saúde da Mulher",
-        importancia: "Vermelho"
-    },
-
-    // ==========================================
-    // OFTALMOLOGIA E ORL BÁSICOS
-    // ==========================================
-    {
-        bloco: "Oftalmologia e ORL Básicos",
-        disciplina: "Oftalmologia na APS",
-        aula: "Olho Vermelho na Atenção Primária: Diagnóstico Diferencial de Conjuntivites e Sinais de Alarme",
-        professor: "FAFIPA / Oftalmologia",
-        grandeArea: "Oftalmologia e ORL Básicos",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Sintaxe da Oração",
+        "aula": "Termos Acessórios da Oração: Adjunto Adnominal, Adjunto Adverbial, Aposto e Vocativo",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Oftalmologia e ORL Básicos",
-        disciplina: "Oftalmologia na APS",
-        aula: "Urgências Oftalmológicas: Corpo Estranho Ocular, Trauma Contuso e Queimaduras Químicas",
-        professor: "FAFIPA / Oftalmologia",
-        grandeArea: "Oftalmologia e ORL Básicos",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Sintaxe do Período",
+        "aula": "Orações Coordenadas: Assindéticas e Sindéticas (Aditivas, Adversativas, Alternativas, Conclusivas, Explicativas)",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Oftalmologia e ORL Básicos",
-        disciplina: "Otorrinolaringologia na APS",
-        aula: "Afecções do Ouvido: Otite Média Aguda (OMA), Otite Externa e Remoção de Cerume/Corpo Estranho",
-        professor: "FAFIPA / Otorrinolaringologia",
-        grandeArea: "Oftalmologia e ORL Básicos",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Sintaxe do Período",
+        "aula": "Orações Subordinadas: Substantivas, Adjetivas e Adverbiais",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Oftalmologia e ORL Básicos",
-        disciplina: "Otorrinolaringologia na APS",
-        aula: "Rinossinusite Aguda e Manejo Prático da Epistaxe (Tampamento Anterior e Posterior)",
-        professor: "FAFIPA / Otorrinolaringologia",
-        grandeArea: "Oftalmologia e ORL Básicos",
-        importancia: "Verde"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Concordância e Regência",
+        "aula": "Concordância Verbal: Regra Geral e Casos Especiais mais Frequentes em Concurso",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Oftalmologia e ORL Básicos",
-        disciplina: "Otorrinolaringologia na APS",
-        aula: "Faringoamigdalites Agudas no Pronto Atendimento: Escore de Centor e Etiologia Viral vs. Bacteriana",
-        professor: "FAFIPA / Otorrinolaringologia",
-        grandeArea: "Oftalmologia e ORL Básicos",
-        importancia: "Verde"
-    },
-
-    // ==========================================
-    // VIGILÂNCIA E PROTEÇÃO
-    // ==========================================
-    {
-        bloco: "Vigilância e Proteção",
-        disciplina: "Vigilância Epidemiológica",
-        aula: "Lista Nacional de Notificação Compulsória de Doenças, Agravos e Eventos de Saúde Pública (SINAN)",
-        professor: "FAFIPA / Saúde Pública",
-        grandeArea: "Vigilância e Proteção",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Concordância e Regência",
+        "aula": "Concordância Nominal: Regras Gerais e Expressões Especiais",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Vigilância e Proteção",
-        disciplina: "Proteção Social e Saúde",
-        aula: "Notificação e Protocolo de Atendimento às Vítimas de Violência Doméstica e Sexual (Lei Maria da Penha)",
-        professor: "FAFIPA / Saúde Pública",
-        grandeArea: "Vigilância e Proteção",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Concordância e Regência",
+        "aula": "Regência Verbal e Regência Nominal de Verbos/Nomes Clássicos da FAFIPA",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
     {
-        bloco: "Vigilância e Proteção",
-        disciplina: "Proteção Social e Saúde",
-        aula: "Notificação de Suspeita ou Confirmação de Maus-Tratos contra Crianças, Adolescentes e Idosos",
-        professor: "FAFIPA / Saúde Pública",
-        grandeArea: "Vigilância e Proteção",
-        importancia: "Vermelho"
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Concordância e Regência",
+        "aula": "Crase: Casos Obrigatórios, Proibidos e Facultativos",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
-
-    // ==========================================
-    // LEGISLAÇÃO MUNICIPAL DOS EDITAIS
-    // ==========================================
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Cruz Machado: Lei Orgânica do Município e Lei Complementar nº 1/2006 (Estatuto do Servidor)", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Pontuação",
+        "aula": "Pontuação: Emprego da Vírgula (Proibições e Obrigatoriedades)",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Sintaxe",
+        "conteudo": "Concordância, regência, crase, pontuação, termos da oração (destacado pela banca como mais importante)",
+        "temaId": 7
     },
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Coronel Vivida: Lei Orgânica, LC nº 071 (Estatuto dos Servidores) e LC nº 073 (Plano de Cargos/Carreira)", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Estilística",
+        "aula": "Figuras de Linguagem: Metáfora, Metonímia, Antítese, Paradoxo, Hipérbole e Ironia",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Literatura",
+        "conteudo": "Prosa e poesia, autores e obras, figuras de linguagem",
+        "temaId": 8
     },
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Foz do Iguaçu: Estatuto do Servidor (Lei Complementar nº 17/1993 e alterações)", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Aritmética Básica",
+        "aula": "Operações Fundamentais com Números Inteiros, Decimais e Frações",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Base numérica",
+        "conteudo": "Operações, MMC/MDC, conjuntos numéricos, polinômios",
+        "temaId": 9
     },
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Paula Freitas: Lei Orgânica Municipal e Lei Complementar nº 2.095/2013 (Regime Jurídico Único)", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Aritmética Básica",
+        "aula": "Potenciação, Radiciação e Notação Científica",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Base numérica",
+        "conteudo": "Operações, MMC/MDC, conjuntos numéricos, polinômios",
+        "temaId": 9
     },
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Siqueira Campos: Estatuto dos Servidores Públicos e Lei Orgânica do Município de Siqueira Campos-PR", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Aritmética Básica",
+        "aula": "Múltiplos, Divisores, Critérios de Divisibilidade, MMC e MDC",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Base numérica",
+        "conteudo": "Operações, MMC/MDC, conjuntos numéricos, polinômios",
+        "temaId": 9
     },
-    { 
-        bloco: "Legislação Municipal dos Editais", 
-        disciplina: "Legislação Municipal", 
-        aula: "Quitandinha: História, Geografia, Cidade, Meio de Vida, Trabalho e Economia do Município", 
-        professor: "Legislação Municipal", 
-        grandeArea: "Legislação Municipal dos Editais", 
-        importancia: "Vermelho" 
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Conjuntos",
+        "aula": "Teoria dos Conjuntos: Operações, Diagramas de Venn e Cardinalidade",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Conjuntos e lógica",
+        "conteudo": "Proposições, tabela-verdade, silogismos, diagramas lógicos",
+        "temaId": 14
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Proporcionalidade",
+        "aula": "Razão, Proporção e Divisão Proporcional (Direta e Inversa)",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Razão e proporção",
+        "conteudo": "Razão, proporção, regra de três simples/composta, porcentagem",
+        "temaId": 10
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Proporcionalidade",
+        "aula": "Regra de Três Simples e Composta",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Razão e proporção",
+        "conteudo": "Razão, proporção, regra de três simples/composta, porcentagem",
+        "temaId": 10
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Proporcionalidade",
+        "aula": "Porcentagem: Variação Percentual, Lucro, Descontos e Aumentos Sucessivos",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Razão e proporção",
+        "conteudo": "Razão, proporção, regra de três simples/composta, porcentagem",
+        "temaId": 10
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Matemática Financeira",
+        "aula": "Juros Simples: Fórmulas, Taxas e Montante",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Matemática financeira",
+        "conteudo": "Juros simples e compostos, sistema monetário",
+        "temaId": 11
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Matemática Financeira",
+        "aula": "Juros Compostos: Aplicações Práticas e Comparativo com Juros Simples",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Matemática financeira",
+        "conteudo": "Juros simples e compostos, sistema monetário",
+        "temaId": 11
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Álgebra e Equações",
+        "aula": "Equações e Sistemas do 1º Grau aplicados a Problemas",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Equações e funções",
+        "conteudo": "1º e 2º grau, sistemas lineares, função afim/quadrática/exponencial",
+        "temaId": 12
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Álgebra e Equações",
+        "aula": "Equações do 2º Grau (Fórmula de Bhaskara, Soma e Produto)",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Equações e funções",
+        "conteudo": "1º e 2º grau, sistemas lineares, função afim/quadrática/exponencial",
+        "temaId": 12
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Geometria",
+        "aula": "Geometria Plana: Perímetro e Área de Figuras Planas (Triângulos, Retângulos e Círculos)",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Geometria",
+        "conteudo": "Plana, espacial e analítica básica",
+        "temaId": 17
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Geometria",
+        "aula": "Teorema de Pitágoras e Relações Trigonométricas Básicas no Triângulo Retângulo",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Geometria",
+        "conteudo": "Plana, espacial e analítica básica",
+        "temaId": 17
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Geometria",
+        "aula": "Geometria Espacial: Volume e Capacidade de Prismas, Cubos e Cilindros",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Geometria",
+        "conteudo": "Plana, espacial e analítica básica",
+        "temaId": 17
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Lógica Proposicional",
+        "aula": "Proposições Simples, Compostas e Conectivos Lógicos (E, OU, SE...ENTÃO, SE E SOMENTE SE)",
+        "professor": "FAFIPA / RLM",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Conjuntos e lógica",
+        "conteudo": "Proposições, tabela-verdade, silogismos, diagramas lógicos",
+        "temaId": 14
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Lógica Proposicional",
+        "aula": "Tabela-Verdade, Tautologia, Contradição e Equivalências Lógicas Clássicas",
+        "professor": "FAFIPA / RLM",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Conjuntos e lógica",
+        "conteudo": "Proposições, tabela-verdade, silogismos, diagramas lógicos",
+        "temaId": 14
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Lógica Proposicional",
+        "aula": "Negação de Proposições Compostas e Leis de De Morgan",
+        "professor": "FAFIPA / RLM",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Conjuntos e lógica",
+        "conteudo": "Proposições, tabela-verdade, silogismos, diagramas lógicos",
+        "temaId": 14
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Sequências e Raciocínio",
+        "aula": "Sequências Lógicas: Numéricas, Geométricas e de Palavras",
+        "professor": "FAFIPA / RLM",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Sequências",
+        "conteudo": "PA e PG, sequências numéricas e de figuras",
+        "temaId": 13
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Hardware e Software",
+        "aula": "Conceitos de Informática: Hardware, Processador, Memórias (RAM/ROM) e Periféricos",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Fundamentos",
+        "conteudo": "Hardware, periféricos, software",
+        "temaId": 19
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Sistemas Operacionais",
+        "aula": "Windows 10 e 11: Gerenciador de Arquivos, Pastas, Extensões e Atalhos Principais",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Azul",
+        "semana": 0,
+        "grupo": "Sistema operacional",
+        "conteudo": "Windows 8/10/11, atalhos, gerenciamento de arquivos",
+        "temaId": 20
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Editor de Texto",
+        "aula": "Microsoft Word: Formatação de Fontes, Parágrafos, Quebras e Mala Direta",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Aplicativos",
+        "conteudo": "Word, Excel, Outlook, PowerPoint",
+        "temaId": 21
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Planilhas Eletrônicas",
+        "aula": "Microsoft Excel: Fórmulas Básicas (SOMA, MÉDIA, SE, PROCV, CONT.SE) e Células Relativas/Absolutas",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Aplicativos",
+        "conteudo": "Word, Excel, Outlook, PowerPoint",
+        "temaId": 21
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Apresentações",
+        "aula": "Microsoft PowerPoint: Transições, Animações e Modos de Apresentação",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Aplicativos",
+        "conteudo": "Word, Excel, Outlook, PowerPoint",
+        "temaId": 21
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Internet e Navegação",
+        "aula": "Navegadores Web (Chrome, Edge, Firefox): Abas, Histórico, Favoritos e Navegação Anônima",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Azul",
+        "semana": 0,
+        "grupo": "Internet",
+        "conteudo": "Navegadores, e-mail, armazenamento em nuvem",
+        "temaId": 22
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Correio e Nuvem",
+        "aula": "Correio Eletrônico: Campos (Para, Cc, Cco), Protocolos (POP3, IMAP, SMTP) e Anexos",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Internet",
+        "conteudo": "Navegadores, e-mail, armazenamento em nuvem",
+        "temaId": 22
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Correio e Nuvem",
+        "aula": "Armazenamento em Nuvem e Backup: Google Drive, OneDrive e Sincronização",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Verde",
+        "semana": 0,
+        "grupo": "Internet",
+        "conteudo": "Navegadores, e-mail, armazenamento em nuvem",
+        "temaId": 22
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Segurança da Informação",
+        "aula": "Segurança da Informação: Malware (Vírus, Worm, Ransomware, Phishing) e Firewall/Antivírus",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Segurança",
+        "conteudo": "Segurança na internet e de dados",
+        "temaId": 23
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Constituição Federal",
+        "aula": "CF/88: Princípios Fundamentais e Direitos Individuais e Coletivos (Art. 5º)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "Constituição Federal",
+        "conteudo": "Títulos I, II, III (art. 18/19, 29/30, 37-41), IV",
+        "temaId": 25
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Constituição Federal",
+        "aula": "CF/88: Direitos Sociais e Nacionalidade (Arts. 6º a 13)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "Constituição Federal",
+        "conteudo": "Títulos I, II, III (art. 18/19, 29/30, 37-41), IV",
+        "temaId": 25
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Constituição Federal",
+        "aula": "CF/88: Organização do Estado e Autonomia dos Municípios (Arts. 18, 29 e 30)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "Constituição Federal",
+        "conteudo": "Títulos I, II, III (art. 18/19, 29/30, 37-41), IV",
+        "temaId": 25
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Constituição Federal",
+        "aula": "CF/88: Da Administração Pública e Servidores Públicos (Arts. 37 a 41 - LIMPE)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "Constituição Federal",
+        "conteudo": "Títulos I, II, III (art. 18/19, 29/30, 37-41), IV",
+        "temaId": 25
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Leis Federais",
+        "aula": "Lei de Improbidade Administrativa (Lei 8.429/1992 com alterações da Lei 14.230/2021)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Leis Federais",
+        "aula": "Lei de Acesso à Informação - LAI (Lei 12.527/2011)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Leis Federais",
+        "aula": "Estatuto da Criança e do Adolescente - ECA (Lei 8.069/1990: Direitos Fundamentais)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Leis Federais",
+        "aula": "Estatuto da Pessoa Idosa (Lei 10.741/2003: Direitos Fundamentais e Crimes)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Leis Federais",
+        "aula": "LGPD - Lei Geral de Proteção de Dados (Lei 13.709/2018: Princípios e Tratamento no Poder Público)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "SUS e Saúde Coletiva",
+        "aula": "SUS na CF/88 (Arts. 196 a 200) e Leis Orgânicas da Saúde (Lei 8.080/90 e Lei 8.142/90)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "SUS e Saúde Coletiva",
+        "aula": "Evolução Histórica das Normas Operacionais do SUS: NOB/91, NOB/93, NOB/96 e NOAS-SUS",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "SUS e Saúde Coletiva",
+        "aula": "Política Nacional de Atenção Básica (PNAB 2017) e Estratégia Saúde da Família (ESF)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Ética e Bioética Médica",
+        "aula": "Código de Ética Médica: Princípios Fundamentais, Autonomia, Relação Médico-Paciente e Deveres",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Ética e Bioética Médica",
+        "aula": "Documentos Médicos: Prontuário, Sigilo Profissional, Atestados e Declaração de Óbito",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Medicina Preventiva",
+        "aula": "Rastreamento de Neoplasias Malignas na APS (Mama, Colo Uterino, Cólon e Próstata)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 13,
+        "grupo": "Prevenção e ciclos de vida",
+        "conteudo": "Rastreio de câncer, imunização do adulto, saúde do homem/idoso, planejamento familiar",
+        "temaId": 33
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Medicina Preventiva",
+        "aula": "Calendário Vacinal do Adulto e Idoso (PNI/SBIm) e Imunizações Especiais (CRIE)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 13,
+        "grupo": "Prevenção e ciclos de vida",
+        "conteudo": "Rastreio de câncer, imunização do adulto, saúde do homem/idoso, planejamento familiar",
+        "temaId": 33
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Medicina Preventiva",
+        "aula": "Abordagem e Cessação do Tabagismo e Manejo do Alcoolismo na Atenção Primária",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 13,
+        "grupo": "Prevenção e ciclos de vida",
+        "conteudo": "Rastreio de câncer, imunização do adulto, saúde do homem/idoso, planejamento familiar",
+        "temaId": 33
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Saúde do Idoso",
+        "aula": "Avaliação Geriátrica Ampla (AGA), Síndrome da Fragilidade, Quedas e Polifarmácia no Idoso",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 13,
+        "grupo": "Prevenção e ciclos de vida",
+        "conteudo": "Rastreio de câncer, imunização do adulto, saúde do homem/idoso, planejamento familiar",
+        "temaId": 33
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Hipertensão Arterial Sistêmica (HAS): Diagnóstico, Metas Pressóricas e Terapia Farmacológica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Dislipidemias: Estratificação de Risco Cardiovascular e Metas de Tratamento com Estatinas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Abordagem da Dor Torácica e Síndromes Coronarianas Agudas (IAM com e sem supra de ST)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Insuficiência Cardíaca: Diagnóstico Clínico, Critérios de Framingham, NYHA e Terapia Quádrupla",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Valvopatias e Febre Reumática: Critérios de Jones, Profilaxia Primária e Secundária",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia",
+        "aula": "Síncope e Hipotensão Postural: Diagnóstico Diferencial e Estratificação de Risco",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia e Emergência",
+        "aula": "Princípios de Eletrocardiograma (ECG): Ritmo, Eixo, Sobrecargas Atriais/Ventriculares e Isquemia",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia e Emergência",
+        "aula": "Taquiarritmias e Bradiarritmias: Manejo da Fibrilação Atrial, Flutter, TSV e Bloqueios AV",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cardiologia e Emergência",
+        "aula": "Parada Cardiorrespiratória (PCR): Protocolo ACLS/BLS para Ritmos Chocáveis e Não Chocáveis",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia",
+        "aula": "Diabetes Mellitus: Critérios Diagnósticos, Metas de HbA1c e Manejo Não Insulínico na APS",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 4,
+        "grupo": "Endócrino e metabólico",
+        "conteudo": "DM e complicações, tireoide, obesidade, distúrbios HE/ácido-básicos",
+        "temaId": 35
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia",
+        "aula": "Insulinoterapia no Diabetes e Complicações Agudas (Cetoacidose Diabética e EHH)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 4,
+        "grupo": "Endócrino e metabólico",
+        "conteudo": "DM e complicações, tireoide, obesidade, distúrbios HE/ácido-básicos",
+        "temaId": 35
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia",
+        "aula": "Hipotireoidismo e Hipertireoidismo: Diagnóstico Laboratorial, Doença de Hashimoto e Graves",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 3,
+        "grupo": "Cardiovascular",
+        "conteudo": "HAS, dislipidemias, doença isquêmica, IC, arritmias, dor torácica, PCR",
+        "temaId": 34
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia",
+        "aula": "Nódulos Tireoidianos: Classificação de Bethesda, USG e Indicação de PAAF",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 1,
+        "grupo": "SUS, APS, ética e gestão",
+        "conteudo": "Lei 8.080/90 e 8.142/90, PNAB 2017, Código de Ética Médica, segurança do paciente",
+        "temaId": 32
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia e Metabologia",
+        "aula": "Síndrome Metabólica e Obesidade: Critérios Clínicos e Abordagem Terapêutica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 4,
+        "grupo": "Endócrino e metabólico",
+        "conteudo": "DM e complicações, tireoide, obesidade, distúrbios HE/ácido-básicos",
+        "temaId": 35
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Endocrinologia e Metabologia",
+        "aula": "Distúrbios Hidroeletrolíticos (Sódio e Potássio) e Equilíbrio Ácido-Básico",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 4,
+        "grupo": "Endócrino e metabólico",
+        "conteudo": "DM e complicações, tireoide, obesidade, distúrbios HE/ácido-básicos",
+        "temaId": 35
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pneumologia",
+        "aula": "Asma Brônquica no Adulto: Diagnóstico Clínico-Espirométrico, Classificação GINA e Crise Aguda",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 5,
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "temaId": 36
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pneumologia",
+        "aula": "DPOC: Diagnóstico Espirométrico, Critérios GOLD e Manejo de Exacerbações Agudas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 5,
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "temaId": 36
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pneumologia",
+        "aula": "Pneumonia Adquirida na Comunidade (PAC): Escore CURB-65, Diagnóstico e Antibioticoterapia Empírica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 5,
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "temaId": 36
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pneumologia",
+        "aula": "Tuberculose Pulmonar: Baciloscopia, TRM-TB, Esquema RIPE e Acompanhamento na Atenção Básica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 5,
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "temaId": 36
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pneumologia",
+        "aula": "Trombose Venosa Profunda (TVP) e Tromboembolismo Pulmonar (TEP): Escore de Wells e Conduta",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 5,
+        "grupo": "Respiratório",
+        "conteudo": "Asma, DPOC, pneumonias, tuberculose, TEP",
+        "temaId": 36
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Doença do Refluxo Gastroesofágico (DRGE), Esofagites e Esôfago de Barrett",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Dispepsia Funcional, Gastrites e Terapia de Erradicação do Helicobacter pylori",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Doença Ulcerosa Péptica e Complicações: Hemorragia Digestiva Alta (HDA) e Perfuração",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia e Hepatologia",
+        "aula": "Hepatites Virais (A, B e C): Marcadores Sorológicos, Profilaxia e Tratamento",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia e Hepatologia",
+        "aula": "Cirrose Hepática e Hipertensão Portal: Manejo de Ascite, PBE, Encefalopatia e Varizes Esofágicas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia e Hepatologia",
+        "aula": "Doença Hepática Esteatótica (Esteatose/EHNA) e Abordagem de Nódulos Hepáticos",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia e Cirurgia Geral",
+        "aula": "Litíase Biliar e Complicações: Colelitíase, Colecistite Aguda, Coledocolitíase e Colangite Aguda",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Cirurgia e pediatria digestiva",
+        "conteudo": "Trauma abdominal, obstrução intestinal e dor abdominal na criança",
+        "temaId": 38
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Pancreatite Aguda e Crônica: Etiologias, Critérios de Ranson e Manejo Clínico",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Diarreia Aguda Infecciosa no Adulto: Reidratação, Critérios para Antibióticos e Alarme",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Diarreia Crônica, Síndrome do Intestino Irritável (SII) e Doenças Inflamatórias Intestinais (Crohn e RCUI)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Gastroenterologia",
+        "aula": "Parasitoses Intestinais Mais Frequentes no Brasil: Diagnóstico e Tratamento na APS",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 6,
+        "grupo": "Gastro e hepato",
+        "conteudo": "DRGE, úlcera péptica, hepatites, cirrose, parasitoses intestinais",
+        "temaId": 37
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cirurgia e Proctologia",
+        "aula": "Doenças Orificiais (Hemorroidas, Fissura Anal, Abscessos) e Hérnias da Parede Abdominal",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Vermelho",
+        "semana": 6,
+        "grupo": "Cirurgia e pediatria digestiva",
+        "conteudo": "Trauma abdominal, obstrução intestinal e dor abdominal na criança",
+        "temaId": 38
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Nefrologia e Urologia",
+        "aula": "Infecções do Trato Urinário (ITU): Cistite Aguda, Pielonefrite e ITU Recorrente",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "temaId": 39
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Nefrologia e Urologia",
+        "aula": "Hiperplasia Prostática Benigna (HPB) e Nefrolitíase (Cólica Nefrética Aguda)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "temaId": 39
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Nefrologia",
+        "aula": "Lesão Renal Aguda (LRA) e Doença Renal Crônica (DRC): Critérios KDIGO e Manejo Conservador",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "temaId": 39
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Nefrologia",
+        "aula": "Síndromes Glomerulares: Síndrome Nefrítica vs. Síndrome Nefrótica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 12,
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "temaId": 39
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Hematologia",
+        "aula": "Anemias Microcíticas e Hipocrômicas: Diagnóstico Diferencial entre Ferropriva, Doença Crônica e Talassemia",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Hematologia e oncologia",
+        "conteudo": "Anemias, linfadenopatia, leucemias e linfomas",
+        "temaId": 40
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Hematologia",
+        "aula": "Anemias Macrocíticas (Megaloblástica por B12/Folato) e Anemias Hemolíticas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Hematologia e oncologia",
+        "conteudo": "Anemias, linfadenopatia, leucemias e linfomas",
+        "temaId": 40
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Hematologia e Oncologia",
+        "aula": "Abordagem das Linfadenopatias e Suspeita de Neoplasias Hematológicas (Leucemias e Linfomas)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Azul",
+        "semana": 12,
+        "grupo": "Hematologia e oncologia",
+        "conteudo": "Anemias, linfadenopatia, leucemias e linfomas",
+        "temaId": 40
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Hematologia",
+        "aula": "Distúrbios da Coagulação e Hemostasia: Trombocitopenias, Hemofilias e Coagulopatias",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 12,
+        "grupo": "Hematologia e oncologia",
+        "conteudo": "Anemias, linfadenopatia, leucemias e linfomas",
+        "temaId": 40
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia",
+        "aula": "Antibioticoterapia Racional e Manejo de Resistência Bacteriana na Atenção Básica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia",
+        "aula": "Infecções Sexualmente Transmissíveis (ISTs): Sífilis (Primária, Secundária e Latente) e Corrimentos Uretrais",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia",
+        "aula": "Infecção pelo HIV/AIDS: Diagnóstico, Profilaxias PEP/PrEP e Infecções Oportunistas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia",
+        "aula": "Hanseníase e Leishmaniose Tegumentar/Visceral: Diagnóstico, Notificação e Tratamento",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia",
+        "aula": "Arboviroses (Dengue, Chikungunya, Zika): Classificação de Risco, Prova do Laço e Manejo Clínico",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Infectologia e Urgência",
+        "aula": "Acidentes por Animais Peçonhentos: Ofídico (Bothrops, Crotalus), Escorpiônico e Aracnídico",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Dermatologia Sanitária",
+        "aula": "Dermatologia na APS: Piodermites, Micoses Superficiais, Escabiose e Eczemas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Dermatologia e Alergologia",
+        "aula": "Lesões Pré-Malignas e Câncer de Pele (Melanoma, CBC, CEC) e Regra do ABCDE",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Dermatologia e Alergologia",
+        "aula": "Urticária, Angioedema e Choque Anafilático: Reconhecimento e Uso Imediato de Adrenalina IM",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Renal e urológico",
+        "conteudo": "ITU/pielonefrite, IRA/IRC, HPB, glomerulopatias",
+        "temaId": 39
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Neurologia",
+        "aula": "Cefaleias Primárias (Enxaqueca, Tensional, Salvas) e Sinais de Alarme (Red Flags)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 10,
+        "grupo": "Neurologia",
+        "conteudo": "Cefaleias, epilepsia, AVC, síndromes demenciais, tontura/vertigem",
+        "temaId": 42
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Neurologia",
+        "aula": "Acidente Vascular Cerebral (AVC Isquêmico e Hemorrágico): Janela de Trombólise e Escala NIHSS",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 10,
+        "grupo": "Neurologia",
+        "conteudo": "Cefaleias, epilepsia, AVC, síndromes demenciais, tontura/vertigem",
+        "temaId": 42
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Neurologia",
+        "aula": "Crises Epilépticas e Epilepsia: Manejo na Urgência, Estado de Mal Epiléptico e Anticonvulsivantes",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 10,
+        "grupo": "Neurologia",
+        "conteudo": "Cefaleias, epilepsia, AVC, síndromes demenciais, tontura/vertigem",
+        "temaId": 42
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Neurologia",
+        "aula": "Síndromes Demenciais (Doença de Alzheimer, Demência Vascular) e Diagnóstico Diferencial de Tontura e Vertigem",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 10,
+        "grupo": "Neurologia",
+        "conteudo": "Cefaleias, epilepsia, AVC, síndromes demenciais, tontura/vertigem",
+        "temaId": 42
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Psiquiatria",
+        "aula": "Depressão Maior e Transtornos de Ansiedade (TAG, Transtorno do Pânico): Diagnóstico e Farmacoterapia",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 11,
+        "grupo": "Psiquiatria",
+        "conteudo": "Depressão, ansiedade, transtornos do sono, alcoolismo, risco de suicídio",
+        "temaId": 43
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Psiquiatria",
+        "aula": "Dependência Química, Abstinência Alcoólica e Manejo de Crises Psiquiátricas / Risco de Suicídio",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 11,
+        "grupo": "Psiquiatria",
+        "conteudo": "Depressão, ansiedade, transtornos do sono, alcoolismo, risco de suicídio",
+        "temaId": 43
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Psiquiatria",
+        "aula": "Transtorno Afetivo Bipolar e Psicoses: Diagnóstico Diferencial e Condutas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 11,
+        "grupo": "Psiquiatria",
+        "conteudo": "Depressão, ansiedade, transtornos do sono, alcoolismo, risco de suicídio",
+        "temaId": 43
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Reumatologia",
+        "aula": "Monoartrites e Poliartrites: Abordagem da Artrite Séptica, Artrite Reumatoide e Artropatia por Gota",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 11,
+        "grupo": "Reumatologia e osteomuscular",
+        "conteudo": "Artrite reumatoide, gota, osteoartrite, espondiloartropatias, lombalgia",
+        "temaId": 44
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Reumatologia",
+        "aula": "Lúpus Eritematoso Sistêmico (LES) e Síndrome do Anticorpo Antifosfolípide (SAF)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 7,
+        "grupo": "Infectologia e imunologia",
+        "conteudo": "Antibioticoterapia, IST/AIDS, hanseníase, arboviroses, febre de origem indeterminada (cobrança integral segundo o edital)",
+        "temaId": 41
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Reumatologia e Ortopedia",
+        "aula": "Lombalgia e Cervicopatia na APS: Sinais de Alarme, Hérnia Discal e Tratamento",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 11,
+        "grupo": "Reumatologia e osteomuscular",
+        "conteudo": "Artrite reumatoide, gota, osteoartrite, espondiloartropatias, lombalgia",
+        "temaId": 44
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Reumatologia",
+        "aula": "Osteoartrite e Fibromialgia: Diagnóstico Clínico e Estratégia de Manejo da Dor Crônica",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 11,
+        "grupo": "Reumatologia e osteomuscular",
+        "conteudo": "Artrite reumatoide, gota, osteoartrite, espondiloartropatias, lombalgia",
+        "temaId": 44
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Cirurgia e Trauma",
+        "aula": "Atendimento Inicial ao Politraumatizado: Protocolo ATLS (ABCDE do Trauma)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Vermelho",
+        "semana": 13,
+        "grupo": "Urgência e ciências básicas",
+        "conteudo": "Emergências médicas, anatomia/fisiologia/bioquímica básicas (checar se o edital específico cobra)",
+        "temaId": 45
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Cirurgia e Trauma",
+        "aula": "Traumatismo Abdominal Fechado e Penetrante: FAST, Lavado Peritoneal e Indicações de Laparotomia",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 13,
+        "grupo": "Urgência e ciências básicas",
+        "conteudo": "Emergências médicas, anatomia/fisiologia/bioquímica básicas (checar se o edital específico cobra)",
+        "temaId": 45
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Puericultura",
+        "aula": "Crescimento Infantil e Curvas da OMS: Peso, Estatura, IMC e Perímetro Cefálico",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Azul",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Puericultura",
+        "aula": "Marcos do Desenvolvimento Neuropsicomotor (DNPM) nos Primeiros 2 Anos de Vida",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Azul",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Nutrição e Vacinação",
+        "aula": "Aleitamento Materno (Vantagens, Técnica e Dificuldades) e Alimentação Complementar Saudável",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Azul",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Nutrição e Vacinação",
+        "aula": "Calendário Vacinal da Criança (PNI): Vacinas aos 2, 3, 4, 5, 6, 9 e 12 Meses",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Vermelho",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Infectopediatria",
+        "aula": "Doenças Exantemáticas na Infância: Sarampo, Rubéola, Varicela e Escarlatina",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Azul",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Infectopediatria",
+        "aula": "Exantema Súbito (Roséola), Eritema Infeccioso e Doença Mão-Pé-Boca",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Verde",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Gastroenterologia Pediátrica",
+        "aula": "Diarreia Aguda e Desidratação na Criança: Avaliação e Manejo dos Planos A, B e C da OMS",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Vermelho",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Pneumopediatria",
+        "aula": "Infecções Respiratórias Agudas na Infância: Resfriado, Faringoamigdalite, Crupe Viral e Epiglotite",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Vermelho",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Pneumopediatria",
+        "aula": "Bronquiolite Viral Aguda (BVA), Asma na Criança e Síndrome do Lactente Sibilante",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Vermelho",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Neonatologia e Triagens",
+        "aula": "Triagens Neonatais no SUS: Teste do Pezinho, Olhinho, Coraçãozinho, Orelhinha e Linguinha",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Amarelo",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Criança",
+        "disciplina": "Prevenção e Cuidados",
+        "aula": "Desnutrição Infantil, Anemia Ferropriva e Prevenção de Acidentes e Intoxicações na Infância",
+        "professor": "FAFIPA / Pediatria",
+        "grandeArea": "Saúde da Criança",
+        "importancia": "Amarelo",
+        "semana": 8,
+        "grupo": "Saúde da criança",
+        "conteudo": "Puericultura, calendário vacinal infantil, doenças exantemáticas, diarreia e IVAS pediátricas",
+        "temaId": 47
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Obstetrícia",
+        "aula": "Assistência ao Pré-Natal de Baixo Risco: Rotina de Consultas, Exames Laboratoriais e Suplementações",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Azul",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Obstetrícia",
+        "aula": "Síndromes Hipertensivas na Gestação: Pré-Eclâmpsia, Eclâmpsia e Sulfatação no Parto",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Obstetrícia",
+        "aula": "Diabetes Mellitus Gestacional (DMG) e Infecções na Gravidez (ITU, Toxoplasmose e Sífilis Gestacional)",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Obstetrícia",
+        "aula": "Sangramentos da Primeira Metade da Gravidez: Abortamento, Gravidez Ectópica e Doença Trofoblástica",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Obstetrícia",
+        "aula": "Sangramentos da Segunda Metade da Gravidez: Placenta Prévia vs. Descolamento Prematuro de Placenta (DPP)",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Ginecologia Preventiva",
+        "aula": "Rastreamento do Câncer de Colo do Útero (Diretrizes do INCA / Citologia Oncótica) e Câncer de Mama",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Azul",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Ginecologia Geral",
+        "aula": "Sangramento Uterino Anormal (SUA): Sistema de Classificação PALM-COEIN e Diagnóstico",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Verde",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Ginecologia Geral",
+        "aula": "Climatério e Menopausa: Sintomas Vasomotores e Indicações de Terapia de Reposição Hormonal (TRH)",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Verde",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Ginecologia Geral",
+        "aula": "Vulvovaginites: Diagnóstico Diferencial Clínico e Microscópico (Vaginose Bacteriana, Candidíase e Tricomoníase)",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Saúde da Mulher",
+        "disciplina": "Ginecologia Geral",
+        "aula": "Cervicites e Doença Inflamatória Pélvica (DIP): Critérios Diagnósticos e Manejo Clínico",
+        "professor": "FAFIPA / GO",
+        "grandeArea": "Saúde da Mulher",
+        "importancia": "Vermelho",
+        "semana": 9,
+        "grupo": "Saúde da mulher",
+        "conteudo": "Pré-natal de baixo risco, rastreio de colo/mama, climatério, DUB",
+        "temaId": 48
+    },
+    {
+        "bloco": "Oftalmologia e ORL Básicos",
+        "disciplina": "Oftalmologia na APS",
+        "aula": "Olho Vermelho na Atenção Primária: Diagnóstico Diferencial de Conjuntivites e Sinais de Alarme",
+        "professor": "FAFIPA / Oftalmologia",
+        "grandeArea": "Oftalmologia e ORL Básicos",
+        "importancia": "Verde",
+        "semana": 12,
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "temaId": 49
+    },
+    {
+        "bloco": "Oftalmologia e ORL Básicos",
+        "disciplina": "Oftalmologia na APS",
+        "aula": "Urgências Oftalmológicas: Corpo Estranho Ocular, Trauma Contuso e Queimaduras Químicas",
+        "professor": "FAFIPA / Oftalmologia",
+        "grandeArea": "Oftalmologia e ORL Básicos",
+        "importancia": "Verde",
+        "semana": 12,
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "temaId": 49
+    },
+    {
+        "bloco": "Oftalmologia e ORL Básicos",
+        "disciplina": "Otorrinolaringologia na APS",
+        "aula": "Afecções do Ouvido: Otite Média Aguda (OMA), Otite Externa e Remoção de Cerume/Corpo Estranho",
+        "professor": "FAFIPA / Otorrinolaringologia",
+        "grandeArea": "Oftalmologia e ORL Básicos",
+        "importancia": "Verde",
+        "semana": 12,
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "temaId": 49
+    },
+    {
+        "bloco": "Oftalmologia e ORL Básicos",
+        "disciplina": "Otorrinolaringologia na APS",
+        "aula": "Rinossinusite Aguda e Manejo Prático da Epistaxe (Tampamento Anterior e Posterior)",
+        "professor": "FAFIPA / Otorrinolaringologia",
+        "grandeArea": "Oftalmologia e ORL Básicos",
+        "importancia": "Verde",
+        "semana": 12,
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "temaId": 49
+    },
+    {
+        "bloco": "Oftalmologia e ORL Básicos",
+        "disciplina": "Otorrinolaringologia na APS",
+        "aula": "Faringoamigdalites Agudas no Pronto Atendimento: Escore de Centor e Etiologia Viral vs. Bacteriana",
+        "professor": "FAFIPA / Otorrinolaringologia",
+        "grandeArea": "Oftalmologia e ORL Básicos",
+        "importancia": "Verde",
+        "semana": 12,
+        "grupo": "Oftalmologia e ORL básicos",
+        "conteudo": "Conjuntivites, corpo estranho, otite, faringoamigdalite, epistaxe",
+        "temaId": 49
+    },
+    {
+        "bloco": "Vigilância e Proteção",
+        "disciplina": "Vigilância Epidemiológica",
+        "aula": "Lista Nacional de Notificação Compulsória de Doenças, Agravos e Eventos de Saúde Pública (SINAN)",
+        "professor": "FAFIPA / Saúde Pública",
+        "grandeArea": "Vigilância e Proteção",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Vigilância e proteção",
+        "conteudo": "Notificação compulsória (SINAN), Lei Maria da Penha, ECA e Estatuto do Idoso",
+        "temaId": 50
+    },
+    {
+        "bloco": "Vigilância e Proteção",
+        "disciplina": "Proteção Social e Saúde",
+        "aula": "Notificação e Protocolo de Atendimento às Vítimas de Violência Doméstica e Sexual (Lei Maria da Penha)",
+        "professor": "FAFIPA / Saúde Pública",
+        "grandeArea": "Vigilância e Proteção",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Vigilância e proteção",
+        "conteudo": "Notificação compulsória (SINAN), Lei Maria da Penha, ECA e Estatuto do Idoso",
+        "temaId": 50
+    },
+    {
+        "bloco": "Vigilância e Proteção",
+        "disciplina": "Proteção Social e Saúde",
+        "aula": "Notificação de Suspeita ou Confirmação de Maus-Tratos contra Crianças, Adolescentes e Idosos",
+        "professor": "FAFIPA / Saúde Pública",
+        "grandeArea": "Vigilância e Proteção",
+        "importancia": "Vermelho",
+        "semana": 12,
+        "grupo": "Vigilância e proteção",
+        "conteudo": "Notificação compulsória (SINAN), Lei Maria da Penha, ECA e Estatuto do Idoso",
+        "temaId": 50
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Cruz Machado: Lei Orgânica do Município e Lei Complementar nº 1/2006 (Estatuto do Servidor)",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Cruz Machado",
+        "conteudo": "Lei Orgânica; Lei Complementar 1/2006 (Estatuto do Servidor)",
+        "temaId": 51
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Coronel Vivida: Lei Orgânica, LC nº 071 (Estatuto dos Servidores) e LC nº 073 (Plano de Cargos/Carreira)",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Coronel Vivida",
+        "conteudo": "LC 071 (Estatuto dos Servidores); LC 073 (PCCR)",
+        "temaId": 52
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Foz do Iguaçu: Estatuto do Servidor (Lei Complementar nº 17/1993 e alterações)",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Foz do Iguaçu",
+        "conteudo": "Estatuto do Servidor - LC 17/93",
+        "temaId": 53
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Paula Freitas: Lei Orgânica Municipal e Lei Complementar nº 2.095/2013 (Regime Jurídico Único)",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Paula Freitas",
+        "conteudo": "Lei Orgânica; LC 2.095/2013 (RJU)",
+        "temaId": 54
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Siqueira Campos: Estatuto dos Servidores Públicos e Lei Orgânica do Município de Siqueira Campos-PR",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Siqueira Campos",
+        "conteudo": "Estatuto dos Servidores; Lei Orgânica municipal",
+        "temaId": 55
+    },
+    {
+        "bloco": "Legislação Municipal dos Editais",
+        "disciplina": "Legislação Municipal",
+        "aula": "Quitandinha: História, Geografia, Cidade, Meio de Vida, Trabalho e Economia do Município",
+        "professor": "Legislação Municipal",
+        "grandeArea": "Legislação Municipal dos Editais",
+        "importancia": "Vermelho",
+        "semana": 2,
+        "grupo": "Quitandinha",
+        "conteudo": "História, geografia, economia e trabalho do município",
+        "temaId": 56
+    },
+    {
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Literatura e Estilística",
+        "aula": "Teoria Literária e Estilística: Prosa, Poesia, Versificação e Gêneros Literários nas Provas FAFIPA",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Literatura",
+        "conteudo": "Prosa e poesia, autores e obras, figuras de linguagem",
+        "temaId": 8
+    },
+    {
+        "bloco": "Língua Portuguesa",
+        "disciplina": "Literatura e Estilística",
+        "aula": "Figuras de Linguagem: Metáfora, Metonímia, Sinestesia, Antítese, Paradoxo, Ironia e Pleonasmo",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Língua Portuguesa",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Literatura",
+        "conteudo": "Prosa e poesia, autores e obras, figuras de linguagem",
+        "temaId": 8
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Análise Combinatória e Probabilidade",
+        "aula": "Análise Combinatória: Princípio Fundamental da Contagem (PFC), Arranjos, Permutações e Combinações Simples",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Contagem e probabilidade",
+        "conteudo": "Análise combinatória, probabilidade",
+        "temaId": 15
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Análise Combinatória e Probabilidade",
+        "aula": "Probabilidade: Espaço Amostral, Eventos, Probabilidade da União e Probabilidade Condicional",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Contagem e probabilidade",
+        "conteudo": "Análise combinatória, probabilidade",
+        "temaId": 15
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Estatística Descritiva",
+        "aula": "Estatística Descritiva: Média Aritmética (Simples e Ponderada), Moda e Mediana",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Estatística",
+        "conteudo": "Média, moda, mediana, leitura de gráficos e tabelas",
+        "temaId": 16
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Estatística Descritiva",
+        "aula": "Interpretação e Análise de Gráficos (Barras, Colunas, Setores) e Tabelas Estatísticas em Provas FAFIPA",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Estatística",
+        "conteudo": "Média, moda, mediana, leitura de gráficos e tabelas",
+        "temaId": 16
+    },
+    {
+        "bloco": "Matemática e RLM",
+        "disciplina": "Situações-Problema",
+        "aula": "Resolução de Situações-Problema do Cotidiano Envolvendo Operações Numéricas e Lógica Aplicada",
+        "professor": "FAFIPA / Matemática",
+        "grandeArea": "Matemática e RLM",
+        "importancia": "Azul",
+        "semana": 0,
+        "grupo": "Situações-problema",
+        "conteudo": "Problemas do cotidiano com números",
+        "temaId": 18
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Inovações e Periféricos",
+        "aula": "Inteligência Artificial Generativa nos Concursos: ChatGPT, Microsoft Copilot, Google Gemini e Usos no Serviço Público",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Outros",
+        "conteudo": "Impressoras; IA generativa (ChatGPT, Copilot, Gemini) - tema recente",
+        "temaId": 24
+    },
+    {
+        "bloco": "Informática",
+        "disciplina": "Inovações e Periféricos",
+        "aula": "Periféricos e Impressoras: Tipos de Impressão (Jato de Tinta, Laser, Térmica), Instalação de Drivers e Fila de Impressão",
+        "professor": "FAFIPA / Informática",
+        "grandeArea": "Informática",
+        "importancia": "Vermelho",
+        "semana": 0,
+        "grupo": "Outros",
+        "conteudo": "Impressoras; IA generativa (ChatGPT, Copilot, Gemini) - tema recente",
+        "temaId": 24
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Legislação Federal",
+        "aula": "Nova Lei de Improbidade Administrativa (Lei nº 8.429/1992 com alterações profundas da Lei nº 14.230/2021)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Azul",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Legislação Federal",
+        "aula": "Lei de Acesso à Informação - LAI (Lei nº 12.527/2011): Transparência Ativa/Passiva, Prazos e Recursos",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Azul",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Legislação Federal",
+        "aula": "Lei Geral de Proteção de Dados - LGPD (Lei nº 13.709/2018): Princípios, Bases Legais e Tratamento pelo Poder Público",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Azul",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Legislação Federal",
+        "aula": "LINDB (Decreto-Lei nº 4.657/1942 e Lei nº 13.655/2018): Segurança Jurídica e Decisão Administrativa",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Legislação Federal",
+        "aula": "Lei de Prioridade de Atendimento (Lei nº 10.048/2000 atualizada pela Lei nº 14.626/2023): Grupos e Deveres",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Azul",
+        "semana": 2,
+        "grupo": "Leis federais",
+        "conteudo": "Improbidade (8.429/14.230), LAI, prioridade de atendimento, ECA, LINDB, LGPD",
+        "temaId": 26
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Administração Pública",
+        "aula": "Modelos de Administração Pública: Patrimonialista, Burocrática e Gerencial (Nova Gestão Pública)",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 2,
+        "grupo": "Administração Pública",
+        "conteudo": "Modelos de administração pública, funções administrativas",
+        "temaId": 27
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Administração Pública",
+        "aula": "Funções Administrativas, Poderes da Administração (Vinculado, Discricionário, Hierárquico e de Polícia) e Atos Administrativos",
+        "professor": "FAFIPA / Legislação",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 2,
+        "grupo": "Administração Pública",
+        "conteudo": "Modelos de administração pública, funções administrativas",
+        "temaId": 27
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Conhecimentos Gerais",
+        "aula": "Atualidades: Panorama Político, Econômico, Social, Ambiental e Tecnológico no Brasil e Paraná",
+        "professor": "FAFIPA / Conhecimentos Gerais",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 0,
+        "grupo": "Atualidades",
+        "conteudo": "Política, economia, saúde, sociedade, tecnologia (conforme edital)",
+        "temaId": 28
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Conhecimentos Gerais",
+        "aula": "História e Geografia Regional: Formação Econômica, Relevo, Bacias Hidrográficas e Municípios do Paraná",
+        "professor": "FAFIPA / Conhecimentos Gerais",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 14,
+        "grupo": "História e Geografia",
+        "conteudo": "Escala municipal, estadual, nacional (ver edital)",
+        "temaId": 29
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Conhecimentos Gerais",
+        "aula": "Políticas Públicas no Brasil: Habitação, Cidadania, Saneamento Básico e Educação Ambiental",
+        "professor": "FAFIPA / Conhecimentos Gerais",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Amarelo",
+        "semana": 1,
+        "grupo": "Políticas públicas",
+        "conteudo": "Habitação, cidadania, saúde, educação ambiental",
+        "temaId": 30
+    },
+    {
+        "bloco": "Legislação e Adm. Pública",
+        "disciplina": "Língua e Cultura Regional",
+        "aula": "Significado de Vocábulos, Expressões Idiomáticas e Termos Regionais nas Provas FAFIPA",
+        "professor": "FAFIPA / Português",
+        "grandeArea": "Legislação e Adm. Pública",
+        "importancia": "Vermelho",
+        "semana": 14,
+        "grupo": "Linguagem regional",
+        "conteudo": "Significado de palavras e termos regionais",
+        "temaId": 31
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Cirurgia e Urgência Digestiva",
+        "aula": "Trauma Abdominal Fechado e Penetrante: FAST, Critérios Cirúrgicos e Tratamento Não Operatório (TNO)",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 6,
+        "grupo": "Cirurgia e pediatria digestiva",
+        "conteudo": "Trauma abdominal, obstrução intestinal e dor abdominal na criança",
+        "temaId": 38
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Pediatria Digestiva e Cirúrgica",
+        "aula": "Dor Abdominal Aguda e Obstrução Intestinal na Criança: Intussuscepção, Apendicite Pediátrica e Vólvulo",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Amarelo",
+        "semana": 6,
+        "grupo": "Cirurgia e pediatria digestiva",
+        "conteudo": "Trauma abdominal, obstrução intestinal e dor abdominal na criança",
+        "temaId": 38
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Medicina de Emergência",
+        "aula": "Urgências e Emergências Médicas na APS e UPA: Reconhecimento do Paciente Crítico, Choque e Sepse",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 13,
+        "grupo": "Urgência e ciências básicas",
+        "conteudo": "Emergências médicas, anatomia/fisiologia/bioquímica básicas (checar se o edital específico cobra)",
+        "temaId": 45
+    },
+    {
+        "bloco": "Medicina: Especialidades e Urgência",
+        "disciplina": "Ciências Básicas Médicas",
+        "aula": "Ciências Básicas Aplicadas à Prática Clínica: Fundamentos de Fisiologia, Farmacologia e Anatomia nas Provas FAFIPA",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Especialidades e Urgência",
+        "importancia": "Amarelo",
+        "semana": 13,
+        "grupo": "Urgência e ciências básicas",
+        "conteudo": "Emergências médicas, anatomia/fisiologia/bioquímica básicas (checar se o edital específico cobra)",
+        "temaId": 45
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Estratégia de Prova FAFIPA",
+        "aula": "Padrão de Cobrança FAFIPA: Análise Transversal de Epidemiologia, Diagnóstico Diferencial e Condutas Terapêuticas",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 14,
+        "grupo": "Estrutura da cobrança",
+        "conteudo": "Padrão transversal: epidemiologia, dx diferencial, tratamento e profilaxia de cada tema",
+        "temaId": 46
+    },
+    {
+        "bloco": "Medicina: Atenção Básica e Clínica",
+        "disciplina": "Estratégia de Prova FAFIPA",
+        "aula": "Resolução Guiada de Casos Clínicos Típicos da Banca FAFIPA para Médico Clínico Geral e ESF",
+        "professor": "FAFIPA / Medicina",
+        "grandeArea": "Medicina: Atenção Básica e Clínica",
+        "importancia": "Azul",
+        "semana": 14,
+        "grupo": "Estrutura da cobrança",
+        "conteudo": "Padrão transversal: epidemiologia, dx diferencial, tratamento e profilaxia de cada tema",
+        "temaId": 46
     }
 ];
 
 export const FAFIPA_SCHEDULE: ScheduleItem[] = RAW_DATA.map(item => ({
-    id: generateId(item),
-    bloco: item.grandeArea,
-    grandeArea: item.grandeArea,
-    disciplina: item.disciplina,
-    aula: item.aula,
-    professor: item.professor,
-    importancia: item.importancia
+    ...item,
+    id: generateId(item)
 }));
+
+/**
+ * Retorna as matérias agrupadas por semana de foco do edital (0 = Estudo Contínuo, 1 a 14 = Foco Semanal)
+ */
+export const getFafipaScheduleByWeek = (weekNumber?: number): ScheduleItem[] => {
+    if (weekNumber === undefined) return FAFIPA_SCHEDULE;
+    return FAFIPA_SCHEDULE.filter(item => item.semana === weekNumber);
+};
+
+/**
+ * Retorna o tema oficial do edital pelo seu ID de 1 a 56
+ */
+export const getFafipaTemaById = (temaId: number) => {
+    return FAFIPA_TEMAS.find(t => t.id === temaId);
+};

@@ -361,7 +361,7 @@ function AppContent() {
             };
             setTopics(prev => prev.map(t => t.id === existing.id ? updated : t));
             vibration.success();
-            alert("Matéria atualizada com as novas aulas do bloco!");
+            toast.success("Matéria atualizada com as novas aulas do bloco!");
         } else {
             const newTopicId = generateId();
             // Pass baseQuestions as overrideBaseQuestions to maintain AI schedule
@@ -469,6 +469,34 @@ function AppContent() {
         vibration.complete();
         triggerConfetti();
         toast.success(`+${total * 10} XP!`, { description: 'Revisão concluída com sucesso!' });
+    };
+
+    const handleQuickCompleteReview = (topicId: string, reviewIdx: number) => {
+        setTopics(prev => prev.map(t => {
+            if (t.id !== topicId) return t;
+            const newReviews = [...t.reviews];
+            const r = newReviews[reviewIdx];
+            if (!r) return t;
+            const targetQ = r.targetQ || 10;
+            newReviews[reviewIdx] = {
+                ...r,
+                done: true,
+                correct: targetQ,
+                total: targetQ,
+                difficulty: 'medium' as any,
+                completedAt: new Date().toISOString()
+            };
+            return {
+                ...t,
+                reviews: newReviews,
+                updatedAt: Date.now()
+            };
+        }));
+        vibration.success();
+        triggerConfetti();
+        toast.success("Revisão concluída em 1 clique!", {
+            description: "Registrada com aproveitamento integral."
+        });
     };
 
     const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
@@ -772,18 +800,95 @@ function AppContent() {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full relative">
-                {/* Focus Mode Toggle Button (Top-left, doesn't occupy layout space) */}
-                {!sidebarOpen && (
-                    <button 
-                        onClick={() => setSidebarOpen(true)}
-                        className="fixed top-3 left-3 z-40 hidden lg:flex items-center justify-center w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-xs hover:shadow transition-all active:scale-95"
-                        title="Expandir Menu Lateral"
-                        aria-label="Abrir Menu"
-                    >
-                        <PanelLeftOpen size={17} />
-                    </button>
-                )}
-                <main className="flex-1 overflow-y-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-12 pt-[calc(4.25rem+env(safe-area-inset-top))] lg:pt-8 transition-all duration-500 px-3 sm:px-4 lg:px-8">
+                {/* Desktop Modern Navigation Header */}
+                <header className="hidden lg:flex items-center justify-between h-16 px-6 bg-white dark:bg-zinc-900 border-b border-slate-200/80 dark:border-white/5 z-40 shrink-0">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setView('list')}>
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
+                                <Activity size={17} strokeWidth={2.5}/>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">ReviewFlow</span>
+                                <span className="text-[11px] text-slate-400 font-medium">Plano Médico</span>
+                            </div>
+                        </div>
+
+                        {/* Desktop Navigation Tabs */}
+                        <nav className="flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-white/5">
+                            {NAV_ITEMS.map((item) => {
+                                const isActive = view === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => { vibration.tick(); setView(item.id as any); }}
+                                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                            isActive
+                                                ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
+                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                        }`}
+                                    >
+                                        <item.icon size={15} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-blue-600 dark:text-blue-400' : ''} />
+                                        <span>{item.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </div>
+
+                    {/* Desktop Actions */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsSearchActive(true)}
+                            aria-label="Pesquisar"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 text-xs font-medium transition-colors"
+                        >
+                            <Search size={14} />
+                            <span>Buscar...</span>
+                        </button>
+                        <button
+                            onClick={() => setAddModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-xs active:scale-95"
+                        >
+                            <Plus size={14} strokeWidth={2.5} />
+                            <span>Novo Tema</span>
+                        </button>
+                        <button
+                            onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all active:scale-95 border border-slate-200/60 dark:border-white/5"
+                        >
+                            <ClipboardList size={14} className="text-purple-500" />
+                            <span>Simulado</span>
+                        </button>
+                        <button
+                            onClick={handleSyncClick}
+                            disabled={status === 'syncing' || !syncKey}
+                            title={syncKey ? "Sincronizar Dados" : "Configurar Sincronização"}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 transition-all ${status === 'syncing' ? 'opacity-50' : ''}`}
+                        >
+                            <RefreshCw size={14} className={status === 'syncing' ? 'animate-spin text-blue-500' : ''} />
+                        </button>
+                        <button
+                            onClick={() => setSettingsOpen(true)}
+                            title="Configurações"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 transition-all"
+                        >
+                            <Settings size={14} />
+                        </button>
+                        <UserStatsDropdown
+                            totalXP={stats.totalXP}
+                            totalQuestions={stats.totalAnswered}
+                            topics={topics}
+                            simulados={simulados}
+                            userRole={userRole}
+                            userIcon={config.userIcon}
+                            onSelectUserIcon={(newIcon) => setConfig(prev => ({ ...prev, userIcon: newIcon }))}
+                            dropPosition="down"
+                            size="sm"
+                        />
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-y-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8 pt-[calc(4.25rem+env(safe-area-inset-top))] lg:pt-6 transition-all duration-300 px-3 sm:px-4 lg:px-8">
                     <div className="max-w-6xl mx-auto w-full h-full">
                         {/* Search Overlay (When active) */}
                 {isSearchActive && (
@@ -810,9 +915,6 @@ function AppContent() {
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto">
-                            {/* Search results would go here if we wanted a dedicated search UI, 
-                                but currently search filters the views. 
-                                So we just show a hint or recent searches. */}
                             <div className="text-center text-slate-400 text-sm mt-10">
                                 <Search size={48} className="mx-auto mb-4 opacity-20"/>
                                 <p>Digite para buscar em {currentViewTitle}</p>
@@ -831,6 +933,7 @@ function AppContent() {
                                 dailyNotes={dailyNotes}
                                 setDailyNotes={setDailyNotes}
                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
+                                onQuickCompleteReview={handleQuickCompleteReview}
                                 onEditTopic={(id) => {
                                     const t = topics.find(topic => topic.id === id);
                                     if(t) setEditTopic(t);
