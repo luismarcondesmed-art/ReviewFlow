@@ -191,7 +191,7 @@ export const HubView = ({
         };
     }, [filteredActiveTopics, today]);
 
-    const todaysProgress = todaysTotal > 0 ? Math.round((todaysDone / todaysTotal) * 100) : 100;
+    const todaysProgress = todaysTotal > 0 ? Math.round((todaysDone / todaysTotal) * 100) : 0;
 
     // KPI Metrics calculation
     const kpiMetrics = useMemo(() => {

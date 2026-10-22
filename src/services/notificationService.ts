@@ -3,7 +3,7 @@ import { getTodayStr } from '../utils';
 
 export class NotificationService {
     private static instance: NotificationService;
-    private checkInterval: NodeJS.Timeout | null = null;
+    private checkInterval: ReturnType<typeof setInterval> | null = null;
     private lastNotificationDate: string | null = null;
 
     private constructor() {
@@ -61,7 +61,7 @@ export class NotificationService {
     }
 
     private checkAndNotify(config: UserConfig) {
-        if (!config.notifications?.enabled) return;
+        if (!config.notifications?.enabled || !('Notification' in window) || Notification.permission !== 'granted') return;
 
         const today = getTodayStr();
         if (this.lastNotificationDate === today) return; // Already notified today
@@ -74,9 +74,10 @@ export class NotificationService {
         const scheduledTime = config.notifications.time;
         
         if (this.isTimeToNotify(currentTime, scheduledTime)) {
-            this.showNotification(config);
-            this.lastNotificationDate = today;
-            localStorage.setItem('lastNotificationDate', today);
+            void this.showNotification(config).then(() => {
+                this.lastNotificationDate = today;
+                localStorage.setItem('lastNotificationDate', today);
+            }).catch(console.warn);
         }
     }
 
@@ -105,9 +106,9 @@ export class NotificationService {
 
             // Try to use Service Worker registration for "persistent" notification
             if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
+                const registration = await navigator.serviceWorker.getRegistration();
                 if (registration) {
-                    registration.showNotification('Hora de Revisar! 📚', options);
+                    await registration.showNotification('Hora de Revisar! 📚', options);
                     return;
                 }
             }

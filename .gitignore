@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dev-dist/
+.env
+.env.*
+!.env.example
+.vercel/
+*.log
+playwright-report/
+test-results/

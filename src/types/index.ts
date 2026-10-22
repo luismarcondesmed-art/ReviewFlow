@@ -24,6 +24,7 @@ export interface Review {
 }
 
 export interface Topic {
+  fsrsCard?: Record<string, unknown>;
   id: string;
   title: string;
   area: AreaType;
@@ -82,6 +83,8 @@ export interface WeeklyGoal {
 }
 
 export interface UserConfig {
+  fsrsRetention?: number;
+  fsrsMaximumInterval?: number;
   examDate: string; // YYYY-MM-DD
   targetAccuracy: number; // 0-100
   autoOptimize?: boolean; // FSRS-based dynamic optimization

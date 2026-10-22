@@ -503,8 +503,10 @@ export const CronogramaView = ({
     onEditTopic?: (topic: Topic) => void
 }) => {
     const [collapsedBlocks, setCollapsedBlocks] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem('reviewflow_collapsed_blocks');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
+        try {
+            const saved = JSON.parse(localStorage.getItem('reviewflow_collapsed_blocks') || '[]');
+            return new Set<string>(Array.isArray(saved) ? saved.filter(v => typeof v === 'string') : []);
+        } catch { return new Set<string>(); }
     });
     const [searchLocal, setSearchLocal] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');

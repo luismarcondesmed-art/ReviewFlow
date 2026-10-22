@@ -317,17 +317,15 @@ export class FafipaQuestionService {
 
         // 1. Tentar via endpoint de IA do servidor
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos de timeout
+            if (import.meta.env.VITE_ENABLE_AI !== 'true') throw new Error('IA desativada; banco local ativo.');
 
             const res = await fetch('/api/ai/fafipa-questions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(params),
-                signal: controller.signal
+                signal: AbortSignal.timeout(8000)
             });
 
-            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const data = await res.json();
@@ -336,7 +334,7 @@ export class FafipaQuestionService {
                 }
             }
         } catch (err) {
-            console.warn('API de IA do Gemini indisponível ou em timeout. Utilizando motor especializado FAFIPA:', err);
+            if (import.meta.env.VITE_ENABLE_AI === 'true') console.warn('IA indisponível. Usando banco didático local.');
         }
 
         // 2. Motor especialista didático FAFIPA (Garante funcionamento 100% resiliente)
@@ -470,17 +468,15 @@ export class FafipaQuestionService {
     static async analyzeTopic(topicName: string, areaName: string, items?: string[]): Promise<TopicAnalysis> {
         // Tenta servidor via Gemini
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000);
 
+            if (import.meta.env.VITE_ENABLE_AI !== 'true') throw new Error('IA desativada; análise local ativa.');
             const res = await fetch('/api/ai/analyze-topic', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topicName, areaName, items }),
-                signal: controller.signal
+                signal: AbortSignal.timeout(6000)
             });
 
-            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const data = await res.json();

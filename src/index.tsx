@@ -1,3 +1,5 @@
+import './styles.css';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
@@ -11,6 +13,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <App />
+    <UpdatePrompt />
     <Analytics />
     <SpeedInsights />
   </React.StrictMode>

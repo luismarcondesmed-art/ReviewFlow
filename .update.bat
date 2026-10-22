@@ -1,3 +1,4 @@
-git add . 
-git commit -m "update"
-git push origin main
+@echo off
+cd /d "%~dp0"
+node scripts/autosubmit.mjs --once
+exit /b %errorlevel%

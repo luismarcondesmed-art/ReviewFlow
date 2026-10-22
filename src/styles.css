@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+button, a, input, select { touch-action: manipulation; }
+input, textarea, select { font-size: max(16px, 1em); }
+@supports (height: 100dvh) { .h-screen { height: 100dvh; } .min-h-screen { min-height: 100dvh; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

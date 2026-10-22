@@ -1,304 +1,127 @@
-
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Topic, Simulado, UserConfig, Review, ScheduleProgress } from '../types';
-import { USER_FIREBASE_CONFIG, mergeItems, APP_ID, getTodayStr, AREAS } from '../utils';
+import { USER_FIREBASE_CONFIG, APP_ID, getTodayStr, AREAS } from '../utils';
+import { mergeStudyData, preserveInFlightChanges, type StudyData } from '../services/syncMerge';
+import { toast } from 'sonner';
 
-// Dynamic imports are used inside effects to handle Firebase dependencies
-
+const defaults: UserConfig = { examDate: '', targetAccuracy: 80, useFSRS: true, fsrsRetention: 0.9, fsrsMaximumInterval: 730 };
+const storage = { topics: 'reviewflow_v3_data', simulados: 'reviewflow_simulados', config: 'reviewflow_config', scheduleProgress: 'reviewflow_schedule_progress', dailyNotes: 'reviewflow_daily_notes' };
+function readLocal(): StudyData {
+  const result: StudyData = { topics: [], simulados: [], config: { ...defaults }, scheduleProgress: {}, dailyNotes: {} };
+  for (const [field, key] of Object.entries(storage)) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      const value = JSON.parse(raw);
+      const valid = ['topics', 'simulados'].includes(field) ? Array.isArray(value) && value.every(item => item && typeof item.id === 'string' && (field !== 'topics' || Array.isArray(item.reviews))) : value && typeof value === 'object' && !Array.isArray(value);
+      if (!valid) throw new Error('Formato inválido');
+      result[field] = value;
+    } catch (error) {
+      // Keep the original bytes before repairing a corrupt entry.
+      localStorage.setItem(key + '_backup_' + Date.now(), raw);
+      toast.error('Dados locais inválidos: ' + field, { description: 'Uma cópia foi preservada no navegador.' });
+    }
+  }
+  return result;
+}
+function loadBase(): Partial<StudyData> {
+  try {
+    const saved = JSON.parse(localStorage.getItem('reviewflow_last_synced_state') || JSON.stringify({ config: defaults }));
+    return Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, typeof v === 'string' ? JSON.parse(v || '{}') : v]));
+  } catch { return {}; }
+}
 export const useSync = () => {
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [simulados, setSimulados] = useState<Simulado[]>([]);
-  const [config, setConfig] = useState<UserConfig>({ examDate: '', targetAccuracy: 80 });
-  const [scheduleProgress, setScheduleProgress] = useState<ScheduleProgress>({});
-  const [dailyNotes, setDailyNotes] = useState<Record<string, string>>({});
-  const [loaded, setLoaded] = useState(false);
-  
-  // Sync States
+  const [initial] = useState(readLocal);
+  const [topics, setTopics] = useState<Topic[]>(initial.topics);
+  const [simulados, setSimulados] = useState<Simulado[]>(initial.simulados);
+  const [config, setConfig] = useState<UserConfig>(initial.config);
+  const [scheduleProgress, setScheduleProgress] = useState<ScheduleProgress>(initial.scheduleProgress);
+  const [dailyNotes, setDailyNotes] = useState<Record<string,string>>(initial.dailyNotes);
+  const loaded = true;
   const [status, setStatus] = useState<'offline'|'syncing'|'online'|'error'>('offline');
-  const [syncKey, _setSyncKey] = useState(() => localStorage.getItem('reviewflow_sync_key') || '');
-  
-  const dbRef = useRef<any>(null);
-  const stateRef = useRef({ topics, simulados, config, scheduleProgress, dailyNotes });
-  const lastSyncedState = useRef({ topics: '', simulados: '', config: '', scheduleProgress: '', dailyNotes: '' });
-  const appId = APP_ID;
-
-  const isSyncingRef = useRef(false);
-
-  const setSyncKey = (newKey: string) => {
-      if (syncKey && syncKey !== newKey) {
-          setTopics([]);
-          setSimulados([]);
-          setScheduleProgress({});
-          setDailyNotes({});
-          lastSyncedState.current = { topics: '', simulados: '', config: '', scheduleProgress: '', dailyNotes: '' };
-          localStorage.removeItem('reviewflow_last_synced_state');
-          localStorage.removeItem('reviewflow_last_sync_time');
-          localStorage.removeItem('reviewflow_v3_data');
-          localStorage.removeItem('reviewflow_simulados');
-          localStorage.removeItem('reviewflow_config');
-          localStorage.removeItem('reviewflow_schedule_progress');
-          localStorage.removeItem('reviewflow_daily_notes');
-      }
-
-      setStatus('syncing'); 
-      _setSyncKey(newKey);
-      localStorage.setItem('reviewflow_sync_key', newKey);
+  const [syncKey, updateKey] = useState(() => localStorage.getItem('reviewflow_sync_key') || '');
+  const stateRef = useRef<StudyData>(initial);
+  const keyRef = useRef(syncKey);
+  const syncing = useRef(false);
+  const lastSynced = useRef(loadBase());
+  const state = { topics, simulados, config, scheduleProgress, dailyNotes };
+  stateRef.current = state;
+  const apply = (data: StudyData) => {
+    stateRef.current = data;
+    setTopics(data.topics); setSimulados(data.simulados); setConfig(data.config);
+    setScheduleProgress(data.scheduleProgress); setDailyNotes(data.dailyNotes);
   };
-
-  useEffect(() => { stateRef.current = { topics, simulados, config, scheduleProgress, dailyNotes }; }, [topics, simulados, config, scheduleProgress, dailyNotes]);
-
-  // 1. Initial Local Load
+  const setSyncKey = (input: string) => {
+    const key = input.trim();
+    if (key === keyRef.current) return;
+    if (syncing.current) { toast.error('Aguarde a sincronização terminar antes de trocar a chave.'); return; }
+    if (key && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) { toast.error('Use uma chave de 16 a 128 caracteres: letras, números, hífen ou sublinhado.'); return; }
+    if (keyRef.current) {
+      localStorage.setItem('reviewflow_account_backup_' + Date.now(), JSON.stringify({ key: keyRef.current, ...stateRef.current }));
+      if (key) apply({ topics: [], simulados: [], config: { ...defaults }, scheduleProgress: {}, dailyNotes: {} });
+    }
+    lastSynced.current = { config: { ...defaults } };
+    localStorage.removeItem('reviewflow_last_synced_state');
+    localStorage.removeItem('reviewflow_last_sync_time');
+    keyRef.current = key; updateKey(key);
+    localStorage.setItem('reviewflow_sync_key', key);
+    setStatus('offline');
+  };
+  const syncNow = async (manual = false) => {
+    const key = keyRef.current;
+    if (!key || syncing.current) return;
+    if (!navigator.onLine) { setStatus('offline'); return; }
+    syncing.current = true; setStatus('syncing');
+    const snapshot = structuredClone(stateRef.current);
+    try {
+      if (!USER_FIREBASE_CONFIG.apiKey || !USER_FIREBASE_CONFIG.projectId) throw new Error('Configure o Firebase para sincronizar. Os dados continuam salvos neste dispositivo.');
+      const { initializeApp, getApps } = await import('firebase/app');
+      const { getAuth, signInAnonymously } = await import('firebase/auth');
+      const { getFirestore, doc, runTransaction } = await import('firebase/firestore');
+      const app = getApps()[0] || initializeApp(USER_FIREBASE_CONFIG);
+      const auth = getAuth(app);
+      await auth.authStateReady();
+      if (!auth.currentUser) await signInAnonymously(auth);
+      const ref = doc(getFirestore(app), 'artifacts', APP_ID, 'public', 'data', 'users', key);
+      const merged = await runTransaction(getFirestore(app), async transaction => {
+        const remote = await transaction.get(ref);
+        const result = mergeStudyData(snapshot, remote.exists() ? remote.data() : {}, lastSynced.current);
+        transaction.set(ref, JSON.parse(JSON.stringify({ ...result, updatedAt: new Date().toISOString() })));
+        return result;
+      });
+      // Preserve changes made in this tab while the request was in flight.
+      apply(preserveInFlightChanges(stateRef.current, merged, snapshot));
+      lastSynced.current = merged;
+      localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(merged));
+      localStorage.setItem('reviewflow_last_sync_time', String(Date.now()));
+      setStatus('online');
+      if (manual) toast.success('Sincronização concluída.');
+    } catch (error) {
+      setStatus('error');
+      toast.error('Não foi possível sincronizar', { description: error instanceof Error ? error.message : 'Tente novamente. Seus dados locais foram mantidos.' });
+    } finally { syncing.current = false; }
+  };
   useEffect(() => {
     try {
-      const t = localStorage.getItem('reviewflow_v3_data');
-      if (t) setTopics(JSON.parse(t));
-      const s = localStorage.getItem('reviewflow_simulados');
-      if (s) setSimulados(JSON.parse(s));
-      const c = localStorage.getItem('reviewflow_config');
-      if (c) setConfig(JSON.parse(c));
-      const p = localStorage.getItem('reviewflow_schedule_progress');
-      if (p) setScheduleProgress(JSON.parse(p));
-      const n = localStorage.getItem('reviewflow_daily_notes');
-      if (n) setDailyNotes(JSON.parse(n));
-      
-      // Load last synced state to prevent overwriting local changes if sync fails
-      const lastSynced = localStorage.getItem('reviewflow_last_synced_state');
-      if (lastSynced) {
-          lastSyncedState.current = JSON.parse(lastSynced);
-      }
-    } catch (e) { console.error(e); }
-    setLoaded(true);
-  }, []);
-
-  // 2. Firebase Connection & Sync Now function
-  const syncNow = async (manual = false) => {
-      if (!syncKey || !loaded || isSyncingRef.current) return;
-      
-      const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
-      const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
-      const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-      
-      let uRole = 'usuario';
-      if (adminKeys.includes(syncKey)) uRole = 'admin';
-      else if (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) uRole = 'colaborador';
-      
-      const lastSyncTimeStr = localStorage.getItem('reviewflow_last_sync_time');
-      const now = Date.now();
-      
-      if (manual && lastSyncTimeStr) {
-          const lastSyncTime = parseInt(lastSyncTimeStr, 10);
-          const timeDiffMinutes = (now - lastSyncTime) / (1000 * 60);
-          
-          if (uRole === 'usuario' && timeDiffMinutes < 30) {
-              alert(`Sua conta permite sincronização a cada 30 minutos. Tente novamente em ${Math.ceil(30 - timeDiffMinutes)} min.`);
-              return;
-          }
-          if (uRole === 'colaborador' && timeDiffMinutes < 5) {
-              alert(`Como colaborador, você pode sincronizar a cada 5 minutos. Tente novamente em ${Math.ceil(5 - timeDiffMinutes)} min.`);
-              return;
-          }
-          // Admin has no manual restriction
-      }
-      
-      try {
-          if (!navigator.onLine) {
-              setStatus('error');
-              alert("Você está offline. Verifique sua conexão com a internet.");
-              return;
-          }
-
-          isSyncingRef.current = true;
-          setStatus('syncing');
-          
-          let db = dbRef.current;
-          if (!db) {
-              const { initializeApp } = await import('firebase/app') as any;
-              const { getFirestore } = await import('firebase/firestore') as any;
-              const { getAuth, signInAnonymously } = await import('firebase/auth') as any;
-
-              const app = initializeApp(USER_FIREBASE_CONFIG);
-              const auth = getAuth(app);
-              db = getFirestore(app);
-              dbRef.current = db;
-
-              await signInAnonymously(auth);
-          }
-
-          const { doc, getDoc, setDoc } = await import('firebase/firestore') as any;
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', syncKey);
-          
-          // 1. Fetch remote data
-          const snap = await getDoc(docRef);
-          let remoteData: any = {};
-          if (snap.exists()) {
-              remoteData = snap.data();
-          }
-
-          // 2. Merge remote with local synchronously using stateRef
-          let mergedTopics = stateRef.current.topics;
-          if (remoteData.topics) {
-              mergedTopics = mergeItems(stateRef.current.topics, remoteData.topics);
-              setTopics(mergedTopics);
-          }
-
-          let mergedSimulados = stateRef.current.simulados;
-          if (remoteData.simulados) {
-              mergedSimulados = mergeItems(stateRef.current.simulados, remoteData.simulados);
-              setSimulados(mergedSimulados);
-          }
-
-          let mergedConfig = stateRef.current.config;
-          if (remoteData.config) {
-              const hasLocalChanges = JSON.stringify(stateRef.current.config) !== lastSyncedState.current.config;
-              if (!hasLocalChanges && JSON.stringify(remoteData.config) !== JSON.stringify(stateRef.current.config)) {
-                  mergedConfig = remoteData.config;
-              } else {
-                  mergedConfig = stateRef.current.config;
-              }
-              setConfig(mergedConfig);
-          }
-
-          const safeParse = (str: string) => {
-              try { return str ? JSON.parse(str) : {}; } catch { return {}; }
-          };
-          const mergeDict = (local: any, remote: any, lastSyncedStr: string) => {
-              const lastSynced = safeParse(lastSyncedStr);
-              const merged: any = {};
-              const allKeys = new Set([...Object.keys(local || {}), ...Object.keys(remote || {}), ...Object.keys(lastSynced || {})]);
-              
-              allKeys.forEach(k => {
-                  const l = local?.[k];
-                  const r = remote?.[k];
-                  const base = lastSynced?.[k];
-                  
-                  if (l !== base) {
-                      if (l !== undefined) merged[k] = l;
-                  } else if (r !== base) {
-                      if (r !== undefined) merged[k] = r;
-                  } else {
-                      if (base !== undefined) merged[k] = base;
-                  }
-              });
-              return merged;
-          };
-
-          let mergedScheduleProgress = stateRef.current.scheduleProgress;
-          if (remoteData.scheduleProgress) {
-              mergedScheduleProgress = mergeDict(stateRef.current.scheduleProgress, remoteData.scheduleProgress, lastSyncedState.current.scheduleProgress);
-              setScheduleProgress(mergedScheduleProgress);
-          }
-
-          let mergedDailyNotes = stateRef.current.dailyNotes;
-          if (remoteData.dailyNotes) {
-              mergedDailyNotes = mergeDict(stateRef.current.dailyNotes, remoteData.dailyNotes, lastSyncedState.current.dailyNotes);
-              setDailyNotes(mergedDailyNotes);
-          }
-
-          // 3. Save merged data back to Firebase
-          const payload = JSON.parse(JSON.stringify({
-              ...remoteData,
-              topics: mergedTopics,
-              simulados: mergedSimulados,
-              config: mergedConfig,
-              scheduleProgress: mergedScheduleProgress,
-              dailyNotes: mergedDailyNotes,
-              updatedAt: new Date().toISOString()
-          }));
-
-          // Fill in deletedAt timestamps
-          if (payload.topics) {
-              payload.topics.forEach((t: any) => {
-                  if (t.deleted && !t.deletedAt) t.deletedAt = new Date().toISOString();
-              });
-          }
-          if (payload.simulados) {
-              payload.simulados.forEach((s: any) => {
-                  if (s.deleted && !s.deletedAt) s.deletedAt = new Date().toISOString();
-              });
-          }
-
-          await setDoc(docRef, payload);
-
-          // 4. Update last synced state
-          lastSyncedState.current = {
-              topics: JSON.stringify(mergedTopics),
-              simulados: JSON.stringify(mergedSimulados),
-              config: JSON.stringify(mergedConfig),
-              scheduleProgress: JSON.stringify(mergedScheduleProgress),
-              dailyNotes: JSON.stringify(mergedDailyNotes)
-          };
-          localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(lastSyncedState.current));
-
-          // 5. Update last sync time
-          localStorage.setItem('reviewflow_last_sync_time', now.toString());
-          setStatus('online');
-
-      } catch (e) {
-          console.error("Sync Error:", e);
-          setStatus('error');
-      } finally {
-          isSyncingRef.current = false;
-      }
-  };
-
-  // 3. Auto-sync on load and on data changes
+      for (const [field, key] of Object.entries(storage)) localStorage.setItem(key, JSON.stringify(state[field]));
+    } catch { setStatus('error'); toast.error('Armazenamento cheio ou indisponível. Exporte um backup nas configurações.'); }
+  }, [topics, simulados, config, scheduleProgress, dailyNotes]);
   useEffect(() => {
-      if (!loaded || !syncKey) return;
-      
-      const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
-      const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
-      const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-      
-      let uRole = 'usuario';
-      if (adminKeys.includes(syncKey)) uRole = 'admin';
-      else if (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) uRole = 'colaborador';
-      
-      // Removed the aggressive 2s auto-sync for all changes.
-      // Instead, we just mark as online and let manual sync handle most things.
-      // We can do a single auto-sync on load, or a very long debounced one (e.g. 5 minutes) for admins.
-      
-      setStatus('online');
-      
-      if (uRole === 'admin') {
-          // Sync every 5 minutes for admins automatically to prevent loss, but not every keystroke
-          const timeout = setTimeout(() => {
-              syncNow(false);
-          }, 300000); 
-          return () => clearTimeout(timeout);
-      }
-  }, [loaded, syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
-
-  // 4. Save to LocalStorage (Immediate)
+    if (syncKey) void syncNow();
+    const offline = () => setStatus('offline');
+    const online = () => { if (keyRef.current) void syncNow(); };
+    window.addEventListener('offline', offline); window.addEventListener('online', online);
+    return () => { window.removeEventListener('offline', offline); window.removeEventListener('online', online); };
+  }, [syncKey]);
   useEffect(() => {
-    if (!loaded) return;
-    
-    localStorage.setItem('reviewflow_v3_data', JSON.stringify(topics));
-    localStorage.setItem('reviewflow_simulados', JSON.stringify(simulados));
-    localStorage.setItem('reviewflow_config', JSON.stringify(config));
-    localStorage.setItem('reviewflow_schedule_progress', JSON.stringify(scheduleProgress));
-    localStorage.setItem('reviewflow_daily_notes', JSON.stringify(dailyNotes));
-    localStorage.setItem('reviewflow_sync_key', syncKey);
-  }, [topics, simulados, config, scheduleProgress, dailyNotes, syncKey, loaded]);
-
-  const adminKeys = ((import.meta as any).env?.VITE_ADMIN_SYNC_KEYS || '').split(',');
-  const colabKeys = ((import.meta as any).env?.VITE_COLAB_SYNC_KEYS || '').split(',');
-  const premiumKeys = ((import.meta as any).env?.VITE_PREMIUM_SYNC_KEYS || '').split(',');
-  const userRole = adminKeys.includes(syncKey) ? 'admin' : (premiumKeys.includes(syncKey) || colabKeys.includes(syncKey)) ? 'colaborador' : 'usuario';
-
-  return { 
-    topics, setTopics, 
-    simulados, setSimulados, 
-    config, setConfig,
-    scheduleProgress, setScheduleProgress,
-    dailyNotes, setDailyNotes,
-    loaded,
-    status,
-    syncKey,
-    setSyncKey,
-    appId,
-    syncNow,
-    userRole
-  };
+    if (!syncKey) return;
+    if (JSON.stringify(stateRef.current) === JSON.stringify(lastSynced.current)) return;
+    const timer = setTimeout(() => void syncNow(), 30000);
+    return () => clearTimeout(timer);
+  }, [syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
+  // No privileged role is inferred from public client environment variables.
+  const userRole = 'usuario' as const;
+  return { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, appId: APP_ID, syncNow, userRole };
 };
 
 export const useVibration = () => {

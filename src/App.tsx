@@ -1,3 +1,4 @@
+import { withNextFSRSReview } from './services/fsrsService';
 
 import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +13,7 @@ import {
 } from './types';
 import { 
     AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateFSRSNextDate, calculateStreak, getLevelInfo
+    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateStreak, getLevelInfo
 } from './utils';
 import { useSync, useVibration } from './hooks';
 import { NotificationService } from './services/notificationService';
@@ -71,7 +72,8 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                             </button>
                             <button 
                                 onClick={() => {
-                                    localStorage.clear();
+                                    if (!window.confirm('Isso apagará os dados locais. Exporte um backup nas configurações antes de continuar. Deseja apagar?')) return;
+                                    Object.keys(localStorage).filter(key => key.startsWith('reviewflow_')).forEach(key => localStorage.removeItem(key));
                                     window.location.reload();
                                 }} 
                                 className="w-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
@@ -149,19 +151,7 @@ function AppContent() {
     const [optimizationResult, setOptimizationResult] = useState<{topics: Topic[], changes: OptimizationChange[]} | null>(null);
 
     const handleSyncClick = () => {
-        if (userRole === 'usuario') {
-            const lastSyncTimeStr = localStorage.getItem('reviewflow_last_sync_time');
-            if (lastSyncTimeStr) {
-                const timeDiffMinutes = (Date.now() - parseInt(lastSyncTimeStr, 10)) / (1000 * 60);
-                if (timeDiffMinutes < 30) {
-                    setSyncAdOpen(true);
-                    return;
-                }
-            }
-            syncNow(true);
-        } else {
-            syncNow(true);
-        }
+        void syncNow(true);
     };
 
     useEffect(() => {
@@ -329,7 +319,9 @@ function AppContent() {
 
     const handleAddTopic = (t: Topic) => {
         const newTopicId = generateId();
-        const reviews = generateSmartSchedule(t.studyDate, config.examDate, t.importance, topics, newTopicId);
+        const customSettings = t.customSettings || (config.customReviewIntervals?.length ? { intervals: config.customReviewIntervals, baseQuestions: t.reviews?.[0]?.targetQ || 25 } : undefined);
+        const schedule = generateSmartSchedule(t.studyDate, config.examDate, t.importance, topics, newTopicId, customSettings);
+        const reviews = config.useFSRS ? schedule.slice(0, 1) : schedule;
         const newTopic: Topic = { ...t, id: newTopicId, reviews: reviews, deleted: false, updatedAt: Date.now() };
         setTopics(prev => [newTopic, ...prev]);
         setAddModalOpen(false);
@@ -366,6 +358,7 @@ function AppContent() {
             const newTopicId = generateId();
             // Pass baseQuestions as overrideBaseQuestions to maintain AI schedule
             let reviews = generateSmartSchedule(getTodayStr(), config.examDate, priority, topics, newTopicId, undefined, baseQuestions);
+            if (config.useFSRS) reviews = reviews.slice(0, 1);
             
             const hasDifficultLesson = lessons.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
             if (hasDifficultLesson) {
@@ -391,7 +384,7 @@ function AppContent() {
             triggerConfetti();
             vibration.success();
         }
-    }, [topics, config.examDate]);
+    }, [topics, config.examDate, config.useFSRS, activeSimulados]);
 
     const handleUpdateTopic = (updated: Topic) => {
         const old = topics.find(t => t.id === updated.id);
@@ -409,7 +402,11 @@ function AppContent() {
                 return { ...r, targetQ: nextTargetQ };
             });
         }
-        const finalTopic = { ...updated, reviews, updatedAt: Date.now() };
+        let finalTopic = { ...updated, reviews, updatedAt: Date.now() };
+        if (config.useFSRS) {
+            const history = old?.reviews.filter(r => r.done) || [];
+            finalTopic = history.length ? withNextFSRSReview({ ...finalTopic, reviews: [...history, ...reviews.filter(r => !r.done)] }, config, baseQ || 20) : { ...finalTopic, reviews: reviews.slice(0, 1) };
+        }
         setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
         vibration.success();
     };
@@ -417,8 +414,13 @@ function AppContent() {
     const handleReviewSubmit = (data: { correct: number; total: number; difficulty: string; timeSpent?: number }) => {
         if (!reviewData) return;
         const { correct, total, difficulty, timeSpent } = data;
+        if (!Number.isInteger(total) || total <= 0 || !Number.isInteger(correct) || correct < 0 || correct > total) {
+            toast.error('Informe um total positivo e acertos entre zero e o total de questões.');
+            return;
+        }
         setTopics(prev => prev.map(t => {
             if (t.id !== reviewData.tId) return t;
+            if (!t.reviews[reviewData.rIdx] || t.reviews[reviewData.rIdx].done) return t;
             const newReviews = [...t.reviews];
             const acc = total > 0 ? Math.round((correct/total)*100) : 0;
             
@@ -433,29 +435,8 @@ function AppContent() {
             };
             
             if (config.useFSRS) {
-                // Calculate next interval based on FSRS
-                let previousInterval = 1;
-                if (reviewData.rIdx > 0) {
-                    const currDate = new Date(newReviews[reviewData.rIdx].date);
-                    const prevDate = new Date(newReviews[reviewData.rIdx - 1].date);
-                    previousInterval = Math.max(1, Math.round((currDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24)));
-                }
-                
-                const nextDateStr = calculateFSRSNextDate(acc, previousInterval);
-                const nextType = `R${newReviews.length}` as any;
-                
-                let nextTargetQ = calculateNextLoad(t.importance, difficulty, nextType, acc/100, newReviews[0].targetQ);
-                if (t.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
-
-                newReviews.push({
-                    type: nextType,
-                    date: nextDateStr,
-                    label: `Revisão ${newReviews.length}`,
-                    done: false,
-                    correct: 0,
-                    total: 0,
-                    targetQ: nextTargetQ
-                });
+                const targetQ = calculateNextLoad(t.importance, difficulty, 'extra', acc / 100, newReviews[0].targetQ);
+                return withNextFSRSReview({ ...t, reviews: newReviews, updatedAt: Date.now() }, config, targetQ);
             } else if (reviewData.rIdx + 1 < newReviews.length) {
                 const baseQ = t.reviews[0].targetQ;
                 const hasDifficultLesson = t.linkedLessons?.some(l => activeSimulados.some(s => s.difficultyLessons?.includes(l)));
@@ -476,7 +457,7 @@ function AppContent() {
             if (t.id !== topicId) return t;
             const newReviews = [...t.reviews];
             const r = newReviews[reviewIdx];
-            if (!r) return t;
+            if (!r || r.done) return t;
             const targetQ = r.targetQ || 10;
             newReviews[reviewIdx] = {
                 ...r,
@@ -486,11 +467,8 @@ function AppContent() {
                 difficulty: 'medium' as any,
                 completedAt: new Date().toISOString()
             };
-            return {
-                ...t,
-                reviews: newReviews,
-                updatedAt: Date.now()
-            };
+            const updated = { ...t, reviews: newReviews, updatedAt: Date.now() };
+            return config.useFSRS ? withNextFSRSReview(updated, config, targetQ) : updated;
         }));
         vibration.success();
         triggerConfetti();
@@ -507,7 +485,8 @@ function AppContent() {
             if (newReviews[historyEditData.rIdx]) {
                 newReviews[historyEditData.rIdx] = { ...newReviews[historyEditData.rIdx], date: data.date, correct: data.correct, total: data.total };
             }
-            return { ...t, reviews: newReviews, updatedAt: Date.now() };
+            const updated = { ...t, reviews: newReviews, updatedAt: Date.now() };
+            return config.useFSRS ? withNextFSRSReview(updated, config, newReviews[0]?.targetQ || 20) : updated;
         }));
         setHistoryEditData(null);
         vibration.success();
@@ -555,7 +534,7 @@ function AppContent() {
     };
 
     const handleExport = () => {
-        const data = { version: 1, date: new Date().toISOString(), topics, simulados, config };
+        const data = { version: 2, date: new Date().toISOString(), topics, simulados, config, scheduleProgress, dailyNotes };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `reviewflow-backup-${getTodayStr()}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); vibration.success();
@@ -567,9 +546,16 @@ function AppContent() {
         reader.onload = (ev) => {
             try {
                 const data = JSON.parse(ev.target?.result as string);
-                if (data.topics) setTopics(data.topics);
-                if (data.simulados) setSimulados(data.simulados);
+                if (!Array.isArray(data.topics) || !data.topics.every(t => t && typeof t.id === 'string' && typeof t.title === 'string' && Array.isArray(t.reviews) && t.reviews.every(r => r && typeof r.date === 'string' && Number.isFinite(r.total) && Number.isFinite(r.correct)))) throw new Error('Temas inválidos');
+                if (data.simulados !== undefined && (!Array.isArray(data.simulados) || !data.simulados.every(s => s && typeof s.id === 'string' && Number.isFinite(s.totalQuestions) && Number.isFinite(s.correctCount)))) throw new Error('Simulados inválidos');
+                for (const key of ['config', 'scheduleProgress', 'dailyNotes']) if (data[key] !== undefined && (!data[key] || typeof data[key] !== 'object' || Array.isArray(data[key]))) throw new Error('Formato inválido');
+                localStorage.setItem('reviewflow_pre_import_backup_' + Date.now(), JSON.stringify({ topics, simulados, config, scheduleProgress, dailyNotes }));
+                const importedAt = Date.now();
+                setTopics(data.topics.map(t => ({ ...t, updatedAt: importedAt })));
+                if (data.simulados) setSimulados(data.simulados.map(s => ({ ...s, updatedAt: importedAt })));
                 if (data.config) setConfig(data.config);
+                if (data.scheduleProgress) setScheduleProgress(data.scheduleProgress);
+                if (data.dailyNotes) setDailyNotes(data.dailyNotes);
                 alert('Importado!'); setSettingsOpen(false); vibration.success();
             } catch (err) { alert('Erro.'); vibration.error(); }
         };
@@ -633,7 +619,7 @@ function AppContent() {
                         <PanelLeftClose size={18} />
                     </button>
                 </div>
-                {(userRole === 'admin' || userRole === 'colaborador') && (
+                {config.isPremium && (
                     <div className="px-4 pb-2 min-w-[16rem]">
                         <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">{userRole}</span>
                     </div>
@@ -809,7 +795,7 @@ function AppContent() {
                             </div>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">ReviewFlow</span>
-                                <span className="text-[11px] text-slate-400 font-medium">Plano Médico</span>
+                                <span className="text-[11px] text-slate-400 font-medium">Estudos e revisões</span>
                             </div>
                         </div>
 
@@ -1026,7 +1012,12 @@ function AppContent() {
                 isOpen={settingsOpen} 
                 onClose={() => setSettingsOpen(false)} 
                 config={config} 
-                onSaveConfig={(c) => { setConfig(c); vibration.success(); }}
+                onSaveConfig={(c) => {
+                    if (c.useFSRS && (!config.useFSRS || c.fsrsRetention !== config.fsrsRetention || c.fsrsMaximumInterval !== config.fsrsMaximumInterval)) {
+                        setTopics(prev => prev.map(t => t.deleted ? t : t.reviews.some(r => r.done) ? withNextFSRSReview({ ...t, updatedAt: Date.now() }, c, t.reviews.find(r => !r.done)?.targetQ || t.reviews[0]?.targetQ || 20) : { ...t, reviews: t.reviews.slice(0, 1), updatedAt: Date.now() }));
+                    }
+                    setConfig(c); vibration.success();
+                }}
                 syncKey={syncKey}
                 onSaveKey={setSyncKey}
                 onExport={handleExport}

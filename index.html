@@ -2,9 +2,9 @@
 <html lang="pt-BR" class="antialiased">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ReviewFlow • Medical Plan</title>
-    <meta name="description" content="Planejador de estudos com Repetição Espaçada automática para estudantes de medicina. Organize revisões e simulados.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ReviewFlow • Estudos e revisões</title>
+    <meta name="description" content="Planejador de estudos com Repetição Espaçada automática para estudantes de todas as áreas. Organize revisões e simulados.">
     
     <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6526249232306742" crossorigin="anonymous"></script>
@@ -19,14 +19,14 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://reviewflow.vercel.app/">
-    <meta property="og:title" content="ReviewFlow • Medical Plan">
-    <meta property="og:description" content="Estude medicina com inteligência. Repetição espaçada automática e métricas de desempenho.">
+    <meta property="og:title" content="ReviewFlow • Estudos e revisões">
+    <meta property="og:description" content="Estude qualquer área com inteligência. Repetição espaçada automática e métricas de desempenho.">
     <meta property="og:image" content="/icon-512.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="ReviewFlow • Medical Plan">
-    <meta property="twitter:description" content="Estude medicina com inteligência. Repetição espaçada automática e métricas de desempenho.">
+    <meta property="twitter:title" content="ReviewFlow • Estudos e revisões">
+    <meta property="twitter:description" content="Estude qualquer área com inteligência. Repetição espaçada automática e métricas de desempenho.">
     <meta property="twitter:image" content="/icon-512.png">
     
     <!-- PWA Configuration -->
@@ -47,43 +47,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: { 850: '#1e293b', 950: '#020617' },
-                        zinc: { 850: '#27272a', 900: '#18181b', 950: '#09090b' }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                    animation: {
-                        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'fade-in': 'fadeIn 0.2s ease-out forwards',
-                    },
-                    keyframes: {
-                        scaleIn: {
-                            '0%': { transform: 'scale(0.95)', opacity: '0' },
-                            '100%': { transform: 'scale(1)', opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
-                        },
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         :root { 
             --glass-border: rgba(0,0,0,0.06); 

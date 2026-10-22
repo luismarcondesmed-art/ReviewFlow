@@ -1,4 +1,5 @@
 
+import confetti from 'canvas-confetti';
 import { AreaType, ImportanceType, Review, Topic, Simulado, ReviewType } from '../types';
 
 // --- Constants ---
@@ -47,57 +48,6 @@ const SYSTEM_PARAMS = {
 // --- Logic ---
 
 export const getTodayStr = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-
-export const calculateFSRSNextDate = (accuracy: number, previousIntervalDays: number): string => {
-    // Approximation of DSR (Difficulty, Stability, Retrievability) Model (FSRS v4 inspired)
-    // 1. Grade mapping (1-4)
-    let grade = 1; // Again
-    if (accuracy >= 90) grade = 4; // Easy
-    else if (accuracy >= 70) grade = 3; // Good
-    else if (accuracy >= 50) grade = 2; // Hard
-
-    // 2. Estimate D (Difficulty) based on accuracy (assumed baseline D=5 for a medium topic)
-    let D = 5;
-    if (grade === 4) D = 3;
-    if (grade === 3) D = 5;
-    if (grade === 2) D = 7;
-    if (grade === 1) D = 9;
-
-    // 3. Current Stability (S) is approximately the previous interval 
-    const currentS = Math.max(1, previousIntervalDays);
-
-    let nextS = currentS;
-    if (grade === 1) {
-        // Lapsing (Forgetting): Drastic stability penalty
-        nextS = Math.max(1, currentS * 0.2); 
-    } else {
-        // Success: Stability increases. 
-        // Spacing effect: The longer the previous interval, the more stable the memory builds.
-        const expDifficulty = Math.exp(1 - D / 5); // Easier = higher growth
-        const spacingEffect = 1 / Math.log(currentS + 1.5);
-        
-        let gradeMultiplier = 1;
-        if(grade === 2) gradeMultiplier = 1.3;
-        if(grade === 3) gradeMultiplier = 2.0;
-        if(grade === 4) gradeMultiplier = 2.8;
-
-        nextS = currentS * (1 + expDifficulty * spacingEffect) * gradeMultiplier;
-    }
-
-    // 4. Fuzzing (Random variance +/- 5% to prevent review clumping)
-    const fuzz = 1 + (Math.random() * 0.1 - 0.05);
-    nextS *= fuzz;
-    
-    // 5. Target Interval (Targeting R = 90% retention).
-    let nextInterval = Math.max(1, Math.round(nextS));
-    
-    // Hard cap at 180 days to prevent infinite forgetting in extreme cases
-    nextInterval = Math.min(nextInterval, 180);
-    
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + nextInterval);
-    return nextDate.toISOString().split('T')[0];
-};
 
 export const calculateStreak = (topics: Topic[], simulados: Simulado[]): number => {
     // Use local date for today
@@ -479,7 +429,8 @@ export const calculateHealth = (topics: Topic[]): number => {
 };
 
 export const triggerConfetti = () => { 
-    if (window.confetti) window.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] }); 
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] });
 };
 
 export const APP_VERSION = '1.4.0';

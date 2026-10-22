@@ -140,7 +140,7 @@ export const FafipaQuestionModal: React.FC<FafipaQuestionModalProps> = ({
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-white leading-tight">
-                                    Simulador FAFIPA com IA
+                                    Treino no estilo FAFIPA
                                 </h2>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-wide">
                                     Banca Oficial
@@ -169,9 +169,9 @@ export const FafipaQuestionModal: React.FC<FafipaQuestionModalProps> = ({
                                 <div className="absolute top-0 left-0 w-14 h-14 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-slate-800 dark:text-white">Gerando questões no perfil da FAFIPA...</h3>
+                                <h3 className="text-base font-bold text-slate-800 dark:text-white">Preparando questões de treino...</h3>
                                 <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
-                                    Avaliando enunciados oficiais, literalidade legislativa e casos clínicos habituais da banca.
+                                    Material didático simulado. As questões não são provas oficiais da banca.
                                 </p>
                             </div>
                         </div>
@@ -231,7 +231,7 @@ export const FafipaQuestionModal: React.FC<FafipaQuestionModalProps> = ({
                                     </span>
                                     <span className="text-slate-300 dark:text-zinc-700">•</span>
                                     <span className="text-[11px] font-semibold text-slate-400">
-                                        {currentQ.concurso || 'FAFIPA • Prova Oficial'}
+                                        Treino simulado · {currentQ.concurso || 'Estilo FAFIPA'}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">

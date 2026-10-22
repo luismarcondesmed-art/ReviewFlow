@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from "react";
+import { toast } from 'sonner';
 import {
   X,
   ChevronRight,
@@ -1416,6 +1417,12 @@ export const SettingsModal = ({
   };
 
   const handleSave = () => {
+    const key = tempKey.trim();
+    if (key && key !== syncKey && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) {
+      toast.error('A chave deve ter de 16 a 128 caracteres: letras, números, hífen ou sublinhado.');
+      return;
+    }
+    if (status === 'syncing' && key !== syncKey) { toast.error('Aguarde a sincronização terminar.'); return; }
     onSaveKey(tempKey);
     onSaveConfig(tempConfig);
     onClose();
@@ -1668,7 +1675,7 @@ export const SettingsModal = ({
               <div className="p-5 bg-white dark:bg-white/5 rounded-[24px] space-y-4 border border-slate-100 dark:border-white/5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
-                    <Zap size={18} className="text-amber-500" /> Algoritmo FSRS
+                    <Zap size={18} className="text-amber-500" /> Revisão adaptativa · FSRS-6
                   </h4>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -1686,10 +1693,17 @@ export const SettingsModal = ({
                   </label>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Calcula o próximo intervalo com base no seu desempenho
-                  (Retrievability), substituindo os atrasos progressivos.
-                  Recomendado.
+                  Usa seu histórico de conclusões, acertos e dificuldade para calcular a próxima revisão. Mantém uma revisão futura por tema, por tantos anos quanto você continuar estudando.
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="text-sm text-slate-600 dark:text-slate-300">Retenção desejada (%)
+                    <input aria-label="Retenção desejada (%)" type="number" min="80" max="97" step="1" value={Math.round((tempConfig.fsrsRetention ?? 0.9) * 100)} onChange={e => setTempConfig(p => ({ ...p, fsrsRetention: Math.min(97, Math.max(80, Number(e.target.value) || 90)) / 100 }))} className="mt-2 w-full rounded-xl border p-3 bg-slate-50 dark:bg-zinc-900" />
+                  </label>
+                  <label className="text-sm text-slate-600 dark:text-slate-300">Intervalo máximo (dias)
+                    <input aria-label="Intervalo máximo (dias)" type="number" min="1" max="36500" value={tempConfig.fsrsMaximumInterval ?? 730} onChange={e => setTempConfig(p => ({ ...p, fsrsMaximumInterval: Math.min(36500, Math.max(1, Number(e.target.value) || 730)) }))} className="mt-2 w-full rounded-xl border p-3 bg-slate-50 dark:bg-zinc-900" />
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500">Mais retenção significa revisões mais frequentes. Acertos em questões são uma estimativa de lembrança, não uma medição direta de memória. Intervalos personalizados abaixo se aplicam ao modo fixo.</p>
 
                 <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-white/5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">
@@ -1866,7 +1880,7 @@ export const SettingsModal = ({
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
-                    ReviewFlow Passkey
+                    Chave de sincronização
                   </label>
                   <input
                     type="password"
@@ -1875,6 +1889,8 @@ export const SettingsModal = ({
                     placeholder="••••••••••••"
                     className="w-full bg-slate-50 dark:bg-black/20 text-slate-900 dark:text-white p-3.5 rounded-xl text-sm font-bold border border-slate-200 dark:border-white/5 outline-none focus:border-blue-500/50"
                   />
+                  <button type="button" onClick={() => setTempKey(crypto.randomUUID().replaceAll('-', ''))} className="mt-2 rounded-lg bg-blue-600 text-white px-4 py-3 text-sm">Gerar chave segura</button>
+                  <p className="text-xs text-slate-500 mt-2">Use a mesma chave nos seus dispositivos. Quem possui a chave pode acessar os dados sincronizados. Guarde-a em local seguro.</p>
                 </div>
               </div>
 
