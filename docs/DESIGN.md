@@ -38,3 +38,11 @@ Os dois caminhos para registrar simulados (menu Criar e botão na tela Simulados
 Checagem TypeScript, testes de domínio e build de produção fazem parte do envio. A conferência visual realizada mostrou o desktop com navegação lateral expandida/recolhida, abas superiores e menu de criação. A inspeção automatizada do navegador ficou indisponível na etapa final, impedindo concluir a conferência móvel e percorrer todos os formulários. As fontes são incluídas no precache da PWA.
 
 Essa conferência não equivale a uma auditoria completa de acessibilidade, a testes com estudantes nem à homologação em dispositivos físicos. O efeito visual não transforma a PWA em um aplicativo WinUI nativo.
+
+## Cor de destaque e formulários
+
+Em Ajustes → Geral, a cor de destaque pode ser escolhida entre seis opções ou pelo seletor de cor nativo. A alteração é aplicada ao salvar e persiste na configuração do usuário, incluindo backup e sincronização. Os tons de navegação, foco, seleções e ações principais usam a mesma paleta. Cores muito claras são ajustadas nas ações preenchidas para manter contraste de pelo menos 4,5:1 com texto branco; as cores de desempenho e alertas mantêm seu significado.
+
+Os formulários de matérias e simulados usam largura máxima de 620 px, uma área interna de rolagem e ações fixas no rodapé. As informações essenciais aparecem primeiro; organização, tags, aulas e reforço ficam em seções expansíveis. O formulário de matérias preserva o histórico e os ajustes personalizados. O registro de simulados calcula o aproveitamento durante o preenchimento e exige números inteiros, total positivo e acertos entre zero e o total. Os campos têm rótulos associados e os criadores contêm a navegação por Tab.
+
+Nesta atualização, foram conferidos no navegador os formulários no desktop e o simulado em 390 × 844 px, incluindo limites de largura e ações visíveis. A seleção de cor foi aplicada, salva e conferida após recarregamento. Os testes de paleta cobrem preferências inválidas e contraste de cores personalizadas. Isso não substitui a homologação em iOS e Android físicos.

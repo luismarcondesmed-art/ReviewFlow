@@ -1,5 +1,6 @@
 import { AppShell, type StudyTool } from './components/AppShell';
 import { withNextFSRSReview } from './services/fsrsService';
+import { applyAccent } from './utils/accent';
 
 import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -157,6 +158,8 @@ function AppContent() {
         if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
         localStorage.setItem('theme', themeMode);
     }, [themeMode]);
+
+    useEffect(() => { applyAccent(config.accentColor); }, [config.accentColor]);
 
     // Focus search when activated
     useEffect(() => {

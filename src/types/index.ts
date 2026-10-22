@@ -83,6 +83,7 @@ export interface WeeklyGoal {
 }
 
 export interface UserConfig {
+  accentColor?: string;
   fsrsRetention?: number;
   fsrsMaximumInterval?: number;
   examDate: string; // YYYY-MM-DD

@@ -46,6 +46,7 @@ import {
   Heart,
   PlayCircle,
 } from "lucide-react";
+import { AccentPicker } from "../components/AccentPicker";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   Topic,
@@ -79,6 +80,7 @@ export const Modal = ({
   alignTopOnMobile,
   fullScreen,
   hideHeader,
+  creator = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -88,7 +90,31 @@ export const Modal = ({
   alignTopOnMobile?: boolean;
   fullScreen?: boolean;
   hideHeader?: boolean;
+  creator?: boolean;
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen || !creator) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      // History editing opens another dialog above this creator.
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+      if (dialogs[dialogs.length - 1] !== dialogRef.current?.closest('[role="dialog"]')) return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]') || []).filter(el => el.getClientRects().length > 0);
+      const first = controls[0]; const last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', trapFocus);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', trapFocus);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isOpen, creator]);
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -120,7 +146,8 @@ export const Modal = ({
 
       {/* Modal Container: Floating Glass Panel */}
       <div
-        className={`relative w-full ${fullScreen ? "max-w-md sm:max-w-2xl" : "max-w-md"} bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl ${
+        ref={dialogRef}
+        className={`${creator ? "rf-creator-dialog" : ""} relative w-full ${fullScreen ? "max-w-md sm:max-w-2xl" : "max-w-md"} bg-white/95 dark:bg-[#121214]/95 backdrop-blur-xl ${
             fullScreen 
               ? "h-[100dvh] rounded-none sm:h-auto sm:rounded-[36px] sm:min-h-[500px]" 
               : alignTopOnMobile 
@@ -151,7 +178,7 @@ export const Modal = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-0 scroll-smooth custom-scrollbar flex flex-col">
+        <div className={`${creator ? "rf-creator-content" : ""} min-h-0 flex-1 overflow-y-auto p-0 scroll-smooth custom-scrollbar flex flex-col`}>
           {children}
         </div>
       </div>
@@ -650,7 +677,6 @@ export const EditTopicModal = ({
   // Linked Lessons State
   const [linkedLessons, setLinkedLessons] = useState<string[]>([]);
   const [newLessonInput, setNewLessonInput] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // Tags State
   const [tags, setTags] = useState<string[]>([]);
@@ -679,27 +705,9 @@ export const EditTopicModal = ({
         setTags([]);
       }
       setNewLessonInput("");
-      setSuggestions([]);
       setNewTagInput("");
     }
   }, [isOpen, topic]);
-
-  // Lesson Autocomplete Logic
-  const availableLessons = useMemo(() => {
-    // Return empty for now as we removed medical schedules
-    return [];
-  }, [config?.activeSchedule]);
-
-  useEffect(() => {
-    if (newLessonInput.length > 2) {
-      const matches = availableLessons
-        .filter((l) => l.toLowerCase().includes(newLessonInput.toLowerCase()))
-        .slice(0, 5); // Limit to 5 suggestions
-      setSuggestions(matches);
-    } else {
-      setSuggestions([]);
-    }
-  }, [newLessonInput, availableLessons]);
 
   if (!isOpen) return null;
 
@@ -710,7 +718,6 @@ export const EditTopicModal = ({
     if (lesson && !linkedLessons.includes(lesson)) {
       setLinkedLessons([...linkedLessons, lesson]);
       setNewLessonInput("");
-      setSuggestions([]);
     }
   };
 
@@ -739,7 +746,8 @@ export const EditTopicModal = ({
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
-    const title = fd.get("title") as string;
+    const title = (fd.get("title") as string).trim();
+    if (!title) { toast.error("Informe o nome da matéria."); return; }
     const subarea = fd.get("subarea") as string;
     const area = fd.get("area") as AreaType;
     const importance = fd.get("importance") as ImportanceType;
@@ -747,10 +755,10 @@ export const EditTopicModal = ({
 
     let customSettings = undefined;
     if (showAdvanced && intervalsStr.trim()) {
-      const intervals = intervalsStr
-        .split(",")
-        .map((s) => parseInt(s.trim()))
-        .filter((n) => !isNaN(n) && n > 0);
+      const intervals = intervalsStr.split(",").map(s => Number(s.trim()));
+      if (intervals.some(n => !Number.isInteger(n) || n < 1 || n > 730)) {
+        toast.error("Use intervalos inteiros entre 1 e 730 dias, separados por vírgula."); return;
+      }
       const baseQ =
         typeof baseQuestions === "number"
           ? baseQuestions
@@ -801,7 +809,7 @@ export const EditTopicModal = ({
       ...safeTopic,
       title,
       subarea: subarea || "",
-      tags,
+      tags: [...new Set([...tags, ...(newTagInput.trim() ? [newTagInput.trim()] : [])])],
       area,
       importance,
       studyDate,
@@ -818,9 +826,10 @@ export const EditTopicModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isNew ? "Nova Matéria" : "Editar Matéria"}
+      title={isNew ? "Nova matéria" : "Editar matéria"}
+      creator
     >
-      <div className="flex flex-col h-full">
+      <div className="rf-editor-body">
         {!isNew && (
           <div className="flex p-2 bg-slate-50/50 dark:bg-white/5 border-b border-black/5 dark:border-white/5 backdrop-blur-sm">
             <button
@@ -839,213 +848,61 @@ export const EditTopicModal = ({
         )}
 
         {activeTab === "details" ? (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                Tema
+          <form onSubmit={handleSubmit} className="rf-creator-form">
+            <div className="rf-creator-scroll">
+              <p className="rf-form-intro">Defina o que você vai estudar. O ReviewFlow organiza as próximas revisões.</p>
+              <label className="rf-field">Nome da matéria
+                <input name="title" defaultValue={safeTopic.title || ""} autoFocus required maxLength={200} placeholder="Ex.: Diabetes ou Direito constitucional" />
               </label>
-              <input
-                name="title"
-                defaultValue={safeTopic.title || ""}
-                type="text"
-                className="w-full text-lg font-bold bg-white dark:bg-black/20 p-4 rounded-2xl outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 transition-all appearance-none focus:ring-4 focus:ring-slate-100 dark:focus:ring-white/5"
-                required
-                placeholder="Ex: Diabetes, HAS..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                  Área
-                </label>
-                <div className="relative">
-                  <select
-                    name="area"
-                    defaultValue={safeTopic.area || "geral"}
-                    className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none appearance-none cursor-pointer text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30"
-                  >
-                    {AREAS.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.full}
-                      </option>
-                    ))}
+              <div className="rf-form-grid">
+                <label className="rf-field">Área do conhecimento
+                  <select name="area" defaultValue={safeTopic.area || "geral"}>
+                    {AREAS.map(a => <option key={a.id} value={a.id}>{a.full}</option>)}
                   </select>
-                  <ChevronRight
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none"
-                    size={16}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                  Tópico Específico
                 </label>
-                <input
-                  name="subarea"
-                  type="text"
-                  defaultValue={safeTopic.subarea || ""}
-                  placeholder="Ex: Assunto detalhado"
-                  className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                Tags (Opcional)
-              </label>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wide"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(idx)}
-                        className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <input
-                type="text"
-                value={newTagInput}
-                onChange={(e) => setNewTagInput(e.target.value)}
-                onKeyDown={handleAddTag}
-                placeholder="Digite uma tag e aperte Enter"
-                className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none"
-              />
-            </div>
-            {safeTopic.linkedLessons && safeTopic.linkedLessons.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                  Aulas do Bloco
+                <label className="rf-field">Data de início
+                  <input name="date" type="date" required defaultValue={safeTopic.studyDate || getTodayStr()} />
                 </label>
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                  <ul className="list-disc list-inside text-xs font-medium text-slate-600 dark:text-slate-300 space-y-1">
-                    {safeTopic.linkedLessons.map((lesson, idx) => (
-                      <li key={idx}>{lesson}</li>
-                    ))}
-                  </ul>
-                </div>
               </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                Início
-              </label>
-              <input
-                name="date"
-                type="date"
-                defaultValue={safeTopic.studyDate || getTodayStr()}
-                className="w-full p-4 rounded-2xl bg-white dark:bg-black/20 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/10 focus:border-slate-400 dark:focus:border-white/30 appearance-none min-h-[54px]"
-                required
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                Prioridade
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {["low", "medium", "high"].map((lvl) => (
-                  <label key={lvl} className="cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="importance"
-                      value={lvl}
-                      className="peer hidden"
-                      defaultChecked={
-                        safeTopic.importance === lvl ||
-                        (!safeTopic.importance && lvl === "medium")
-                      }
-                    />
-                    <div className="py-3 text-center rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/20 text-xs font-bold text-slate-500 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500 peer-checked:text-white dark:peer-checked:text-white transition-all uppercase peer-checked:border-transparent peer-checked:shadow-lg peer-checked:scale-105 group-active:scale-95">
-                      {lvl === "high"
-                        ? "Alta"
-                        : lvl === "medium"
-                          ? "Média"
-                          : "Baixa"}
-                    </div>
+              <fieldset className="rf-priority">
+                <legend>Prioridade</legend>
+                <div className="rf-priority-options">
+                  {(["low", "medium", "high"] as const).map(lvl => <label key={lvl}>
+                    <input type="radio" name="importance" value={lvl} defaultChecked={(safeTopic.importance || "medium") === lvl} />
+                    <span>{lvl === "high" ? "Alta" : lvl === "medium" ? "Média" : "Baixa"}</span>
+                  </label>)}
+                </div>
+                <p className="rf-field-hint">Define o volume de questões sugerido para as revisões.</p>
+              </fieldset>
+              <details className="rf-form-section">
+                <summary>Organização <span>Opcional</span><ChevronDown size={16} /></summary>
+                <div className="rf-section-fields">
+                  <label className="rf-field">Tópico específico
+                    <input name="subarea" defaultValue={safeTopic.subarea || ""} placeholder="Ex.: Endocrinologia" />
                   </label>
-                ))}
+                  <label className="rf-field">Tags
+                    <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)} onKeyDown={handleAddTag} placeholder="Digite e pressione Enter" />
+                  </label>
+                  {!!tags.length && <div className="rf-chips">{tags.map((tag, idx) => <span key={tag}>{tag}<button type="button" aria-label={`Remover tag ${tag}`} onClick={() => handleRemoveTag(idx)}><X size={13} /></button></span>)}</div>}
+                  <label className="rf-field">Aulas vinculadas
+                    <div className="rf-inline-field"><input value={newLessonInput} onChange={e => setNewLessonInput(e.target.value)} placeholder="Nome da aula" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleAddLesson(newLessonInput.trim()); } }} /><button type="button" aria-label="Adicionar aula" onClick={() => handleAddLesson(newLessonInput.trim())}><Plus size={18} /></button></div>
+                  </label>
+                  {!!linkedLessons.length && <div className="rf-chips">{linkedLessons.map((lesson, idx) => <span key={lesson}>{lesson}<button type="button" aria-label={`Remover aula ${lesson}`} onClick={() => handleRemoveLesson(idx)}><X size={13} /></button></span>)}</div>}
+                </div>
+              </details>
+              <div className="rf-form-section">
+                <button type="button" className="rf-section-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced(!showAdvanced)}>Personalizar revisões <span>Avançado</span><ChevronDown size={16} /></button>
+                {showAdvanced && <div className="rf-section-fields">
+                  <p className="rf-field-hint">Deixe os intervalos vazios para usar o algoritmo definido nas configurações.</p>
+                  <label className="rf-field">Intervalos em dias<input value={intervalsStr} onChange={e => setIntervalsStr(e.target.value)} placeholder="1, 7, 15, 30" /></label>
+                  <label className="rf-field">Meta de questões por revisão<input type="number" min="1" step="1" value={baseQuestions} onChange={e => setBaseQuestions(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Ex.: 20" /></label>
+                </div>}
               </div>
             </div>
-
-            {/* Custom Settings Toggle */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors w-full justify-center py-2 border border-dashed border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5"
-              >
-                <SlidersHorizontal size={14} />{" "}
-                {showAdvanced
-                  ? "Ocultar Personalização"
-                  : "Configuração Personalizada"}
-              </button>
-
-              {showAdvanced && (
-                <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 space-y-4 animate-scale-in">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Intervalos (dias)
-                    </label>
-                    <input
-                      type="text"
-                      value={intervalsStr}
-                      onChange={(e) => setIntervalsStr(e.target.value)}
-                      placeholder="Ex: 1, 7, 15, 30"
-                      className="w-full p-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
-                    />
-                    <p className="text-[9px] text-slate-400">
-                      Separe os dias por vírgula.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Meta de Questões
-                    </label>
-                    <input
-                      type="number"
-                      value={baseQuestions}
-                      onChange={(e) =>
-                        setBaseQuestions(parseInt(e.target.value) || "")
-                      }
-                      placeholder="Ex: 20"
-                      className="w-full p-3 rounded-xl bg-white dark:bg-black/20 text-xs font-bold outline-none border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4 flex gap-4">
-              {onDelete && !isNew && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm("Tem certeza que deseja excluir?")) {
-                      onDelete(safeTopic.id);
-                      onClose();
-                    }
-                  }}
-                  className="flex-[1] py-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide text-xs flex items-center justify-center gap-2 border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-900/20"
-                >
-                  <Trash2 size={16} />{" "}
-                  <span className="hidden sm:inline">Excluir</span>
-                </button>
-              )}
-              <button
-                type="submit"
-                className={`flex-[2] py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-[20px] shadow-lg shadow-black/10 active:scale-95 transition-all uppercase tracking-wide text-xs ${isNew ? "w-full" : ""}`}
-              >
-                Salvar
-              </button>
+            <div className="rf-form-footer">
+              {onDelete && !isNew && <button className="rf-delete" type="button" onClick={() => { if (window.confirm("Tem certeza que deseja excluir esta matéria?")) { onDelete(safeTopic.id); onClose(); } }}><Trash2 size={16} />Excluir</button>}
+              <button className="rf-cancel" type="button" onClick={onClose}>Cancelar</button>
+              <button className="rf-save" type="submit">{isNew ? "Criar matéria" : "Salvar alterações"}<ArrowRight size={16} /></button>
             </div>
           </form>
         ) : (
@@ -1607,11 +1464,14 @@ export const SettingsModal = ({
                   </div>
                 </div>
 
+                <AccentPicker value={tempConfig.accentColor} onChange={accentColor => setTempConfig(prev => ({ ...prev, accentColor }))} />
+
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                     Modo Escuro
                   </span>
                   <button
+                    aria-label={themeMode === "light" ? "Ativar modo escuro" : "Ativar modo claro"}
                     onClick={() =>
                       setThemeMode(themeMode === "light" ? "dark" : "light")
                     }
@@ -1947,301 +1807,82 @@ export const SettingsModal = ({
   );
 };
 
-export const SimuladoModal = ({
-  isOpen,
-  onClose,
-  simulado,
-  onSave,
-  onDelete,
-  topics,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  simulado: Simulado | null;
-  onSave: (s: any) => void;
-  onDelete?: (id: string) => void;
-  topics: Topic[];
+export const SimuladoModal = ({ isOpen, onClose, simulado, onSave, onDelete, topics }: {
+  isOpen: boolean; onClose: () => void; simulado: Simulado | null;
+  onSave: (s: any) => void; onDelete?: (id: string) => void; topics: Topic[];
 }) => {
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
-    [],
-  );
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedLessons, setSelectedLessons] = useState<string[]>([]);
   const [simTopicSearch, setSimTopicSearch] = useState("");
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
-
+  const [total, setTotal] = useState("100");
+  const [correct, setCorrect] = useState("");
   useEffect(() => {
-    if (isOpen && simulado) {
-      setSelectedDifficulties(simulado.difficultyTopics || []);
-      setSelectedLessons(simulado.difficultyLessons || []);
-    } else {
-      setSelectedDifficulties([]);
-      setSelectedLessons([]);
-    }
-    setSimTopicSearch("");
-    setExpandedTopic(null);
+    if (!isOpen) return;
+    setSelectedDifficulties(simulado?.difficultyTopics || []);
+    setSelectedLessons(simulado?.difficultyLessons || []);
+    setSimTopicSearch(""); setExpandedTopic(null);
+    setTotal(String(simulado?.totalQuestions ?? 100));
+    setCorrect(simulado ? String(simulado.correctCount) : "");
   }, [isOpen, simulado]);
-
+  const filteredTopics = topics.filter(t => !t.deleted && (t.title.toLocaleLowerCase().includes(simTopicSearch.trim().toLocaleLowerCase()) || t.linkedLessons?.some(l => l.toLocaleLowerCase().includes(simTopicSearch.trim().toLocaleLowerCase()))));
+  const validScore = correct !== "" && Number.isInteger(Number(correct)) && Number.isInteger(Number(total)) && Number(total) > 0 && Number(correct) >= 0 && Number(correct) <= Number(total);
+  const toggle = (list: string[], value: string) => list.includes(value) ? list.filter(v => v !== value) : [...list, value];
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const newS = {
-      id: simulado?.id,
-      name: fd.get("institution") as string,
-      year: fd.get("year") as string,
-      totalQuestions: parseInt(fd.get("total") as string) || 0,
-      correctCount: parseInt(fd.get("correct") as string) || 0,
-      dateTaken: new Date(
-        (fd.get("date") as string) + "T12:00:00",
-      ).toISOString(),
-      difficultyTopics: selectedDifficulties,
-      difficultyLessons: selectedLessons,
-      updatedAt: Date.now(),
-    };
-    onSave(newS);
+    const name = String(fd.get("institution") || "").trim();
+    if (!name) { toast.error("Informe o nome do simulado."); return; }
+    if (!validScore) { toast.error("Os acertos devem ficar entre zero e o total de questões."); return; }
+    const date = new Date(String(fd.get("date")) + "T12:00:00");
+    if (Number.isNaN(date.getTime())) { toast.error("Informe uma data válida."); return; }
+    onSave({ id: simulado?.id, name, year: String(fd.get("year")), totalQuestions: Number(total), correctCount: Number(correct), dateTaken: date.toISOString(), difficultyTopics: selectedDifficulties, difficultyLessons: selectedLessons, updatedAt: Date.now() });
     onClose();
   };
-
-  const toggleLesson = (lesson: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedLessons((prev) =>
-      prev.includes(lesson)
-        ? prev.filter((l) => l !== lesson)
-        : [...prev, lesson],
-    );
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={simulado ? "Editar Simulado" : "Novo Simulado"}
-    >
-      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold text-purple-600 uppercase tracking-widest pl-1">
-            Instituição
-          </label>
-          <input
-            name="institution"
-            defaultValue={simulado?.name}
-            autoFocus
-            type="text"
-            placeholder="Ex: USP, UNIFESP..."
-            className="w-full text-base font-bold bg-slate-50 dark:bg-zinc-900/50 p-3.5 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none transition-all"
-            required
-          />
+  return <Modal isOpen={isOpen} onClose={onClose} title={simulado ? "Editar simulado" : "Registrar simulado"} creator>
+    <form onSubmit={handleSubmit} className="rf-creator-form">
+      <div className="rf-creator-scroll">
+        <p className="rf-form-intro">Registre o resultado de uma prova para acompanhar sua evolução.</p>
+        <label className="rf-field">Nome ou instituição
+          <input name="institution" defaultValue={simulado?.name || ""} autoFocus required maxLength={200} placeholder="Ex.: USP — Simulado 01" />
+        </label>
+        <div className="rf-form-grid">
+          <label className="rf-field">Data da realização<input name="date" type="date" required defaultValue={simulado ? simulado.dateTaken.split("T")[0] : getTodayStr()} /></label>
+          <label className="rf-field">Ano da prova<input name="year" type="number" min="1900" max="9999" step="1" required defaultValue={simulado?.year || new Date().getFullYear()} /></label>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-              Data
-            </label>
-            <input
-              name="date"
-              type="date"
-              defaultValue={
-                simulado ? simulado.dateTaken.split("T")[0] : getTodayStr()
-              }
-              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none min-h-[48px]"
-              required
-            />
+        <section className="rf-score-section" aria-label="Resultado">
+          <div className="rf-score-heading"><span>Seu resultado</span><output aria-live="polite">{validScore ? `${Math.round(Number(correct) / Number(total) * 100)}% de acertos` : "Preencha os acertos"}</output></div>
+          <div className="rf-form-grid">
+            <label className="rf-field">Total de questões<input name="total" type="number" inputMode="numeric" min="1" step="1" required value={total} onChange={e => setTotal(e.target.value)} /></label>
+            <label className="rf-field">Acertos<input name="correct" type="number" inputMode="numeric" min="0" max={Number(total) > 0 ? total : undefined} step="1" required placeholder="0" value={correct} onChange={e => setCorrect(e.target.value)} aria-describedby="score-hint" /></label>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-              Ano
-            </label>
-            <input
-              name="year"
-              type="number"
-              placeholder="2025"
-              defaultValue={simulado?.year || new Date().getFullYear()}
-              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-sm font-bold outline-none text-slate-900 dark:text-white border border-slate-200 dark:border-white/5 appearance-none"
-              required
-            />
+          <p id="score-hint" className="rf-field-hint">{correct !== "" && !validScore ? "Use números inteiros: os acertos não podem ultrapassar o total." : "Conte cada questão uma única vez."}</p>
+        </section>
+        <details className="rf-form-section" key={`${isOpen}-${simulado?.id || 'new'}`} open={(simulado?.difficultyTopics?.length || simulado?.difficultyLessons?.length) ? true : undefined}>
+          <summary>Temas para reforçar <span>{selectedDifficulties.length + selectedLessons.length || "Opcional"}</span><ChevronDown size={16} /></summary>
+          <div className="rf-section-fields">
+            <p className="rf-field-hint">Marque matérias ou aulas em que teve dificuldade. Aulas selecionadas recebem 10% a mais de questões.</p>
+            <label className="rf-field"><span className="sr-only">Buscar matéria ou aula</span><input type="search" placeholder="Buscar matéria ou aula…" value={simTopicSearch} onChange={e => setSimTopicSearch(e.target.value)} /></label>
+            <div className="rf-topic-picker">
+              {filteredTopics.map(t => <div className="rf-topic-option" key={t.id}>
+                <div className="rf-topic-option-row">
+                  <label><input type="checkbox" checked={selectedDifficulties.includes(t.id)} onChange={() => setSelectedDifficulties(prev => toggle(prev, t.id))} /><span>{t.title}</span></label>
+                  {!!t.linkedLessons?.length && <button type="button" aria-label={`Aulas de ${t.title}`} aria-expanded={expandedTopic === t.id} onClick={() => setExpandedTopic(expandedTopic === t.id ? null : t.id)}><ChevronDown size={16} /></button>}
+                </div>
+                {expandedTopic === t.id && <div className="rf-lesson-options">{t.linkedLessons?.map(l => <label key={l}><input type="checkbox" checked={selectedLessons.includes(l)} onChange={() => setSelectedLessons(prev => toggle(prev, l))} /><span>{l}</span></label>)}</div>}
+              </div>)}
+              {!filteredTopics.length && <p className="rf-empty-options">{topics.some(t => !t.deleted) ? "Nenhuma matéria encontrada para esta busca." : "Cadastre uma matéria para associá-la ao resultado."}</p>}
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest pl-1">
-              Acertos
-            </label>
-            <input
-              name="correct"
-              type="number"
-              defaultValue={simulado?.correctCount}
-              className="w-full p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 text-emerald-600 font-black text-xl text-center outline-none border border-emerald-200/50 dark:border-emerald-500/20 focus:border-emerald-500/50 appearance-none transition-colors"
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-              Total
-            </label>
-            <input
-              name="total"
-              type="number"
-              defaultValue={simulado?.totalQuestions || 100}
-              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-900/50 text-slate-700 dark:text-slate-200 font-black text-xl text-center outline-none border border-slate-200 dark:border-white/5 appearance-none"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="bg-slate-50 dark:bg-zinc-900/30 p-3.5 rounded-xl border border-slate-200 dark:border-white/5 space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-              <Target size={12} /> Temas com Dificuldade
-            </label>
-            <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
-              {selectedDifficulties.length + selectedLessons.length}{" "}
-              selecionados
-            </span>
-          </div>
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              size={14}
-            />
-            <input
-              type="text"
-              placeholder="Buscar matéria..."
-              value={simTopicSearch}
-              onChange={(e) => setSimTopicSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-black/20 rounded-lg text-xs font-medium outline-none appearance-none border border-slate-200 dark:border-white/5 focus:border-blue-500/30 transition-colors"
-            />
-          </div>
-          <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
-            {topics
-              .filter(
-                (t) =>
-                  !t.deleted &&
-                  (t.title
-                    .toLowerCase()
-                    .includes(simTopicSearch.toLowerCase()) ||
-                    t.linkedLessons?.some((l) =>
-                      l.toLowerCase().includes(simTopicSearch.toLowerCase()),
-                    )),
-              )
-              .map((t) => {
-                const isSelected = selectedDifficulties.includes(t.id);
-                const isExpanded = expandedTopic === t.id;
-                const hasLessons =
-                  t.linkedLessons && t.linkedLessons.length > 0;
-
-                return (
-                  <div
-                    key={t.id}
-                    className={`rounded-lg border overflow-hidden transition-all ${isSelected ? "border-blue-500/30 bg-blue-50/30 dark:bg-blue-900/10" : "border-slate-200 dark:border-white/5 bg-white dark:bg-zinc-900/50"}`}
-                  >
-                    <div className="flex items-center p-1">
-                      <div
-                        onClick={() => {
-                          if (isSelected)
-                            setSelectedDifficulties((p) =>
-                              p.filter((id) => id !== t.id),
-                            );
-                          else setSelectedDifficulties((p) => [...p, t.id]);
-                        }}
-                        className="flex-1 flex items-center gap-2 p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-md transition-colors"
-                      >
-                        <div
-                          className={`w-4 h-4 rounded flex items-center justify-center border ${isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-slate-300 dark:border-slate-600"}`}
-                        >
-                          {isSelected && <Check size={10} strokeWidth={3} />}
-                        </div>
-                        <span
-                          className={`text-xs font-medium truncate ${isSelected ? "text-blue-700 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"}`}
-                        >
-                          {t.title}
-                        </span>
-                      </div>
-                      {hasLessons && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedTopic(isExpanded ? null : t.id)
-                          }
-                          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                        >
-                          <ChevronDown
-                            size={14}
-                            className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                          />
-                        </button>
-                      )}
-                    </div>
-
-                    {isExpanded && hasLessons && (
-                      <div className="px-3 pb-3 pt-1 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 space-y-1.5">
-                        <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider mb-2 mt-1">
-                          Aulas Específicas
-                        </p>
-                        {t.linkedLessons!.map((l, i) => {
-                          const isLessonSelected = selectedLessons.includes(l);
-                          return (
-                            <div
-                              key={i}
-                              onClick={(e) => toggleLesson(l, e)}
-                              className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-[11px] transition-colors border ${isLessonSelected ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 font-medium" : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/10"}`}
-                            >
-                              <span className="truncate pr-2">{l}</span>
-                              {isLessonSelected ? (
-                                <Star
-                                  size={12}
-                                  className="fill-amber-500 text-amber-500 shrink-0"
-                                />
-                              ) : (
-                                <Star
-                                  size={12}
-                                  className="text-slate-300 dark:text-slate-600 shrink-0"
-                                />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            {topics.filter((t) => !t.deleted).length === 0 && (
-              <div className="text-center text-[10px] text-slate-400 py-4">
-                Nenhuma matéria cadastrada.
-              </div>
-            )}
-          </div>
-          <p className="text-[9px] text-slate-400 leading-tight text-center">
-            Marque os temas ou aulas específicas que você errou. Aulas marcadas
-            com estrela terão 10% a mais de questões.
-          </p>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          {onDelete && simulado && (
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm("Tem certeza que deseja excluir?")) {
-                  onDelete(simulado.id);
-                  onClose();
-                }
-              }}
-              className="flex-[1] bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold py-3.5 rounded-xl active:scale-[0.98] transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 border border-red-100 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-900/20"
-            >
-              <Trash2 size={14} />{" "}
-              <span className="hidden sm:inline">Excluir</span>
-            </button>
-          )}
-          <button
-            type="submit"
-            className={`flex-[2] bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all text-xs uppercase tracking-wider ${!simulado ? "w-full" : ""}`}
-          >
-            Salvar Resultado
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
+        </details>
+      </div>
+      <div className="rf-form-footer">
+        {onDelete && simulado && <button type="button" className="rf-delete" onClick={() => { if (window.confirm("Tem certeza que deseja excluir este simulado?")) { onDelete(simulado.id); onClose(); } }}><Trash2 size={16} />Excluir</button>}
+        <button type="button" className="rf-cancel" onClick={onClose}>Cancelar</button>
+        <button type="submit" className="rf-save">Salvar resultado<ArrowRight size={16} /></button>
+      </div>
+    </form>
+  </Modal>;
 };
 
 export const ReviewModal = ({
