@@ -433,7 +433,7 @@ export const triggerConfetti = () => {
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6', '#10b981', '#8b5cf6'] });
 };
 
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '2.0.0';
 
 export const filterDataByRange = (data: any[], dateKey: string, range: 'week' | 'month' | 'year' | 'all') => {
     const today = new Date();

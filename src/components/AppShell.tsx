@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Activity, BookOpen, Calendar, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Cloud, Command, Database, Home, Menu, PanelLeftClose, PanelLeftOpen, PieChart, Plus, RefreshCw, Search, Settings, StickyNote, Target, Timer, X } from 'lucide-react';
+import { Activity,BookOpen,Calendar,Check,ChevronDown,ChevronRight,CircleHelp,ClipboardList,Cloud,Database,Home,Menu,PanelLeftClose,PanelLeftOpen,PieChart,Plus,RefreshCw,Search,Settings,StickyNote,Target,Timer,X } from 'lucide-react';
+import React,{ useEffect,useState } from 'react';
 
-export type WorkspaceView = 'list' | 'cronograma' | 'calendar' | 'database' | 'simulados' | 'stats';
-export type StudyTool = 'notes' | 'goals' | 'focus';
+export type WorkspaceView = 'list' | 'cronograma' | 'calendar' | 'database' | 'simulados' | 'stats' | 'notes';
+export type StudyTool = 'notes' | 'goals' | 'focus' | 'today';
 interface Props {
   view: WorkspaceView;
   onNavigate: (view: WorkspaceView) => void;
@@ -13,8 +13,10 @@ interface Props {
   onHelp: () => void;
   onTool: (tool: StudyTool) => void;
   onSync: () => void;
-  status: 'offline' | 'syncing' | 'online' | 'error';
+  status: 'offline' | 'syncing' | 'online' | 'error' | 'pending';
   hasSyncKey: boolean;
+  syncIntervalMs: number;
+  lastSyncAt: number;
   profile: React.ReactNode;
   children: React.ReactNode;
   pendingCount: number;
@@ -27,13 +29,14 @@ const navigation = [
   { id: 'database', label: 'Matérias', icon: Database },
   { id: 'simulados', label: 'Simulados', icon: ClipboardList },
   { id: 'stats', label: 'Estatísticas', icon: PieChart },
+  { id: 'notes', label: 'Anotações', icon: StickyNote },
 ] as const;
 
 export function AppShell(props: Props) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('reviewflow_nav_collapsed') === 'true');
   const [mobileOpen, setMobileOpen] = useState(false);
   const active = navigation.find(item => item.id === props.view)!;
-  const context = ['database', 'simulados'].includes(props.view)
+  const context = props.view === 'notes' ? navigation.filter(item => ['notes', 'database'].includes(item.id)) : ['database', 'simulados'].includes(props.view)
     ? navigation.filter(item => ['database', 'simulados'].includes(item.id))
     : ['cronograma', 'calendar'].includes(props.view)
       ? navigation.filter(item => ['cronograma', 'calendar'].includes(item.id))
@@ -89,7 +92,7 @@ export function AppShell(props: Props) {
       <div className="mica-window-identity">
         <button className="mica-icon-button mica-desktop-toggle" onClick={toggleCollapse} aria-label={collapsed ? 'Expandir barra lateral' : 'Recolher barra lateral'} aria-expanded={!collapsed} aria-controls="workspace-sidebar">{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
         <button className="mica-icon-button mica-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Fechar navegação' : 'Abrir navegação'} aria-expanded={mobileOpen} aria-controls="workspace-sidebar">{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button>
-        <button className="mica-brand" onClick={() => navigate('list')} aria-label="ReviewFlow — início"><span className="mica-app-mark"><Activity size={18} strokeWidth={1.7} /></span><span>ReviewFlow</span></button>
+        <button className="mica-brand" onClick={() => navigate('list')} aria-label="ReviewFlow — início"><span className="mica-app-mark"><Activity size={18} strokeWidth={1.7} /></span><span>ReviewFlow <small className="rf-version">2.0</small></span></button>
       </div>
       <button className="mica-command-search" onClick={props.onSearch}><Search size={16} /><span>Buscar no ReviewFlow</span><kbd>Ctrl K</kbd></button>
       <div className="mica-window-actions">
@@ -108,16 +111,17 @@ export function AppShell(props: Props) {
       <button className="mica-sidebar-create" onClick={() => { props.onNewTopic(); setMobileOpen(false); }} title="Novo tema"><Plus size={18} /><span>Novo tema</span></button>
       <div className="mica-sidebar-scroll">
         <p className="mica-nav-heading">Área de trabalho</p>
-        <nav aria-label="Navegação lateral">{navigation.map(item => <button key={item.id} className="mica-nav-item" onClick={() => navigate(item.id)} aria-label={item.label} aria-current={props.view === item.id ? 'page' : undefined} title={collapsed ? item.label : undefined}><item.icon size={18} strokeWidth={1.65} /><span>{item.label}</span>{item.id === 'list' && props.pendingCount > 0 && <small>{props.pendingCount}</small>}</button>)}</nav>
+        <nav aria-label="Navegação lateral">{navigation.filter(item => item.id !== 'notes').map(item => <button key={item.id} className="mica-nav-item" onClick={() => navigate(item.id)} aria-label={item.label} aria-current={props.view === item.id ? 'page' : undefined} title={collapsed ? item.label : undefined}><item.icon size={18} strokeWidth={1.65} /><span>{item.label}</span>{item.id === 'list' && props.pendingCount > 0 && <small>{props.pendingCount}</small>}</button>)}</nav>
         <p className="mica-nav-heading mica-tools-heading">Ferramentas</p>
         <nav aria-label="Ferramentas de estudo">
-          <button className="mica-nav-item" onClick={() => openTool('notes')} aria-label="Anotações" title={collapsed ? 'Anotações' : undefined}><StickyNote size={18} strokeWidth={1.65} /><span>Anotações</span></button>
+          <button className="mica-nav-item" onClick={() => navigate('notes')} aria-label="Anotações" title={collapsed ? 'Anotações' : undefined}><StickyNote size={18} strokeWidth={1.65} /><span>Anotações</span></button>
+          <button className="mica-nav-item" onClick={() => openTool('today')} aria-label="To-Do Today" title="To-Do Today"><ClipboardList size={18} strokeWidth={1.65} /><span>To-Do Today</span></button>
           <button className="mica-nav-item" onClick={() => openTool('goals')} aria-label="Metas" title={collapsed ? 'Metas' : undefined}><Target size={18} strokeWidth={1.65} /><span>Metas</span></button>
           <button className="mica-nav-item" onClick={() => openTool('focus')} aria-label="Temporizador" title={collapsed ? 'Temporizador' : undefined}><Timer size={18} strokeWidth={1.65} /><span>Temporizador</span></button>
         </nav>
       </div>
       <footer className="mica-sidebar-footer">
-        <button className="mica-sync-status" onClick={() => { props.onSync(); setMobileOpen(false); }} disabled={props.status === 'syncing'} title="Sincronização">{props.status === 'syncing' ? <RefreshCw size={16} className="animate-spin" /> : props.status === 'online' ? <Check size={16} /> : <Cloud size={16} />}<span>{!props.hasSyncKey ? 'Salvo neste dispositivo' : props.status === 'syncing' ? 'Sincronizando…' : props.status === 'online' ? 'Sincronização em dia' : props.status === 'error' ? 'Tentar sincronizar' : 'Sincronizar agora'}<small>{props.hasSyncKey ? 'Seus estudos, conectados' : 'Configure o acesso entre dispositivos'}</small></span></button>
+        <button className="mica-sync-status" onClick={() => { props.onSync(); setMobileOpen(false); }} disabled={props.status === 'syncing'} title="Sincronização">{props.status === 'syncing' ? <RefreshCw size={16} className="animate-spin" /> : props.status === 'online' ? <Check size={16} /> : <Cloud size={16} />}<span>{!props.hasSyncKey ? 'Salvo neste dispositivo' : props.status === 'syncing' ? 'Sincronizando…' : props.status === 'online' ? 'Sincronização em dia' : props.status === 'pending' ? 'Alterações salvas no aparelho' : props.status === 'error' ? 'Tentar sincronizar' : 'Sincronizar agora'}<small>{props.hasSyncKey ? `Envio a cada ${props.syncIntervalMs < 60000 ? '30 s' : '10 min'} · ${props.lastSyncAt ? 'último ' + new Date(props.lastSyncAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'aguardando envio'}` : 'Configure o acesso entre dispositivos'}</small></span></button>
         <div className="mica-utility-actions"><button onClick={() => { props.onSettings(); setMobileOpen(false); }} title="Configurações"><Settings size={17} /><span>Configurações</span></button><button onClick={() => { props.onHelp(); setMobileOpen(false); }} aria-label="Ajuda e tutorial" title="Ajuda e tutorial"><CircleHelp size={17} /></button></div>
       </footer>
     </aside>

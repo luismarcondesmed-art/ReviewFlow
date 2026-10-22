@@ -458,3 +458,78 @@ input, select, textarea { font-size: 14px; }
   .rf-app .rf-field input, .rf-app .rf-field select { font-size: 16px; }
 }
 @media (max-width: 380px) { .rf-form-grid { grid-template-columns: minmax(0,1fr); } }
+/* ReviewFlow 2.0: background customization changes the canvas, never the accent. */
+:root[data-background=custom] {
+  --rf-ink: #000; --rf-muted: #000;
+  --rf-paper: var(--user-background);
+  --rf-surface: color-mix(in srgb, var(--user-background) 88%, white);
+  --mica-workspace: color-mix(in srgb, var(--user-background) 94%, white);
+  --mica-flyout: color-mix(in srgb, var(--user-background) 82%, white);
+  --mica-input: rgba(255,255,255,.3);
+  --rf-wash: rgba(40,40,60,.035);
+}
+:root.dark[data-background=custom] {
+  --rf-ink: #fff; --rf-muted: #fff;
+  --rf-surface: color-mix(in srgb, var(--user-background) 88%, black);
+  --mica-workspace: color-mix(in srgb, var(--user-background) 94%, black);
+  --mica-flyout: color-mix(in srgb, var(--user-background) 82%, black);
+  --mica-input: rgba(0,0,0,.14);
+  --rf-wash: rgba(255,255,255,.04);
+}
+html[data-background=custom] .rf-app { background: var(--user-background); }
+.rf-version { font-size: 9px; color: var(--rf-muted); vertical-align: top; margin-left: 3px; }
+.rf-app .rf-field textarea { width: 100%; min-width: 0; padding: 11px 12px; color: var(--rf-ink); font-size: 14px; font-weight: 400; background: var(--mica-input); border: 1px solid var(--rf-rule); border-radius: 7px; resize: vertical; }
+.rf-priority-options { grid-template-columns: repeat(auto-fit,minmax(80px,1fr)); }
+.rf-todo { padding: 22px 0; border-bottom: 1px solid var(--rf-rule); margin-bottom: 24px; }
+.rf-todo > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 15px; }
+.rf-todo h2 { font-size: 18px; font-weight: 500; }
+.rf-todo h2 small { display: inline-block; margin-left: 10px; color: var(--rf-muted); font-size: 11px; font-weight: 400; }
+.rf-todo-date { display: flex; align-items: center; gap: 8px; color: var(--rf-muted); }
+.rf-todo-date button { min-width: 32px; min-height: 36px; display: grid; place-items: center; font-size: 12px; }
+.rf-todo-date input { background: transparent; color: var(--rf-ink); width: 132px; min-height: 36px; font-size: 12px; }
+.rf-todo-add { display: flex; border: 1px solid var(--rf-rule); border-radius: 8px; background: var(--mica-input); margin-bottom: 12px; padding: 4px; }
+.rf-todo-add > input { min-width: 0; flex: 1; padding: 9px 12px; outline: none; background: transparent; color: var(--rf-ink); font-size: 13px; }
+.rf-todo-add button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 5px; background: var(--mica-hover); font-size: 12px; }
+.rf-todo li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rf-rule); }
+.rf-todo li input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--rf-accent); flex-shrink: 0; }
+.rf-todo li input:not([type=checkbox]) { min-width: 0; flex: 1; padding: 7px 0; background: transparent; color: var(--rf-ink); font-size: 13px; }
+.rf-todo li.is-done input:not([type=checkbox]) { text-decoration: line-through; color: var(--rf-muted); }
+.rf-todo li button { color: var(--rf-muted); padding: 10px; }
+.rf-todo-saved { color: var(--rf-muted); font-size: 10px; margin-top: 12px; }
+.rf-notebooks-heading { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; padding: 12px 0 28px; }
+.rf-notebooks-heading h1 { font-size: clamp(24px,3vw,32px); font-weight: 500; letter-spacing: -.04em; }
+.rf-notebooks-heading p:not(.journal-eyebrow) { font-size: 13px; color: var(--rf-muted); margin-top: 8px; line-height: 1.7; }
+.rf-notebooks-layout { display: grid; grid-template-columns: 230px minmax(0,1fr); border: 1px solid var(--rf-rule); border-radius: 10px; overflow: hidden; min-height: 65vh; }
+.rf-notebooks-layout > aside { min-width: 0; padding: 14px; border-right: 1px solid var(--rf-rule); max-height: 80vh; overflow-y: auto; }
+.rf-notebooks-layout > aside > label { margin-bottom: 10px; }
+.rf-notebook-item { display: flex; align-items: flex-start; gap: 10px; padding: 13px 9px; width: 100%; text-align: left; border-radius: 6px; font-size: 13px; overflow-wrap: anywhere; }
+.rf-notebook-item svg { margin-top: 2px; }
+.rf-notebook-item small { display: block; margin-top: 5px; color: var(--rf-muted); font-size: 10px; }
+.rf-notebook-item[aria-pressed=true] { background: var(--mica-active); }
+.rf-notebook-reader { min-width: 0; display: flex; flex-direction: column; }
+.rf-notebook-reader > header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--rf-rule); }
+.rf-notebook-reader > header h2 { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.rf-notebook-reader > header > div { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rf-notebook-reader iframe { display: block; width: 100%; min-height: 65vh; flex: 1; background: white; border: 0; }
+.rf-notebook-reader > .rf-field-hint { padding: 12px 20px; }
+.rf-notebook-empty { padding: 50px 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; flex: 1; }
+.rf-notebook-empty h3 { font-size: 21px; font-weight: 500; }
+.rf-notebook-empty p { color: var(--rf-muted); font-size: 13px; line-height: 1.75; max-width: 430px; }
+.rf-notebook-empty > a { font-size: 12px; color: var(--rf-accent); }
+.rf-tutorial { display: flex; flex-direction: column; min-height: 0; padding: 22px 24px; gap: 20px; overflow-y: auto; }
+.rf-tutorial-progress { height: 3px; background: var(--rf-rule); border-radius: 4px; }
+.rf-tutorial-progress span { display: block; height: 100%; background: var(--rf-accent); }
+.rf-tutorial h2 { font-size: 23px; font-weight: 500; margin: 8px 0 14px; letter-spacing: -.025em; }
+.rf-tutorial article > p:not(.journal-eyebrow), .rf-tutorial li { font-size: 14px; line-height: 1.8; color: var(--rf-muted); }
+.rf-tutorial ul { margin-top: 16px; padding-left: 18px; list-style: disc; }
+.rf-tutorial li { padding-left: 4px; margin: 9px 0; }
+.rf-tutorial footer { display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid var(--rf-rule); padding-top: 18px; }
+@media (max-width: 700px) {
+  .rf-notebooks-layout { grid-template-columns: minmax(0,1fr); }
+  .rf-notebooks-layout > aside { border-right: 0; border-bottom: 1px solid var(--rf-rule); max-height: 230px; }
+  .rf-notebook-reader > header { padding: 16px; }
+  .rf-notebook-empty { padding: 32px 18px; }
+  .rf-todo-add > input, .rf-todo li input:not([type=checkbox]), .rf-app .rf-field textarea { font-size: 16px; }
+  .rf-todo-add button span { display: none; }
+  .rf-tutorial { padding: 18px; }
+}

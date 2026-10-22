@@ -1,73 +1,58 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
-import { toast } from 'sonner';
 import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Trash2,
-  ArrowRight,
-  Target,
-  Key,
-  Save,
-  Download,
-  Upload,
-  Sun,
-  Moon,
-  Zap,
-  Minus,
-  Plus,
-  Search,
-  Check,
-  ClipboardList,
-  Calendar,
-  LayoutList,
-  History,
-  Info,
-  AlertTriangle,
-  Edit2,
-  Cloud,
-  BookOpen,
-  Smartphone,
-  HelpCircle,
-  GraduationCap,
-  BarChart3,
-  SlidersHorizontal,
-  Link as LinkIcon,
-  Bell,
-  ChevronDown,
-  Clock,
-  Circle,
-  CheckCircle2,
-  Star,
-  BrainCircuit,
-  Trophy,
-  Settings,
-  Sparkles,
-  Heart,
-  PlayCircle,
+ArrowRight,
+Bell,
+Check,
+ChevronDown,
+ChevronRight,
+ClipboardList,
+Clock,
+Cloud,
+Download,
+Edit2,
+Heart,
+HelpCircle,
+History,
+Info,
+LayoutList,
+Moon,
+PlayCircle,
+Plus,
+Settings,
+Smartphone,
+Sparkles,
+Star,
+Sun,
+Target,
+Trash2,
+Upload,
+X,
+Zap
 } from "lucide-react";
-import { AccentPicker } from "../components/AccentPicker";
 import { QRCodeCanvas } from "qrcode.react";
+import React,{ useEffect,useRef,useState } from "react";
+import { toast } from 'sonner';
+import { BackgroundPicker } from "../components/BackgroundPicker";
+import { TodoToday } from "../components/TodoToday";
+import { TutorialContent } from "../components/TutorialContent";
+import { validSyncCode } from "../services/syncPolicy";
 import {
-  Topic,
-  AreaType,
-  ImportanceType,
-  Simulado,
-  UserConfig,
-  Review,
+AreaType,
+ImportanceType,
+Simulado,
+Topic,
+UserConfig
 } from "../types";
 import {
-  AREAS,
-  formatDate,
-  formatFullDate,
-  getAreaTheme,
-  getTodayStr,
-  getPerformanceColor,
-  OptimizationChange,
-  getPerformanceBgLight,
-  IMPORTANCE_LEVELS,
-  generateSmartSchedule,
+AREAS,
+formatDate,
+generateSmartSchedule,
+getAreaTheme,
+getPerformanceColor,
+getTodayStr,
+IMPORTANCE_LEVELS,
+OptimizationChange
 } from "../utils";
+import { notionURL } from "../utils/notion";
 // Schedules imports removed
 
 // --- Modern Glass Modal ---
@@ -279,206 +264,11 @@ export const SyncAdModal = ({
   );
 };
 
-export const DailyTodoContent = ({
-  dailyNotes,
-  setDailyNotes,
-  onClose,
-  hideHeader = false,
-}: {
+export const DailyTodoContent = ({ dailyNotes, setDailyNotes }: {
   dailyNotes: Record<string, string>;
   setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  onClose?: () => void;
-  hideHeader?: boolean;
-}) => {
-  const todayStr = getTodayStr();
-  const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [note, setNote] = useState(dailyNotes[selectedDate] || "");
-
-  useEffect(() => {
-    setNote(dailyNotes[selectedDate] || "");
-  }, [dailyNotes, selectedDate]);
-
-  // Auto-save when note changes
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (note !== (dailyNotes[selectedDate] || "")) {
-        setDailyNotes((prev) => ({ ...prev, [selectedDate]: note }));
-      }
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [note, dailyNotes, selectedDate, setDailyNotes]);
-
-  const handlePrevDay = () => {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split("T")[0]);
-  };
-
-  const handleNextDay = () => {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split("T")[0]);
-  };
-
-  const displayDate =
-    selectedDate === todayStr
-      ? "Hoje"
-      : new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", {
-          weekday: "short",
-          day: "2-digit",
-          month: "short",
-        });
-
-  const lines = note.split("\n");
-
-  const toggleLine = (index: number) => {
-    const newLines = [...lines];
-    const line = newLines[index];
-    if (line.startsWith("- [ ] ")) {
-      newLines[index] = "- [x] " + line.slice(6);
-    } else if (line.startsWith("- [x] ") || line.startsWith("- [X] ")) {
-      newLines[index] = "- [ ] " + line.slice(6);
-    }
-    setNote(newLines.join("\n"));
-  };
-
-  const updateLine = (index: number, newText: string) => {
-    const newLines = [...lines];
-    const line = newLines[index];
-    const prefixMatch = line.match(/^- \[( |x|X)\] /);
-    if (prefixMatch) {
-      newLines[index] = prefixMatch[0] + newText;
-    } else {
-      newLines[index] = newText;
-    }
-    setNote(newLines.join("\n"));
-  };
-
-  const deleteLine = (index: number) => {
-    const newLines = [...lines];
-    newLines.splice(index, 1);
-    setNote(newLines.join("\n"));
-  };
-
-  const addLine = () => {
-    const newLines = [...lines];
-    if (newLines.length === 1 && newLines[0].trim() === "") {
-      newLines[0] = "- [ ] ";
-    } else {
-      newLines.push("- [ ] ");
-    }
-    setNote(newLines.join("\n"));
-  };
-
-  const hasContent = lines.some((l) => l.trim() !== "");
-
-  return (
-    <div className="flex flex-col h-full max-h-[60vh] lg:max-h-[400px]">
-      {!hideHeader && (
-        <div className="p-4 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50/50 dark:bg-white/[0.02]">
-          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
-            Atividades de Hoje
-          </h3>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <X size={16} className="text-slate-500" />
-            </button>
-          )}
-        </div>
-      )}
-
-      <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-[#1c1c1e]">
-        <button
-          onClick={handlePrevDay}
-          className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-slate-500" />
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-200 capitalize">
-            {displayDate}
-          </span>
-          {selectedDate !== todayStr && (
-            <button
-              onClick={() => setSelectedDate(todayStr)}
-              className="text-[10px] font-bold text-slate-500 hover:text-slate-600 ml-1"
-            >
-              (Voltar para Hoje)
-            </button>
-          )}
-        </div>
-        <button
-          onClick={handleNextDay}
-          className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-500"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
-      <div className="p-4 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-2">
-        {!hasContent && (
-          <div className="text-center py-6 text-slate-400">
-            <p className="text-xs mb-2">Nenhuma atividade para este dia.</p>
-          </div>
-        )}
-
-        {lines.map((line, i) => {
-          const isChecklist =
-            line.startsWith("- [ ] ") ||
-            line.startsWith("- [x] ") ||
-            line.startsWith("- [X] ");
-          const isChecked =
-            line.startsWith("- [x] ") || line.startsWith("- [X] ");
-          const text = isChecklist ? line.slice(6) : line;
-
-          if (!isChecklist && line.trim() === "" && lines.length === 1) {
-            return null;
-          }
-
-          return (
-            <div key={i} className="flex items-start gap-2 group">
-              <button
-                onClick={() => (isChecklist ? toggleLine(i) : null)}
-                className={`mt-0.5 shrink-0 transition-colors ${isChecklist ? "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer" : "text-transparent cursor-default"}`}
-              >
-                {isChecked ? (
-                  <CheckCircle2 size={16} className="text-emerald-500" />
-                ) : (
-                  <Circle size={16} />
-                )}
-              </button>
-
-              <input
-                value={text}
-                onChange={(e) => updateLine(i, e.target.value)}
-                className={`flex-1 bg-transparent border-none focus:outline-none text-sm py-0.5 ${isChecked ? "line-through text-slate-400" : "text-slate-700 dark:text-slate-200"}`}
-                placeholder="Nova atividade..."
-              />
-
-              <button
-                onClick={() => deleteLine(i)}
-                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity p-1"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          );
-        })}
-
-        <button
-          onClick={addLine}
-          className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 mt-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors w-fit"
-        >
-          <Plus size={14} /> Adicionar atividade
-        </button>
-      </div>
-    </div>
-  );
-};
+  onClose?: () => void; hideHeader?: boolean;
+}) => <TodoToday notes={dailyNotes} onChange={setDailyNotes} />;
 
 export const TodoModal = ({
   isOpen,
@@ -510,145 +300,7 @@ export const TodoModal = ({
   );
 };
 
-export const TutorialModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  const [step, setStep] = useState(0);
-  const steps = [
-    {
-      title: "O Método ReviewFlow",
-      icon: <Zap size={24} className="text-amber-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Bem-vindo! Este app utiliza <strong>Repetição Espaçada</strong>{" "}
-            automática para otimizar seus estudos.
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Flashcards & Kanban",
-      icon: <BrainCircuit size={24} className="text-purple-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Crie <strong>Flashcards</strong> para memorização rápida e acompanhe
-            o progresso dos seus temas no modo <strong>Kanban</strong> no Banco
-            de Dados.
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Gamificação & Metas",
-      icon: <Trophy size={24} className="text-emerald-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Ganhe <strong>XP</strong>, mantenha sua <strong>Ofensiva</strong>{" "}
-            (Streak) e defina <strong>Metas Semanais</strong> nas Configurações
-            para se manter motivado!
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Sincronização & Nuvem",
-      icon: <Cloud size={24} className="text-blue-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Para garantir a sustentabilidade do projeto e cobrir os custos com
-            servidores em nuvem, a sincronização gratuita é limitada a{" "}
-            <strong>uma vez a cada 30 minutos</strong> e deve ser feita
-            manualmente clicando no botão de sincronizar no topo da tela.
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Essa mecânica é um investimento essencial para que possamos manter o
-            aplicativo no ar e continuar desenvolvendo novas funcionalidades
-            para ajudar você a atingir seus objetivos.
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Usuários que apoiam o projeto recebem o cargo de{" "}
-            <strong>"Futuro Especialista"</strong> e têm acesso a sincronizações
-            ilimitadas e automáticas!
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Cronograma & Automação",
-      icon: <Calendar size={24} className="text-slate-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Acompanhe suas aulas e organize seu tempo.
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Simulados & Métricas",
-      icon: <BarChart3 size={24} className="text-emerald-500" />,
-      content: (
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Registre seus simulados e veja provas semelhantes na aba de
-            Estatísticas.
-          </p>
-        </div>
-      ),
-    },
-  ];
-  if (!isOpen) return null;
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Guia Rápido">
-      <div className="flex flex-col h-full min-h-[400px]">
-        <div className="flex-1 p-8 flex flex-col items-center text-center justify-center">
-          <div className="w-20 h-20 bg-slate-100 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 animate-scale-in shadow-inner border border-white/20 dark:border-white/5">
-            {steps[step].icon}
-          </div>
-          <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">
-            {steps[step].title}
-          </h3>
-          <div className="w-full text-left bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 max-h-[250px] overflow-y-auto">
-            {steps[step].content}
-          </div>
-        </div>
-        <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-white/50 dark:bg-[#121214]/50 backdrop-blur-md flex gap-3">
-          {step > 0 && (
-            <button
-              onClick={() => setStep((s) => s - 1)}
-              className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide text-xs"
-            >
-              Anterior
-            </button>
-          )}
-          {step < steps.length - 1 ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              className="flex-[2] py-4 bg-blue-600 dark:bg-blue-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs"
-            >
-              Próximo
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="flex-[2] py-4 bg-emerald-600 dark:bg-emerald-500 text-white font-bold rounded-[20px] active:scale-95 transition-all uppercase tracking-wide shadow-lg text-xs"
-            >
-              Começar
-            </button>
-          )}
-        </div>
-      </div>
-    </Modal>
-  );
-};
+export const TutorialModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => <Modal isOpen={isOpen} onClose={onClose} title="Guia ReviewFlow 2.0" creator><TutorialContent key={String(isOpen)} onClose={onClose} /></Modal>;
 
 export const EditTopicModal = ({
   isOpen,
@@ -753,6 +405,9 @@ export const EditTopicModal = ({
     const importance = fd.get("importance") as ImportanceType;
     const studyDate = fd.get("date") as string;
 
+    let notionLink = '', notionEmbedUrl = '';
+    try { notionLink = notionURL(String(fd.get('notionLink') || '')); notionEmbedUrl = notionURL(String(fd.get('notionEmbedUrl') || '')); }
+    catch (error) { toast.error((error as Error).message); return; }
     let customSettings = undefined;
     if (showAdvanced && intervalsStr.trim()) {
       const intervals = intervalsStr.split(",").map(s => Number(s.trim()));
@@ -768,42 +423,7 @@ export const EditTopicModal = ({
       }
     }
 
-    let reviews = safeTopic.reviews || [];
-
-    const needsRegeneration =
-      isNew ||
-      JSON.stringify(safeTopic.customSettings) !==
-        JSON.stringify(customSettings) ||
-      safeTopic.studyDate !== studyDate;
-
-    if (needsRegeneration) {
-      let finalCustomSettings = customSettings;
-      if (!finalCustomSettings && config && config.customReviewIntervals && config.customReviewIntervals.length > 0) {
-        const baseQ = IMPORTANCE_LEVELS.find((i) => i.id === importance)?.baseQ || 20;
-        finalCustomSettings = { intervals: config.customReviewIntervals, baseQuestions: baseQ };
-      }
-
-      const newSchedule = generateSmartSchedule(
-        studyDate,
-        undefined,
-        importance,
-        [],
-        safeTopic.id,
-        finalCustomSettings,
-      );
-
-      if (isNew) {
-        reviews = newSchedule;
-      } else {
-        reviews = newSchedule.map((newR, i) => {
-          const existing = safeTopic.reviews.find((r) => r.type === newR.type);
-          if (existing && existing.done) {
-            return { ...existing, label: newR.label };
-          }
-          return newR;
-        });
-      }
-    }
+    const reviews = isNew ? generateSmartSchedule(studyDate, config?.examDate, importance, [], undefined, customSettings) : safeTopic.reviews;
 
     const updated = {
       ...safeTopic,
@@ -812,9 +432,10 @@ export const EditTopicModal = ({
       tags: [...new Set([...tags, ...(newTagInput.trim() ? [newTagInput.trim()] : [])])],
       area,
       importance,
+      status: (fd.get("topicStatus") || "backlog") as Topic["status"],
       studyDate,
       reviews,
-      linkedLessons, // Save the linked lessons
+      linkedLessons, notionLink, notionEmbedUrl,
       customSettings,
       updatedAt: Date.now(),
     };
@@ -867,16 +488,25 @@ export const EditTopicModal = ({
               <fieldset className="rf-priority">
                 <legend>Prioridade</legend>
                 <div className="rf-priority-options">
-                  {(["low", "medium", "high"] as const).map(lvl => <label key={lvl}>
+                  {(["optional", "low", "medium", "high", "extreme"] as const).map(lvl => <label key={lvl}>
                     <input type="radio" name="importance" value={lvl} defaultChecked={(safeTopic.importance || "medium") === lvl} />
-                    <span>{lvl === "high" ? "Alta" : lvl === "medium" ? "Média" : "Baixa"}</span>
+                    <span>{IMPORTANCE_LEVELS.find(level => level.id === lvl)?.label}</span>
                   </label>)}
                 </div>
                 <p className="rf-field-hint">Define o volume de questões sugerido para as revisões.</p>
               </fieldset>
               <details className="rf-form-section">
+                <summary>Anotações no Notion <span>Por matéria</span><ChevronDown size={16} /></summary>
+                <div className="rf-section-fields">
+                  <label className="rf-field">Link da página<input name="notionLink" defaultValue={safeTopic.notionLink || ""} placeholder="https://…notion.site/cardiologia…" /></label>
+                  <label className="rf-field">Incorporar dentro do app (opcional)<textarea name="notionEmbedUrl" defaultValue={safeTopic.notionEmbedUrl || ""} placeholder="Cole o código de Incorporar esta página ou o endereço src do iframe" rows={2} /></label>
+                  <p className="rf-field-hint">No Notion publicado, use Incorporar esta página e copie o código. Páginas privadas continuam acessíveis pelo botão Abrir no Notion.</p>
+                </div>
+              </details>
+              <details className="rf-form-section">
                 <summary>Organização <span>Opcional</span><ChevronDown size={16} /></summary>
                 <div className="rf-section-fields">
+                  <label className="rf-field">Etapa no quadro Kanban<select name="topicStatus" defaultValue={safeTopic.status || 'backlog'}><option value="backlog">A fazer</option><option value="studying">Estudando</option><option value="reviewing">Revisando</option><option value="mastered">Dominado</option></select></label>
                   <label className="rf-field">Tópico específico
                     <input name="subarea" defaultValue={safeTopic.subarea || ""} placeholder="Ex.: Endocrinologia" />
                   </label>
@@ -992,11 +622,13 @@ export const EditReviewHistoryModal = ({
   reviewIdx: number | null;
   onSave: (data: { date: string; correct: number; total: number }) => void;
 }) => {
-  if (!isOpen || !topic || reviewIdx === null) return null;
+  if (!isOpen || !topic || reviewIdx === null || !topic.reviews[reviewIdx]) return null;
   const review = topic.reviews[reviewIdx];
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const correct = Number(fd.get("correct")), total = Number(fd.get("total"));
+    if (!Number.isInteger(total) || total < 1 || !Number.isInteger(correct) || correct < 0 || correct > total) { toast.error('Informe total positivo e acertos entre zero e o total.'); return; }
     onSave({
       date: fd.get("date") as string,
       correct: parseInt(fd.get("correct") as string),
@@ -1275,13 +907,16 @@ export const SettingsModal = ({
 
   const handleSave = () => {
     const key = tempKey.trim();
-    if (key && key !== syncKey && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) {
-      toast.error('A chave deve ter de 16 a 128 caracteres: letras, números, hífen ou sublinhado.');
+    if (key && key !== syncKey && !validSyncCode(key)) {
+      toast.error('Use até 128 letras, números, hífens ou sublinhados. Códigos curtos são aceitos.');
       return;
     }
     if (status === 'syncing' && key !== syncKey) { toast.error('Aguarde a sincronização terminar.'); return; }
+    let savedConfig: UserConfig;
+    try { savedConfig = { ...tempConfig, notionHomeUrl: notionURL(tempConfig.notionHomeUrl || ''), notionHomeEmbedUrl: notionURL(tempConfig.notionHomeEmbedUrl || '') }; }
+    catch (error) { toast.error((error as Error).message); return; }
     onSaveKey(tempKey);
-    onSaveConfig(tempConfig);
+    if (!syncKey || !key || key === syncKey) onSaveConfig(savedConfig);
     onClose();
   };
 
@@ -1464,7 +1099,12 @@ export const SettingsModal = ({
                   </div>
                 </div>
 
-                <AccentPicker value={tempConfig.accentColor} onChange={accentColor => setTempConfig(prev => ({ ...prev, accentColor }))} />
+                <details className="rf-form-section"><summary>Caderno inicial do Notion <span>Opcional</span><ChevronDown size={16} /></summary><div className="rf-section-fields">
+                  <label className="rf-field">Link do caderno<input value={tempConfig.notionHomeUrl || ''} onChange={e => setTempConfig(prev => ({ ...prev, notionHomeUrl: e.target.value }))} placeholder="https://…notion.site/…" /></label>
+                  <label className="rf-field">Código de incorporação<textarea rows={2} value={tempConfig.notionHomeEmbedUrl || ''} onChange={e => setTempConfig(prev => ({ ...prev, notionHomeEmbedUrl: e.target.value }))} placeholder="Cole o código de Incorporar esta página" /></label>
+                  <p className="rf-field-hint">Cada matéria pode ter um caderno diferente. Configure na edição da matéria → Anotações no Notion.</p>
+                </div></details>
+                <BackgroundPicker value={tempConfig.backgroundColor} onChange={backgroundColor => setTempConfig(prev => ({ ...prev, backgroundColor }))} />
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
@@ -1690,7 +1330,7 @@ export const SettingsModal = ({
                     </label>
                   </div>
                   <p className="text-xs text-amber-700/80 dark:text-amber-400/80 leading-relaxed font-medium">
-                    Todos os dias, a IA recalcula a prioridade das suas
+                    Todos os dias, o agendamento local recalcula a prioridade das suas
                     revisões, impedindo que os números de "tarefas do dia" saiam
                     de controle, priorizando sempre as essenciais para o seu
                     aproveitamento.
@@ -1734,23 +1374,23 @@ export const SettingsModal = ({
                     Nuvem
                   </h4>
                   <p className="text-[10px] text-slate-500 mt-1 mb-4">
-                    Mantenha seu passkey salvo para ter seu banco em todos os
+                    Use um código simples para acessar seus estudos nos seus
                     seus dispositivos.
                   </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">
-                    Chave de sincronização
+                    Código de sincronização
                   </label>
                   <input
                     type="password"
                     value={tempKey}
                     onChange={(e) => setTempKey(e.target.value)}
-                    placeholder="••••••••••••"
+                    placeholder="Ex.: estudante-ana"
                     className="w-full bg-slate-50 dark:bg-black/20 text-slate-900 dark:text-white p-3.5 rounded-xl text-sm font-bold border border-slate-200 dark:border-white/5 outline-none focus:border-blue-500/50"
                   />
                   <button type="button" onClick={() => setTempKey(crypto.randomUUID().replaceAll('-', ''))} className="mt-2 rounded-lg bg-blue-600 text-white px-4 py-3 text-sm">Gerar chave segura</button>
-                  <p className="text-xs text-slate-500 mt-2">Use a mesma chave nos seus dispositivos. Quem possui a chave pode acessar os dados sincronizados. Guarde-a em local seguro.</p>
+                  <p className="text-xs text-slate-500 mt-2">Use o mesmo código nos seus dispositivos. Quem conhece o código pode acessar os dados vinculados. Salvamos no aparelho imediatamente; o envio automático é agrupado a cada 10 minutos com alterações. O perfil prioritário usa 30 segundos. O botão de sincronizar permite antecipar o envio, com intervalo mínimo de 1 minuto.</p>
                 </div>
               </div>
 

@@ -1,34 +1,40 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Topic, Simulado, UserConfig, Review, ScheduleProgress } from '../types';
-import { USER_FIREBASE_CONFIG, APP_ID, getTodayStr, AREAS } from '../utils';
-import { mergeStudyData, preserveInFlightChanges, type StudyData } from '../services/syncMerge';
+import { useEffect,useMemo,useRef,useState } from 'react';
 import { toast } from 'sonner';
+import { syncCloud } from '../services/cloudSync';
+import { preserveInFlightChanges,type StudyData } from '../services/syncMerge';
+import { emptySyncMeta,fastSync,nextSyncTime, prioritySyncProfile,stableJSON,syncInterval,validSyncCode,type SyncMeta } from '../services/syncPolicy';
+import { ScheduleProgress,Simulado,Topic,UserConfig } from '../types';
+import { getTodayStr } from '../utils';
 
-const defaults: UserConfig = { examDate: '', targetAccuracy: 80, useFSRS: true, fsrsRetention: 0.9, fsrsMaximumInterval: 730 };
+const defaults: UserConfig = { examDate: '', targetAccuracy: 80, useFSRS: true, fsrsRetention: .9, fsrsMaximumInterval: 730 };
 const storage = { topics: 'reviewflow_v3_data', simulados: 'reviewflow_simulados', config: 'reviewflow_config', scheduleProgress: 'reviewflow_schedule_progress', dailyNotes: 'reviewflow_daily_notes' };
+const emptyData = (): StudyData => ({ topics: [], simulados: [], config: { ...defaults }, scheduleProgress: {}, dailyNotes: {} });
+const readText = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
 function readLocal(): StudyData {
-  const result: StudyData = { topics: [], simulados: [], config: { ...defaults }, scheduleProgress: {}, dailyNotes: {} };
+  const result = emptyData();
   for (const [field, key] of Object.entries(storage)) {
-    const raw = localStorage.getItem(key);
+    const raw = readText(key);
     if (!raw) continue;
     try {
       const value = JSON.parse(raw);
-      const valid = ['topics', 'simulados'].includes(field) ? Array.isArray(value) && value.every(item => item && typeof item.id === 'string' && (field !== 'topics' || Array.isArray(item.reviews))) : value && typeof value === 'object' && !Array.isArray(value);
+      const valid = field === 'dailyNotes' ? value && typeof value === 'object' && !Array.isArray(value) && Object.values(value).every(note => typeof note === 'string') : ['topics', 'simulados'].includes(field) ? Array.isArray(value) && value.every(item => item && typeof item.id === 'string' && (field !== 'topics' || Array.isArray(item.reviews))) : value && typeof value === 'object' && !Array.isArray(value);
       if (!valid) throw new Error('Formato inválido');
-      result[field] = value;
-    } catch (error) {
-      // Keep the original bytes before repairing a corrupt entry.
-      localStorage.setItem(key + '_backup_' + Date.now(), raw);
-      toast.error('Dados locais inválidos: ' + field, { description: 'Uma cópia foi preservada no navegador.' });
+      result[field] = field === 'config' ? { ...defaults, ...value } : value;
+    } catch {
+      try { localStorage.setItem(key + '_backup_' + Date.now(), raw); } catch { /* Do not destroy the original entry. */ }
+      toast.error('Dados locais inválidos: ' + field, { description: 'Exporte um backup antes de continuar.' });
     }
   }
   return result;
 }
 function loadBase(): Partial<StudyData> {
   try {
-    const saved = JSON.parse(localStorage.getItem('reviewflow_last_synced_state') || JSON.stringify({ config: defaults }));
+    const saved = JSON.parse(readText('reviewflow_last_synced_state') || JSON.stringify({ config: defaults }));
     return Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, typeof v === 'string' ? JSON.parse(v || '{}') : v]));
   } catch { return {}; }
+}
+function readMeta(code: string): SyncMeta {
+  try { return { ...emptySyncMeta(), ...JSON.parse(readText('reviewflow_sync_meta:' + code) || '{}') }; } catch { return emptySyncMeta(); }
 }
 export const useSync = () => {
   const [initial] = useState(readLocal);
@@ -38,12 +44,19 @@ export const useSync = () => {
   const [scheduleProgress, setScheduleProgress] = useState<ScheduleProgress>(initial.scheduleProgress);
   const [dailyNotes, setDailyNotes] = useState<Record<string,string>>(initial.dailyNotes);
   const loaded = true;
-  const [status, setStatus] = useState<'offline'|'syncing'|'online'|'error'>('offline');
-  const [syncKey, updateKey] = useState(() => localStorage.getItem('reviewflow_sync_key') || '');
+  const [status, setStatus] = useState<'offline'|'syncing'|'online'|'error'|'pending'>('offline');
+  const [syncKey, updateKey] = useState(() => readText('reviewflow_sync_key') || '');
+  const [verifiedAdmin, setVerifiedAdmin] = useState(false);
+  const [priorityProfile, setPriorityProfile] = useState(false);
+  const priorityRef = useRef(false);
+  const [lastSyncAt, setLastSyncAt] = useState(() => readMeta(syncKey).lastSuccess);
   const stateRef = useRef<StudyData>(initial);
   const keyRef = useRef(syncKey);
   const syncing = useRef(false);
+  const staleAccount = useRef(false);
   const lastSynced = useRef(loadBase());
+  const adminRef = useRef(false);
+  const syncRef = useRef<(manual?: boolean, pull?: boolean) => Promise<void>>(async () => {});
   const state = { topics, simulados, config, scheduleProgress, dailyNotes };
   stateRef.current = state;
   const apply = (data: StudyData) => {
@@ -51,77 +64,112 @@ export const useSync = () => {
     setTopics(data.topics); setSimulados(data.simulados); setConfig(data.config);
     setScheduleProgress(data.scheduleProgress); setDailyNotes(data.dailyNotes);
   };
+  const accountUnchanged = () => !staleAccount.current && (readText('reviewflow_sync_key') || '') === keyRef.current;
+  useEffect(() => {
+    let active = true;
+    priorityRef.current = false;
+    void prioritySyncProfile(syncKey).then(priority => { if (active && keyRef.current === syncKey) { priorityRef.current = priority; setPriorityProfile(priority); } }).catch(() => {});
+    return () => { active = false; };
+  }, [syncKey]);
   const setSyncKey = (input: string) => {
     const key = input.trim();
     if (key === keyRef.current) return;
-    if (syncing.current) { toast.error('Aguarde a sincronização terminar antes de trocar a chave.'); return; }
-    if (key && !/^[a-zA-Z0-9_-]{16,128}$/.test(key)) { toast.error('Use uma chave de 16 a 128 caracteres: letras, números, hífen ou sublinhado.'); return; }
-    if (keyRef.current) {
-      localStorage.setItem('reviewflow_account_backup_' + Date.now(), JSON.stringify({ key: keyRef.current, ...stateRef.current }));
-      if (key) apply({ topics: [], simulados: [], config: { ...defaults }, scheduleProgress: {}, dailyNotes: {} });
-    }
-    lastSynced.current = { config: { ...defaults } };
-    localStorage.removeItem('reviewflow_last_synced_state');
-    localStorage.removeItem('reviewflow_last_sync_time');
-    keyRef.current = key; updateKey(key);
-    localStorage.setItem('reviewflow_sync_key', key);
-    setStatus('offline');
+    if (syncing.current) { toast.error('Aguarde a sincronização terminar antes de trocar o código.'); return; }
+    if (!validSyncCode(key)) { toast.error('Use até 128 letras, números, hífens ou sublinhados.'); return; }
+    try {
+      if (keyRef.current) localStorage.setItem('reviewflow_account_backup_' + Date.now(), JSON.stringify({ key: keyRef.current, ...stateRef.current }));
+      localStorage.setItem('reviewflow_sync_key', key);
+      if (keyRef.current && key) apply(emptyData());
+      lastSynced.current = { config: { ...defaults } };
+      localStorage.removeItem('reviewflow_last_synced_state');
+      keyRef.current = key; updateKey(key); staleAccount.current = false;
+      adminRef.current = false; setVerifiedAdmin(false); priorityRef.current = false; setPriorityProfile(false); setLastSyncAt(readMeta(key).lastSuccess);
+      setStatus('offline');
+    } catch { toast.error('Não foi possível trocar o código. Libere espaço ou exporte um backup.'); }
   };
-  const syncNow = async (manual = false) => {
+  const syncNow = async (manual = false, pull = false) => {
     const key = keyRef.current;
-    if (!key || syncing.current) return;
+    if (!key || syncing.current || !accountUnchanged()) return;
     if (!navigator.onLine) { setStatus('offline'); return; }
-    syncing.current = true; setStatus('syncing');
-    const snapshot = structuredClone(stateRef.current);
+    if (!manual && document.visibilityState === 'hidden') return;
+    const execute = async () => {
+      if (!accountUnchanged()) return;
+      const meta = readMeta(key);
+      const due = nextSyncTime(meta, key, manual, adminRef.current || priorityRef.current);
+      if (Date.now() < due) {
+        if (manual) toast.info(`Aguarde ${Math.ceil((due - Date.now()) / 1000)} segundos para sincronizar novamente.`);
+        return;
+      }
+      if (!manual && !pull && stableJSON(stateRef.current) === stableJSON(lastSynced.current)) return;
+      const attempt = { ...meta, lastAttempt: Date.now() };
+      // Persist the throttle before starting network activity, including failures.
+      try { localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify(attempt)); }
+      catch { setStatus('error'); if (manual) toast.error('Armazenamento indisponível. Exporte um backup.'); return; }
+      setStatus('syncing');
+      const snapshot = structuredClone(stateRef.current);
+      try {
+        const { merged, verifiedAdmin: admin } = await syncCloud(snapshot, lastSynced.current, key);
+        if (!accountUnchanged()) return;
+        const current = preserveInFlightChanges(stateRef.current, merged, snapshot);
+        if (stableJSON(current) !== stableJSON(stateRef.current)) apply(current);
+        lastSynced.current = merged;
+        adminRef.current = admin; setVerifiedAdmin(admin);
+        const now = Date.now(); setLastSyncAt(now);
+        localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(merged));
+        localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify({ lastAttempt: attempt.lastAttempt, lastSuccess: now, failures: 0 }));
+        setStatus(stableJSON(current) === stableJSON(merged) ? 'online' : 'pending');
+        if (manual) toast.success('Sincronização concluída.');
+      } catch (error) {
+        localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify({ ...attempt, failures: meta.failures + 1 }));
+        setStatus('error');
+        if (manual) toast.error('Não foi possível sincronizar', { description: error instanceof Error ? error.message : 'Seus dados locais foram mantidos.' });
+      }
+    };
+    syncing.current = true;
     try {
-      if (!USER_FIREBASE_CONFIG.apiKey || !USER_FIREBASE_CONFIG.projectId) throw new Error('Configure o Firebase para sincronizar. Os dados continuam salvos neste dispositivo.');
-      const { initializeApp, getApps } = await import('firebase/app');
-      const { getAuth, signInAnonymously } = await import('firebase/auth');
-      const { getFirestore, doc, runTransaction } = await import('firebase/firestore');
-      const app = getApps()[0] || initializeApp(USER_FIREBASE_CONFIG);
-      const auth = getAuth(app);
-      await auth.authStateReady();
-      if (!auth.currentUser) await signInAnonymously(auth);
-      const ref = doc(getFirestore(app), 'artifacts', APP_ID, 'public', 'data', 'users', key);
-      const merged = await runTransaction(getFirestore(app), async transaction => {
-        const remote = await transaction.get(ref);
-        const result = mergeStudyData(snapshot, remote.exists() ? remote.data() : {}, lastSynced.current);
-        transaction.set(ref, JSON.parse(JSON.stringify({ ...result, updatedAt: new Date().toISOString() })));
-        return result;
-      });
-      // Preserve changes made in this tab while the request was in flight.
-      apply(preserveInFlightChanges(stateRef.current, merged, snapshot));
-      lastSynced.current = merged;
-      localStorage.setItem('reviewflow_last_synced_state', JSON.stringify(merged));
-      localStorage.setItem('reviewflow_last_sync_time', String(Date.now()));
-      setStatus('online');
-      if (manual) toast.success('Sincronização concluída.');
-    } catch (error) {
-      setStatus('error');
-      toast.error('Não foi possível sincronizar', { description: error instanceof Error ? error.message : 'Tente novamente. Seus dados locais foram mantidos.' });
-    } finally { syncing.current = false; }
+      if (navigator.locks) await navigator.locks.request('reviewflow-sync:' + key, { ifAvailable: true }, async lock => { if (lock) await execute(); });
+      else {
+        // Older webviews: best-effort expiring lease, without a polling listener.
+        const leaseKey = 'reviewflow_sync_lease:' + key;
+        if (Number(readText(leaseKey)) > Date.now()) return;
+        localStorage.setItem(leaseKey, String(Date.now() + 120_000));
+        try { await execute(); } finally { localStorage.removeItem(leaseKey); }
+      }
+    } catch { setStatus('error'); if (manual) toast.error('Não foi possível iniciar a sincronização. Seus dados locais foram mantidos.'); }
+    finally { syncing.current = false; }
   };
+  syncRef.current = syncNow;
   useEffect(() => {
+    if (!accountUnchanged()) return;
     try {
-      for (const [field, key] of Object.entries(storage)) localStorage.setItem(key, JSON.stringify(state[field]));
+      for (const [field, key] of Object.entries(storage)) {
+        const encoded = JSON.stringify(state[field]);
+        if (readText(key) !== encoded) localStorage.setItem(key, encoded);
+      }
     } catch { setStatus('error'); toast.error('Armazenamento cheio ou indisponível. Exporte um backup nas configurações.'); }
-  }, [topics, simulados, config, scheduleProgress, dailyNotes]);
-  useEffect(() => {
-    if (syncKey) void syncNow();
-    const offline = () => setStatus('offline');
-    const online = () => { if (keyRef.current) void syncNow(); };
-    window.addEventListener('offline', offline); window.addEventListener('online', online);
-    return () => { window.removeEventListener('offline', offline); window.removeEventListener('online', online); };
-  }, [syncKey]);
+    if (syncKey && stableJSON(stateRef.current) !== stableJSON(lastSynced.current)) setStatus(previous => previous === 'syncing' || previous === 'error' ? previous : 'pending');
+  }, [syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
   useEffect(() => {
     if (!syncKey) return;
-    if (JSON.stringify(stateRef.current) === JSON.stringify(lastSynced.current)) return;
-    const timer = setTimeout(() => void syncNow(), 30000);
-    return () => clearTimeout(timer);
-  }, [syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
-  // No privileged role is inferred from public client environment variables.
-  const userRole = 'usuario' as const;
-  return { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, appId: APP_ID, syncNow, userRole };
+    // Delay the first pull slightly so StrictMode does not double-submit on mount.
+    const startup = setTimeout(() => void syncRef.current(false, true), 1000);
+    const offline = () => setStatus('offline');
+    const pull = () => { if (document.visibilityState === 'visible') void syncRef.current(false, true); };
+    const accountChanged = (event: StorageEvent) => {
+      if (event.key === 'reviewflow_sync_key' && (event.newValue || '') !== keyRef.current) {
+        staleAccount.current = true; setStatus('offline');
+        toast.info('O código mudou em outra aba. Recarregue esta aba antes de continuar.');
+      }
+    };
+    // Idle tabs do not poll Firestore. Changed data is batched at the policy interval.
+    const tick = setInterval(() => void syncRef.current(), fastSync(syncKey, verifiedAdmin || priorityProfile) ? 5000 : 30_000);
+    window.addEventListener('offline', offline); window.addEventListener('online', pull);
+    window.addEventListener('focus', pull); document.addEventListener('visibilitychange', pull);
+    window.addEventListener('storage', accountChanged);
+    return () => { clearTimeout(startup); clearInterval(tick); window.removeEventListener('offline', offline); window.removeEventListener('online', pull); window.removeEventListener('focus', pull); document.removeEventListener('visibilitychange', pull); window.removeEventListener('storage', accountChanged); };
+  }, [syncKey, verifiedAdmin, priorityProfile]);
+  const userRole = verifiedAdmin ? 'admin' as const : 'usuario' as const;
+  return { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, appId: 'reviewflow', syncNow, userRole, lastSyncAt, syncIntervalMs: syncInterval(syncKey, verifiedAdmin || priorityProfile) };
 };
 
 export const useVibration = () => {

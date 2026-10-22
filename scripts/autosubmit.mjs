@@ -15,7 +15,7 @@ function npmRun(script) {
   if (process.platform === 'win32') run('cmd.exe', ['/d', '/s', '/c', `npm run ${script}`]);
   else run(npm, ['run', script]);
 }
-const allowed = /^(src\/|public\/|api\/|tests\/|scripts\/|docs\/|\.github\/|(?:package(?:-lock)?\.json|index\.html|vite\.config\.ts|vitest\.config\.ts|tsconfig\.json|tailwind\.config\.cjs|postcss\.config\.cjs|vercel\.json|README\.md|\.gitignore|\.env\.example|\.update\.bat)$)/;
+const allowed = /^(src\/|desktop\/|public\/|api\/|tests\/|scripts\/|docs\/|\.github\/|(?:package(?:-lock)?\.json|index\.html|vite\.config\.ts|vitest\.config\.ts|tsconfig\.json|tailwind\.config\.cjs|postcss\.config\.cjs|vercel\.json|README\.md|\.gitignore|\.env\.example|\.update\.bat)$)/;
 const forbidden = /(?:^|\/)(?:\.env(?!\.example$)|credentials|secrets|id_rsa|id_ed25519)|\.(?:pem|key|p12|pfx)$/i;
 const permitted = path => (allowed.test(path) || !existsSync(path)) && !forbidden.test(path);
 let busy = false;

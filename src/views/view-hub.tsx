@@ -1,22 +1,32 @@
-import type { StudyTool } from '../components/AppShell';
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Clock, Activity, Flame, CheckCircle2, ChevronRight, PlayCircle, Plus, 
-    BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, 
-    AlertCircle, Calendar, X, BrainCircuit, Target, PlusCircle, ArrowRight, 
-    Sparkles, Check, Award, TrendingUp, Layers, ExternalLink, Zap, MoreHorizontal
+import {
+Activity,
+ArrowRight,
+Calendar,
+ChevronDown,
+ClipboardList,
+Clock,
+Lightbulb,
+MoreHorizontal,
+PlayCircle,Plus,
+Target,
+X
 } from 'lucide-react';
-import { Topic, Simulado, UserConfig } from '../types';
-import { 
-    getTodayStr, getAreaTheme, formatDate, getPerformanceBgLight, 
-    getPerformanceColor, AREAS, getTopicTrack, getTrackBadgeInfo 
-} from '../utils';
-import { 
-    SmartSuggestions, HeatmapWidget, SimuladosMiniWidget, 
-    FutureLoadWidget, RetentionWidget, WeeklyGoalsWidget 
+import React,{ useEffect,useState } from 'react';
+import {
+FutureLoadWidget,
+HeatmapWidget,SimuladosMiniWidget,
+SmartSuggestions,
+WeeklyGoalsWidget
 } from '../components';
-import { DailyTodoContent } from '../modals';
+import type { StudyTool } from '../components/AppShell';
+import { TodoToday } from '../components/TodoToday';
+import { Simulado,Topic,UserConfig } from '../types';
+import {
+AREAS,
+formatDate,
+getTodayStr,
+getTopicTrack
+} from '../utils';
 
 const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void; dueItems: any[]; onReview: (id: string, idx: number) => void }) => {
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -113,11 +123,12 @@ export const HubView = ({
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [deepFocusOpen, setDeepFocusOpen] = useState(false);
-    const [tool, setTool] = useState('notes');
+    const [tool, setTool] = useState('goals');
     const [track, setTrack] = useState('all');
     useEffect(() => {
         if (!toolRequest) return;
-        if (toolRequest.id === 'focus') setDeepFocusOpen(true);
+        if (toolRequest.id === 'today') { setDeepFocusOpen(false); requestAnimationFrame(() => document.getElementById('todo-heading')?.scrollIntoView({ block: 'start' })); }
+        else if (toolRequest.id === 'focus') setDeepFocusOpen(true);
         else {
             setDeepFocusOpen(false);
             setTool(toolRequest.id);
@@ -137,7 +148,7 @@ export const HubView = ({
     const completedToday = history.filter(r => r.completedAt ? new Date(r.completedAt).toLocaleDateString('sv-SE') === today : r.date === today).length;
     const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
     const tools = [
-      { id: 'notes', label: 'Anotações', icon: BookOpen }, { id: 'goals', label: 'Metas', icon: Target },
+      { id: 'goals', label: 'Metas', icon: Target },
       { id: 'exams', label: 'Simulados', icon: ClipboardList }, { id: 'rhythm', label: 'Constância', icon: Activity },
       { id: 'suggestions', label: 'Reforço', icon: Lightbulb }, { id: 'load', label: 'Carga futura', icon: Calendar },
     ];
@@ -166,6 +177,8 @@ export const HubView = ({
           <div><dt>Seu aproveitamento</dt><dd>{total ? Math.round(correct / total * 100) + '%' : '—'}<span>{total ? 'de acertos' : 'aguardando estudo'}</span></dd></div>
           <div><dt>Questões praticadas</dt><dd>{total.toLocaleString('pt-BR')}<span>no total</span></dd></div>
         </dl>
+
+        <TodoToday notes={dailyNotes} onChange={setDailyNotes} />
 
         <div className="journal-layout">
           <section className="journal-today" aria-labelledby="today-heading">
@@ -204,7 +217,6 @@ export const HubView = ({
           <div className="journal-section-heading"><div><p className="journal-eyebrow">Ferramentas</p><h2 id="notebook-heading">Minha rotina</h2></div><button className="rf-text-button" onClick={() => onNavigateToView?.('database')}>Ver minhas matérias <ArrowRight size={16} /></button></div>
           <div className="journal-tool-tabs" role="tablist" aria-label="Ferramentas de estudo">{tools.map(item => <button key={item.id} id={'tool-' + item.id} role="tab" aria-selected={tool === item.id} aria-controls="journal-tool-panel" tabIndex={tool === item.id ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const next = tools[(tools.findIndex(t => t.id === tool) + (e.key === 'ArrowRight' ? 1 : tools.length - 1)) % tools.length]; setTool(next.id); document.getElementById('tool-' + next.id)?.focus(); e.preventDefault(); } }} onClick={() => setTool(item.id)}><item.icon size={16} />{item.label}</button>)}</div>
           <div className="journal-tools" id="journal-tool-panel" role="tabpanel" aria-labelledby={'tool-' + tool}>
-            {tool === 'notes' && <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} hideHeader />}
             {tool === 'goals' && <WeeklyGoalsWidget topics={activeTopics} simulados={activeSimulados} config={config} />}
             {tool === 'exams' && <><button className="rf-text-button" onClick={onAddSimulado}><Plus size={16} /> Registrar simulado</button><SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config.targetAccuracy || 80} onAdd={onAddSimulado || (() => {})} /></>}
             {tool === 'rhythm' && <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />}

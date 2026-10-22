@@ -38,6 +38,7 @@ export interface Topic {
   linkedLessons?: string[]; 
   hasDifficultLesson?: boolean; // Added for gamification/difficulty
   notionLink?: string; // Link to Notion page
+  notionEmbedUrl?: string; // src copied from Notion's Embed this page dialog
   source?: string; // e.g. "BLOCO 1 - Medcof"
   tags?: string[]; // e.g. ["hematologia", "ginecologia geral"]
 
@@ -83,6 +84,9 @@ export interface WeeklyGoal {
 }
 
 export interface UserConfig {
+  backgroundColor?: string;
+  notionHomeUrl?: string;
+  notionHomeEmbedUrl?: string;
   accentColor?: string;
   fsrsRetention?: number;
   fsrsMaximumInterval?: number;

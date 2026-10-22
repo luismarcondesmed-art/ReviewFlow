@@ -1,6 +1,13 @@
-# ReviewFlow
+# ReviewFlow 2.0
 
 Planejamento de estudos e revisão espaçada para medicina, concursos e outras áreas do conhecimento. React, TypeScript, Vite e PWA.
+
+Esta versão inclui anotações do Notion por matéria, To-Do Today, cor de fundo configurável, sincronização agrupada e base desktop Windows em Electron.
+
+- [Guia didático de todas as funções](docs/GUIA-REVIEWFLOW-2.0.md)
+- [Implementação, correções, sincronização e base desktop](docs/REVIEWFLOW-2.0.md)
+
+A sincronização automática comum respeita dez minutos entre tentativas; o perfil prioritário usa trinta segundos. Não há gravação de payloads iguais. Um código curto é aceito e não representa uma permissão administrativa. Notion incorpora páginas publicadas mediante o código fornecido pelo próprio Notion; páginas privadas abrem no serviço.
 
 ## Desenvolvimento
 
@@ -17,6 +24,8 @@ Abra http://localhost:3000. O modo local não precisa de Firebase ou Gemini. Par
 npm run check   # TypeScript e testes
 npm run build   # Bundle e service worker de produção
 npm run preview # Testar a versão compilada
+npm run desktop:pack # Gerar pasta de teste Windows, sem instalar
+npm run desktop:build # Gerar executável portátil de protótipo
 ```
 
 ## Revisão adaptativa

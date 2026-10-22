@@ -1,9 +1,11 @@
+import { toast } from 'sonner';
+import { notionURL,safeNotionURL } from '../utils/notion';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { CalendarCheck, ChevronLeft, ChevronRight, ChevronDown, ClipboardList, Flag, BookOpen, CheckCircle2, Calendar as CalendarIcon, Clock, Link as LinkIcon, ExternalLink, Plus, List, Grid, ListFilter } from 'lucide-react';
-import { Topic, Simulado, UserConfig } from '../types';
-import { getTodayStr, getAreaTheme, formatDate, getTopicTrack } from '../utils';
+import { BookOpen,CalendarCheck,Calendar as CalendarIcon,CheckCircle2,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,Clock,ExternalLink,Flag,Link as LinkIcon,ListFilter } from 'lucide-react';
+import React,{ useEffect,useMemo,useRef,useState } from 'react';
 import { useCalendar } from '../hooks';
+import { Simulado,Topic,UserConfig } from '../types';
+import { formatDate,getAreaTheme,getTodayStr,getTopicTrack } from '../utils';
 
 export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdateTopic, onEditTopic }: { topics: Topic[], simulados: Simulado[], onOpenReview: (id: string, idx: number) => void, config: UserConfig, onUpdateTopic?: (topic: Topic) => void, onEditTopic?: (topic: Topic) => void }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -62,17 +64,15 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
         const newLink = window.prompt('Insira o link do Notion para esta matéria:', currentLink);
         
         if (newLink !== null) {
-            onUpdateTopic({
-                ...topic,
-                notionLink: newLink.trim()
-            });
+            try { onUpdateTopic({ ...topic, notionLink: notionURL(newLink) }); }
+            catch (error) { toast.error((error as Error).message); }
         }
     };
 
     const renderReviewCard = (r: any, isListMode: boolean = false) => {
         const theme = getAreaTheme(r.area || 'clinica'); 
         const topic = topics.find(t => t.id === r.topicId);
-        const notionLink = topic?.notionLink;
+        const notionLink = safeNotionURL(topic?.notionLink);
         const cardId = `${r.topicId}-${r.idx}`;
         const isExpanded = expandedCards[cardId];
         
@@ -109,14 +109,14 @@ export const CalendarView = ({ topics, simulados, onOpenReview, config, onUpdate
                             </button>
                         )}
 
-                        {hasExtraInfo || notionLink || !notionLink ? (
+                        {(
                             <button 
                                 onClick={(e) => toggleCard(cardId, e)}
                                 className="p-2 bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-black dark:hover:text-white rounded-xl transition-colors"
                             >
                                 <ChevronDown size={16} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                             </button>
-                        ) : null}
+                        )}
                     </div>
                 </div>
 

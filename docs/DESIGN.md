@@ -46,3 +46,9 @@ Em Ajustes → Geral, a cor de destaque pode ser escolhida entre seis opções o
 Os formulários de matérias e simulados usam largura máxima de 620 px, uma área interna de rolagem e ações fixas no rodapé. As informações essenciais aparecem primeiro; organização, tags, aulas e reforço ficam em seções expansíveis. O formulário de matérias preserva o histórico e os ajustes personalizados. O registro de simulados calcula o aproveitamento durante o preenchimento e exige números inteiros, total positivo e acertos entre zero e o total. Os campos têm rótulos associados e os criadores contêm a navegação por Tab.
 
 Nesta atualização, foram conferidos no navegador os formulários no desktop e o simulado em 390 × 844 px, incluindo limites de largura e ações visíveis. A seleção de cor foi aplicada, salva e conferida após recarregamento. Os testes de paleta cobrem preferências inválidas e contraste de cores personalizadas. Isso não substitui a homologação em iOS e Android físicos.
+
+## Atualização 2.0
+
+O controle de cores foi substituído por **Cor de fundo**; o seletor anterior de destaque não é mais exibido. A paleta de ações permanece estável, e o tema do texto acompanha a luminância do fundo escolhido. To-Do Today aparece diretamente em Meu dia; Anotações tem uma tela própria com lista de matérias e leitor Notion. O tutorial foi refeito em 12 passos, com seletor para ir direto a uma função. Veja [o registro da versão](REVIEWFLOW-2.0.md) e [o guia do usuário](GUIA-REVIEWFLOW-2.0.md).
+
+Nesta rodada foram conferidos no navegador o tutorial inicial, a criação/conclusão/edição de tarefas e sua persistência ao navegar, a seleção de matérias em Anotações, a abertura da edição do vínculo, a rejeição de links inválidos e a mudança do fundo sem alteração do destaque. Meu dia e Anotações foram percorridos em 390 px. A leitura de um caderno real do Notion e testes físicos permanecem pendentes.

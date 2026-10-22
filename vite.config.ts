@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
         registerType: 'prompt',
         includeAssets: ['icon.svg'],
         manifest: {
-          name: 'ReviewFlow • Estudos e revisões',
+          name: 'ReviewFlow 2.0 • Estudos e revisões',
           short_name: 'ReviewFlow',
           description: 'Estude qualquer área com inteligência. Repetição espaçada automática e métricas de desempenho.',
           theme_color: '#eeeef2',
@@ -70,7 +70,6 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
-            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
             'vendor-ui': ['framer-motion', 'lucide-react', 'canvas-confetti']
           }
         }
@@ -82,6 +81,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
+      watch: { ignored: ['**/release/**', '**/desktop/**'] },
       port: 3000,
       host: '0.0.0.0',
     }

@@ -1,7 +1,7 @@
 {
-  "name": "reviewflow-3.0",
+  "name": "reviewflow",
   "private": true,
-  "version": "3.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,9 +11,14 @@
     "deploy": "npm run build && git push && npx vercel --prod",
     "login": "npx vercel login",
     "test": "vitest run",
-    "check": "npm run lint && npm test",
+    "check": "npm run lint && npm test && npm run desktop:check",
     "submit": "node scripts/autosubmit.mjs --once",
-    "autosubmit": "node scripts/autosubmit.mjs"
+    "autosubmit": "node scripts/autosubmit.mjs",
+    "desktop:check": "node --check desktop/main.cjs && node --test desktop/security.test.cjs",
+    "desktop:dev": "npm run desktop:runtime && npm run build && electron .",
+    "desktop:pack": "npm run desktop:runtime && npm run build && electron-builder --win --dir",
+    "desktop:build": "npm run desktop:runtime && npm run build && electron-builder --win portable",
+    "desktop:runtime": "node node_modules/electron/install.js"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -36,6 +41,8 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.6.1",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.5.31",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.7.0",
@@ -47,5 +54,38 @@
     "glob": "^11.0.0",
     "rimraf": "^6.0.1",
     "tar": "^7.4.3"
+  },
+  "main": "desktop/main.cjs",
+  "description": "Planejamento de estudos e revis\u00e3o espa\u00e7ada",
+  "author": "ReviewFlow",
+  "build": {
+    "appId": "art.medmarcondes.reviewflow",
+    "productName": "ReviewFlow",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/main.cjs",
+      "desktop/security.cjs",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "ReviewFlow-${version}-Windows.${ext}"
+    },
+    "electronDist": "node_modules/electron/dist"
   }
 }

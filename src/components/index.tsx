@@ -1,10 +1,10 @@
 
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { motion,PanInfo,useAnimation } from 'framer-motion';
+import { Activity,AlertCircle,Award,BarChart2,BookOpen,BrainCircuit,Calendar,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,Clock,Crown,Edit,Flame,Flower2,GraduationCap,Medal,Microscope,Play,Plus,Shield,Sparkles,Star,Stethoscope,Target,Trash2,TrendingUp,Trophy,User,Zap } from 'lucide-react';
+import React,{ useEffect,useMemo,useRef,useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { Trophy, Zap, Flame, TrendingUp, Calendar, AlertCircle, ChevronRight, BookOpen, Trash2, Edit, Check, Target, ClipboardList, Star, Crown, Medal, ChevronUp, ChevronDown, Plus, BarChart2, CalendarDays, Clock, PlayCircle, Play, User, Stethoscope, Scissors, Baby, Flower2, ShieldAlert, MoreHorizontal, X, ChevronLeft, Heart, Microscope, Award, Activity, GraduationCap, BrainCircuit, Sparkles, Shield } from 'lucide-react';
-import { Topic, Simulado, AreaType } from '../types';
-import { AREAS, getLevelInfo, getTodayStr, getStreak, formatDate, getAreaTheme, getPerformanceColor, calculateNextLoad, getPriorityInfo, getPerformanceBgLight, calculateDetailedStats, APP_VERSION, getImportanceWeight } from '../utils';
+import { AreaType,Simulado,Topic } from '../types';
+import { APP_VERSION,AREAS,calculateDetailedStats,formatDate,getAreaTheme,getImportanceWeight,getLevelInfo,getPerformanceColor,getPriorityInfo,getTodayStr } from '../utils';
 
 export const getAreaIcon = (area: AreaType) => {
     switch (area) {
@@ -108,16 +108,17 @@ export const UserStatsDropdown = React.memo(({
     const [isOpen, setIsOpen] = useState(false);
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [selectedIconKey, setSelectedIconKey] = useState<string>(() => {
-        return localStorage.getItem('reviewflow_user_icon') || userIcon || 'user';
+        return userIcon || 'user';
     });
     const streak = calculateStreak(topics, simulados);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => setSelectedIconKey(userIcon || 'user'), [userIcon]);
 
     const CurrentAvatarIcon = USER_AVATAR_ICONS[selectedIconKey]?.icon || User;
 
     const handleSelectIcon = (key: string) => {
         setSelectedIconKey(key);
-        localStorage.setItem('reviewflow_user_icon', key);
         if (onSelectUserIcon) onSelectUserIcon(key);
     };
 

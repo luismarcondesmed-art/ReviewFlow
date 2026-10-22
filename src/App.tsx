@@ -1,27 +1,39 @@
-import { AppShell, type StudyTool } from './components/AppShell';
+import { AppShell,type StudyTool,type WorkspaceView } from './components/AppShell';
+import { validateBackup } from './services/backup';
 import { withNextFSRSReview } from './services/fsrsService';
+import { updateDifficultyFlags,updateTopicSchedule } from './services/topicEditing';
 import { applyAccent } from './utils/accent';
+import { applyBackground,backgroundIsDark,validBackground } from './utils/background';
 
-import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Activity, BookOpen, Calendar, ClipboardList, Home, PieChart, Plus, Search, Settings, 
-    Cloud, Check, LayoutGrid, Database, List, MoreHorizontal, ChevronDown, X, Zap, Menu, Flag, Map as MapIcon, GraduationCap,
-    ArrowLeft, Download, LogOut, Moon, Sun, Monitor, RefreshCw, AlertCircle, BrainCircuit, Heart,
-    PanelLeftClose, PanelLeftOpen
+import {
+Activity,
+AlertCircle,
+ArrowLeft,
+Plus,Search,
+X
 } from 'lucide-react';
-import { 
-    AreaType, Topic, Simulado, ImportanceType
-} from './types';
-import { 
-    AREAS, generateId, generateSmartSchedule, calculateNextLoad, getTodayStr, 
-    triggerConfetti, optimizeSchedule, OptimizationChange, formatFullDate, APP_ID, calculateStreak, getLevelInfo
-} from './utils';
-import { useSync, useVibration } from './hooks';
+import React,{ Suspense,lazy,useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import { Toaster,toast } from 'sonner';
+import { UserStatsDropdown } from './components';
+import { useSync,useVibration } from './hooks';
+import { EditReviewHistoryModal,EditTopicModal,OptimizationInfoModal,OptimizationResultModal,ReviewModal,SettingsModal,SimuladoModal,SupportModal,SyncAdModal,TutorialModal } from './modals';
 import { NotificationService } from './services/notificationService';
-import { LevelSystem, TopicCard, CompactLevelSystem, UserStatsDropdown } from './components';
-import { EditTopicModal, EditReviewHistoryModal, OptimizationResultModal, ReviewModal, SettingsModal, SimuladoModal, OptimizationInfoModal, TutorialModal, SyncAdModal, SupportModal, DeepFocusModal } from './modals';
-import { Toaster, toast } from 'sonner';
+import {
+AreaType,
+ImportanceType,
+Simulado,
+Topic
+} from './types';
+import {
+OptimizationChange,
+calculateNextLoad,
+calculateStreak,
+generateId,generateSmartSchedule,
+getLevelInfo,
+getTodayStr,
+optimizeSchedule,
+triggerConfetti
+} from './utils';
 
 // --- Lazy Loaded Views for Performance ---
 const HubView = lazy(() => import('./views/view-hub').then(module => ({ default: module.HubView })));
@@ -31,6 +43,8 @@ const SimuladosView = lazy(() => import('./views/view-simulados').then(module =>
 const CronogramaView = lazy(() => import('./views/view-cronograma').then(module => ({ default: module.CronogramaView })));
 const StatsView = lazy(() => import('./views/view-stats').then(module => ({ default: module.StatsView })));
 const LandingView = lazy(() => import('./views/view-landing').then(module => ({ default: module.LandingView })));
+
+const NotesView = lazy(() => import('./views/view-notes').then(module => ({ default: module.NotesView })));
 
 // --- Loading Skeleton ---
 const LoadingSpinner = () => (
@@ -63,7 +77,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                         <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
                         <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">Ops, algo deu errado!</h1>
                         <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
-                            Ocorreu um erro inesperado. Tente recarregar a página ou limpar os dados locais se o problema persistir.
+                            Ocorreu um erro inesperado. Seus dados locais foram mantidos. Tente recarregar ou exporte uma cópia para recuperação.
                         </p>
                         <div className="flex flex-col gap-3">
                             <button 
@@ -74,13 +88,15 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                             </button>
                             <button 
                                 onClick={() => {
-                                    if (!window.confirm('Isso apagará os dados locais. Exporte um backup nas configurações antes de continuar. Deseja apagar?')) return;
-                                    Object.keys(localStorage).filter(key => key.startsWith('reviewflow_')).forEach(key => localStorage.removeItem(key));
-                                    window.location.reload();
+                                    try {
+                                        const raw = Object.fromEntries(Object.keys(localStorage).filter(key => key.startsWith('reviewflow_')).map(key => [key, localStorage.getItem(key)]));
+                                        const url = URL.createObjectURL(new Blob([JSON.stringify({ recoveryVersion: 1, raw }, null, 2)], { type: 'application/json' }));
+                                        const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'reviewflow-recuperacao.json'; anchor.click(); URL.revokeObjectURL(url);
+                                    } catch { window.alert('Não foi possível exportar. Mantenha esta aba aberta para recuperar os dados.'); }
                                 }} 
                                 className="w-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold py-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                             >
-                                Limpar Dados e Recarregar
+                                Exportar cópia para recuperação
                             </button>
                         </div>
                         {this.state.error && (
@@ -99,13 +115,13 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 function AppContent() {
-    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole } = useSync();
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole, lastSyncAt, syncIntervalMs } = useSync();
     const vibration = useVibration();
     
     // UI State
     const [hasStarted, setHasStarted] = useState(() => localStorage.getItem('reviewflow_has_started') === 'true');
     const [landingView, setLandingView] = useState<'main' | 'privacy' | 'terms'>('main');
-    const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'stats'>('list');
+    const [view, setView] = useState<WorkspaceView>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [homeTool, setHomeTool] = useState<{ id: StudyTool; nonce: number } | null>(null);
     
@@ -143,6 +159,8 @@ function AppContent() {
     const [editingSimulado, setEditingSimulado] = useState<Simulado | null>(null);
     const [optimizationInfoOpen, setOptimizationInfoOpen] = useState(false);
     const [tutorialOpen, setTutorialOpen] = useState(false);
+    useEffect(() => { if (hasStarted && !localStorage.getItem('reviewflow_tutorial_seen_v2')) setTutorialOpen(true); }, [hasStarted]);
+    const closeTutorial = () => { setTutorialOpen(false); try { localStorage.setItem('reviewflow_tutorial_seen_v2', 'true'); } catch { /* Guide remains available. */ } };
     const [syncAdOpen, setSyncAdOpen] = useState(false);
     const [supportModalOpen, setSupportModalOpen] = useState(false);
     
@@ -154,12 +172,13 @@ function AppContent() {
 
     useEffect(() => {
         const root = window.document.documentElement;
-        const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const isDark = validBackground(config.backgroundColor) ? backgroundIsDark(config.backgroundColor) : themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        applyBackground(config.backgroundColor);
         if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
         localStorage.setItem('theme', themeMode);
-    }, [themeMode]);
+    }, [themeMode, config.backgroundColor]);
 
-    useEffect(() => { applyAccent(config.accentColor); }, [config.accentColor]);
+    useEffect(() => { applyAccent(); }, []);
 
     // Focus search when activated
     useEffect(() => {
@@ -312,6 +331,7 @@ function AppContent() {
     const handleDeleteSimulado = (id: string) => {
         const deletionTimestamp = Date.now() + 1000;
         setSimulados(prev => prev.map(s => s.id === id ? { ...s, deleted: true, deletedAt: null, updatedAt: deletionTimestamp } : s));
+        setTopics(previous => updateDifficultyFlags(previous, simulados.filter(s => s.id !== id)));
         setSimuladoModalOpen(false);
         setEditingSimulado(null);
         vibration.success();
@@ -337,7 +357,7 @@ function AppContent() {
                 if (r.done) return r;
                 // If it wasn't difficult before but is now, we should increase it
                 // To be safe, we just recalculate
-                let nextTargetQ = calculateNextLoad(existing.importance, null, r.type, null, existing.reviews[0].targetQ);
+                let nextTargetQ = calculateNextLoad(existing.importance, null, r.type, null, existing.reviews[0]?.targetQ);
                 if (hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
                 return { ...r, targetQ: nextTargetQ };
             });
@@ -387,27 +407,7 @@ function AppContent() {
     }, [topics, config.examDate, config.useFSRS, activeSimulados]);
 
     const handleUpdateTopic = (updated: Topic) => {
-        const old = topics.find(t => t.id === updated.id);
-        let reviews = updated.reviews;
-        const baseQ = old ? old.reviews[0].targetQ : undefined;
-        if (old && old.studyDate !== updated.studyDate) {
-             if (confirm("Recalcular cronograma devido à mudança de data?")) {
-                 reviews = generateSmartSchedule(updated.studyDate, config.examDate, updated.importance, topics, updated.id, undefined, baseQ);
-             } else { updated.studyDate = old.studyDate; }
-        } else if (old && old.importance !== updated.importance) {
-            reviews = reviews.map(r => {
-                if (r.done) return r;
-                let nextTargetQ = calculateNextLoad(updated.importance, null, r.type, null, baseQ);
-                if (updated.hasDifficultLesson) nextTargetQ = Math.ceil(nextTargetQ * 1.1);
-                return { ...r, targetQ: nextTargetQ };
-            });
-        }
-        let finalTopic = { ...updated, reviews, updatedAt: Date.now() };
-        if (config.useFSRS) {
-            const history = old?.reviews.filter(r => r.done) || [];
-            finalTopic = history.length ? withNextFSRSReview({ ...finalTopic, reviews: [...history, ...reviews.filter(r => !r.done)] }, config, baseQ || 20) : { ...finalTopic, reviews: reviews.slice(0, 1) };
-        }
-        setTopics(prev => prev.map(t => t.id === finalTopic.id ? finalTopic : t));
+        setTopics(previous => previous.map(topic => topic.id === updated.id ? updateTopicSchedule(topic, updated, config, previous) : topic));
         vibration.success();
     };
 
@@ -479,14 +479,15 @@ function AppContent() {
 
     const handleHistoryEdit = (data: { date: string, correct: number, total: number }) => {
         if (!historyEditData) return;
+        if (!Number.isInteger(data.total) || data.total < 1 || !Number.isInteger(data.correct) || data.correct < 0 || data.correct > data.total) { toast.error('Resultado de revisão inválido.'); return; }
         setTopics(prev => prev.map(t => {
             if (t.id !== historyEditData.tId) return t;
             const newReviews = [...t.reviews];
             if (newReviews[historyEditData.rIdx]) {
-                newReviews[historyEditData.rIdx] = { ...newReviews[historyEditData.rIdx], date: data.date, correct: data.correct, total: data.total };
+                newReviews[historyEditData.rIdx] = { ...newReviews[historyEditData.rIdx], date: data.date, correct: data.correct, total: data.total, ...(newReviews[historyEditData.rIdx].done && newReviews[historyEditData.rIdx].date !== data.date ? { completedAt: new Date(data.date + "T12:00:00").toISOString() } : {}) };
             }
             const updated = { ...t, reviews: newReviews, updatedAt: Date.now() };
-            return config.useFSRS ? withNextFSRSReview(updated, config, newReviews[0]?.targetQ || 20) : updated;
+            return config.useFSRS && newReviews[historyEditData.rIdx]?.done ? withNextFSRSReview(updated, config, newReviews[0]?.targetQ || 20) : updated;
         }));
         setHistoryEditData(null);
         vibration.success();
@@ -500,16 +501,8 @@ function AppContent() {
             setSimulados(prev => [...prev, sWithId]);
         }
 
-        // Update hasDifficultLesson on topics
-        if (newS.difficultyLessons && newS.difficultyLessons.length > 0) {
-            setTopics(prev => prev.map(t => {
-                const hasDifficult = t.linkedLessons?.some(l => newS.difficultyLessons?.includes(l));
-                if (hasDifficult && !t.hasDifficultLesson) {
-                    return { ...t, hasDifficultLesson: true, updatedAt: Date.now() };
-                }
-                return t;
-            }));
-        }
+        const updatedExams = [...simulados.filter(s => s.id !== sWithId.id), sWithId];
+        setTopics(previous => updateDifficultyFlags(previous, updatedExams));
 
         setSimuladoModalOpen(false);
         setEditingSimulado(null);
@@ -546,20 +539,20 @@ function AppContent() {
         reader.onload = (ev) => {
             try {
                 const data = JSON.parse(ev.target?.result as string);
-                if (!Array.isArray(data.topics) || !data.topics.every(t => t && typeof t.id === 'string' && typeof t.title === 'string' && Array.isArray(t.reviews) && t.reviews.every(r => r && typeof r.date === 'string' && Number.isFinite(r.total) && Number.isFinite(r.correct)))) throw new Error('Temas inválidos');
-                if (data.simulados !== undefined && (!Array.isArray(data.simulados) || !data.simulados.every(s => s && typeof s.id === 'string' && Number.isFinite(s.totalQuestions) && Number.isFinite(s.correctCount)))) throw new Error('Simulados inválidos');
-                for (const key of ['config', 'scheduleProgress', 'dailyNotes']) if (data[key] !== undefined && (!data[key] || typeof data[key] !== 'object' || Array.isArray(data[key]))) throw new Error('Formato inválido');
+                validateBackup(data);
                 localStorage.setItem('reviewflow_pre_import_backup_' + Date.now(), JSON.stringify({ topics, simulados, config, scheduleProgress, dailyNotes }));
-                const importedAt = Date.now();
-                setTopics(data.topics.map(t => ({ ...t, updatedAt: importedAt })));
-                if (data.simulados) setSimulados(data.simulados.map(s => ({ ...s, updatedAt: importedAt })));
+                const importedAt = Math.max(Date.now(), ...topics.map(t => t.updatedAt || 0), ...simulados.map(s => s.updatedAt || 0)) + 1;
+                setTopics([...data.topics.map(t => ({ ...t, updatedAt: importedAt })), ...topics.filter(t => !data.topics.some(imported => imported.id === t.id)).map(t => ({ ...t, deleted: true, updatedAt: importedAt }))]);
+                if (data.simulados) setSimulados([...data.simulados.map(s => ({ ...s, updatedAt: importedAt })), ...simulados.filter(s => !data.simulados!.some(imported => imported.id === s.id)).map(s => ({ ...s, deleted: true, updatedAt: importedAt }))]);
                 if (data.config) setConfig(data.config);
                 if (data.scheduleProgress) setScheduleProgress(data.scheduleProgress);
                 if (data.dailyNotes) setDailyNotes(data.dailyNotes);
                 alert('Importado!'); setSettingsOpen(false); vibration.success();
-            } catch (err) { alert('Erro.'); vibration.error(); }
+            } catch (err) { toast.error('Não foi possível importar', { description: err instanceof Error ? err.message : 'Confira o arquivo.' }); vibration.error(); }
         };
+        reader.onerror = () => toast.error('Não foi possível ler o arquivo.');
         reader.readAsText(file);
+        e.target.value = '';
     };
 
     if (!loaded) return <div className="flex h-screen w-full items-center justify-center bg-transparent"><Activity size={40} className="animate-spin text-slate-500"/></div>;
@@ -567,15 +560,8 @@ function AppContent() {
     const currentReviewTopic = reviewData ? topics.find(t => t.id === reviewData.tId) || null : null;
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
 
-    const NAV_ITEMS = [
-        { id: 'list', label: 'Hoje', icon: Home, title: 'Hoje' },
-        { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
-        { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
-        { id: 'database', label: 'Acervo', icon: Database, title: 'Acervo de Estudos' },
-        { id: 'stats', label: 'Estatísticas', icon: PieChart, title: 'Estatísticas' },
-    ];
 
-    const currentViewTitle = NAV_ITEMS.find(n => n.id === view)?.title || 'ReviewFlow';
+
 
     if (!hasStarted) {
         return (
@@ -606,9 +592,9 @@ function AppContent() {
                 onNewExam={() => { setEditingSimulado(null); setSimuladoModalOpen(true); }}
                 onSettings={() => setSettingsOpen(true)}
                 onHelp={() => setTutorialOpen(true)}
-                onTool={id => { setView('list'); setHomeTool({ id, nonce: Date.now() }); }}
+                onTool={id => { setView(id === 'notes' ? 'notes' : 'list'); setHomeTool({ id, nonce: Date.now() }); }}
                 onSync={() => syncKey ? handleSyncClick() : setSettingsOpen(true)}
-                status={status} hasSyncKey={Boolean(syncKey)}
+                status={status} hasSyncKey={Boolean(syncKey)} lastSyncAt={lastSyncAt} syncIntervalMs={syncIntervalMs}
                 pendingCount={activeTopics.reduce((count, t) => count + t.reviews.filter(r => !r.done && r.date <= getTodayStr()).length, 0)}
                 profile={<UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} userIcon={config.userIcon} onSelectUserIcon={userIcon => setConfig(prev => ({ ...prev, userIcon }))} dropPosition="down" size="sm" />}
             >
@@ -624,7 +610,7 @@ function AppContent() {
                 </section>}
 
                 <div className="flex-1 w-full">
-                    {view !== 'list' && view !== 'stats' && <header className="rf-view-heading">
+                    {view !== 'list' && view !== 'stats' && view !== 'notes' && <header className="rf-view-heading">
                         <div><p className="journal-eyebrow">{view === 'database' ? 'Tudo o que você vem aprendendo' : view === 'calendar' ? 'Um encontro de cada vez' : view === 'cronograma' ? 'Encontre seu fio condutor' : 'Prática com propósito'}</p>
                             <h1>{view === 'database' ? 'Seu acervo' : view === 'calendar' ? 'Sua agenda' : view === 'cronograma' ? 'Seu cronograma' : 'Seus simulados'}</h1>
                             <p>{view === 'database' ? 'Matérias, materiais e histórico de estudo, reunidos em um só lugar.' : view === 'calendar' ? 'Veja os próximos encontros e organize seu tempo para revisar.' : view === 'cronograma' ? 'Acompanhe suas aulas e transforme cada tema em uma rotina de revisão.' : 'Registre resultados e descubra o que vale a pena retomar.'}</p>
@@ -695,6 +681,7 @@ function AppContent() {
                             />
                         )}
 
+                        {view === 'notes' && <NotesView topics={topics} config={config} onEditTopic={setEditTopic} onSettings={() => setSettingsOpen(true)} />}
                         {view === 'stats' && <StatsView topics={activeTopics} simulados={activeSimulados} />}
                     </Suspense>
                 </div>
@@ -794,7 +781,7 @@ function AppContent() {
 
             <TutorialModal 
                 isOpen={tutorialOpen}
-                onClose={() => setTutorialOpen(false)}
+                onClose={closeTutorial}
             />
 
             <SyncAdModal

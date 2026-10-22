@@ -5,6 +5,7 @@ export class NotificationService {
     private static instance: NotificationService;
     private checkInterval: ReturnType<typeof setInterval> | null = null;
     private lastNotificationDate: string | null = null;
+    private sending = false;
 
     private constructor() {
         this.lastNotificationDate = localStorage.getItem('lastNotificationDate');
@@ -64,7 +65,7 @@ export class NotificationService {
         if (!config.notifications?.enabled || !('Notification' in window) || Notification.permission !== 'granted') return;
 
         const today = getTodayStr();
-        if (this.lastNotificationDate === today) return; // Already notified today
+        if (this.lastNotificationDate === today || this.sending) return;
 
         const now = new Date();
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -74,10 +75,11 @@ export class NotificationService {
         const scheduledTime = config.notifications.time;
         
         if (this.isTimeToNotify(currentTime, scheduledTime)) {
+            this.sending = true;
             void this.showNotification(config).then(() => {
                 this.lastNotificationDate = today;
                 localStorage.setItem('lastNotificationDate', today);
-            }).catch(console.warn);
+            }).catch(console.warn).finally(() => { this.sending = false; });
         }
     }
 
