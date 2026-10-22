@@ -623,6 +623,13 @@ function AppContent() {
                 </section>}
 
                 <div className="flex-1 w-full">
+                    {view !== 'list' && view !== 'stats' && <header className="rf-view-heading">
+                        <div><p className="journal-eyebrow">{view === 'database' ? 'Tudo o que você vem aprendendo' : view === 'calendar' ? 'Um encontro de cada vez' : view === 'cronograma' ? 'Encontre seu fio condutor' : 'Prática com propósito'}</p>
+                            <h1>{view === 'database' ? 'Seu acervo' : view === 'calendar' ? 'Sua agenda' : view === 'cronograma' ? 'Seu cronograma' : 'Seus simulados'}</h1>
+                            <p>{view === 'database' ? 'Matérias, materiais e histórico de estudo, reunidos em um só lugar.' : view === 'calendar' ? 'Veja os próximos encontros e organize seu tempo para revisar.' : view === 'cronograma' ? 'Acompanhe suas aulas e transforme cada tema em uma rotina de revisão.' : 'Registre resultados e descubra o que vale a pena retomar.'}</p>
+                        </div>
+                        <button className="rf-secondary" onClick={() => view === 'simulados' ? setSimuladoModalOpen(true) : setAddModalOpen(true)}><Plus size={16} />{view === 'simulados' ? 'Novo simulado' : 'Novo tema'}</button>
+                    </header>}
                     <Suspense fallback={<LoadingSpinner />}>
                         {view === 'list' && (
                             <HubView 

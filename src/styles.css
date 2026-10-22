@@ -138,7 +138,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .rf-app .text-\[9px\], .rf-app .text-\[10px\], .rf-app .text-\[11px\] { font-size: 12px; line-height: 1.45; }
 .rf-app .text-slate-400, .rf-app .text-slate-500 { color: var(--rf-muted); }
 .dark .rf-app .dark\:text-slate-400, .dark .rf-app .dark\:text-slate-500 { color: var(--rf-muted); }
-.rf-main .rounded-3xl, .rf-main .rounded-\[32px\], .rf-main .rounded-\[24px\] { border-radius: 8px; box-shadow: none; }
+.rf-main .rounded-3xl, .rf-main .rounded-2xl, .rf-main .rounded-\[32px\], .rf-main .rounded-\[28px\], .rf-main .rounded-\[24px\] { border-radius: 6px; box-shadow: none; }
+.rf-main [class*="bg-gradient-to-"]:not(.bg-clip-text) { background-image: none; background-color: #245d47; color: #fcfbf7; box-shadow: none; }
+.rf-view-heading { display: flex; align-items: center; justify-content: space-between; gap: 25px; padding: 12px 0 30px; }
+.rf-view-heading h1 { font-size: 45px; font-weight: 400; letter-spacing: -.04em; line-height: 1.2; margin: 10px 0; }
+.rf-view-heading p:not(.journal-eyebrow) { color: var(--rf-muted); line-height: 1.6; font-size: 16px; max-width: 580px; }
+.rf-view-heading > button { flex-shrink: 0; }
 .rf-search { margin: 0 0 28px; padding: 0 0 18px; border-bottom: 1px solid var(--rf-rule); }
 .rf-search-field { display: flex; align-items: center; gap: 16px; color: var(--rf-muted); }
 .rf-search-field input { flex: 1; width: 0; padding: 14px 0; background: transparent; color: var(--rf-ink); font-size: 21px; border: 0; }
@@ -229,6 +234,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .journal-measures dd { font-size: 30px; }
 }
 @media (max-width: 640px) {
+  .rf-view-heading { display: block; padding: 10px 0 26px; }
+  .rf-view-heading h1 { font-size: 36px; }
+  .rf-view-heading p:not(.journal-eyebrow) { font-size: 15px; }
+  .rf-view-heading > button { margin-top: 18px; }
   .rf-statistics .journal-intro > .rf-period { margin-top: 24px; }
   .rf-period button { flex: 1; }
   .rf-area-list li { gap: 20px; }

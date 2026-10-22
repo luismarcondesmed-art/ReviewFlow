@@ -894,8 +894,8 @@ export const CronogramaView = ({
                             </div>
                             <div>
                                 <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                                    <span>Simulador de Questões FAFIPA</span>
-                                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30">IA</span>
+                                    <span>Treino de questões FAFIPA</span>
+                                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-white/10 text-white border border-white/20">Simulado</span>
                                 </h3>
                                 <p className="text-[11px] text-blue-200/70">
                                     Pratique questões no estilo e pegadinhas da banca examinadora.

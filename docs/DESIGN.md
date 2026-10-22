@@ -19,6 +19,7 @@ Trocar o painel de cartões com peso visual semelhante por uma sequência de lei
 4. Estatísticas usam uma faixa de indicadores, seleção de período e lista de áreas; a classificação por tempo desde o estudo fica em uma seção expansível, com explicação de seu limite.
 5. A página de entrada apresenta o ciclo de aprendizado em sequência, com explicação de funcionamento e perguntas frequentes. Os textos legais existentes foram preservados.
 6. Pesquisa deixa de cobrir a tela com uma mensagem vazia: exibe temas e simulados encontrados, com abertura direta para edição. Escape ou o botão de fechar limpam a busca.
+7. Acervo, agenda e cronograma recebem títulos e contexto de uso, com acesso a “Novo tema” na própria tela. Superfícies e controles antigos usam raios menores; banners decorativos passam a usar cor sólida.
 
 ## Responsividade e acessibilidade
 
