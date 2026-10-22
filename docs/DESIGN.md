@@ -1,37 +1,40 @@
-# ReviewFlow — direção visual editorial
+# ReviewFlow — workspace inspirado no Windows
 
-## Intenção
+## Direção
 
-Trocar o painel de cartões com peso visual semelhante por uma sequência de leitura: o que fazer agora, o que vem depois e ferramentas de apoio. Tipografia, espaço e divisórias organizam as informações, sem depender de uma coleção de caixas arredondadas.
+A interface foi reorganizada como um aplicativo de trabalho: moldura contínua, navegação lateral, abas superiores contextuais e camada de conteúdo. Substitui a direção editorial anterior, com fonte serifada, verde e títulos promocionais grandes.
 
-## Sistema visual
+O componente `src/components/AppShell.tsx` concentra essa estrutura. O painel inicial mantém revisões, indicadores, próximos encontros e ferramentas, com uma hierarquia mais compacta. Inter variável é a fonte principal, servida localmente, com Segoe UI Variable Text e Segoe UI como alternativas. Textos regulares usam peso 400; destaque é reservado a títulos e ações.
 
-- Source Serif 4 variável em títulos, textos e controles, com Georgia como fallback. Arquivos WOFF2 locais para o alfabeto latino, normal e itálico, aproximadamente 51 kB cada. Pesos variáveis; sem pedido ao Google Fonts.
-- Papel claro `#f7f5ef`, tinta `#253d30`, verde de ação `#245d47` e linhas discretas. No tema escuro, fundo `#1b211e`, tinta `#e8eadf` e verde claro `#b4d2b0`.
-- Seções abertas, listas alinhadas, bordas de separação e botões com raios pequenos. Números usam algarismos tabulares.
-- Ação principal com presença suficiente para ser encontrada rapidamente. Ações secundárias aparecem como texto ou contorno.
+## Camadas e material
 
-## Mudanças de organização
+A base usa cinzas neutros e reflexos discretos. A área de conteúdo tem fundo de baixa transparência, borda sutil e elevação pequena; menus e diálogos usam desfoque de fundo. Há versões clara e escura, preferência por movimento reduzido, fallback sem backdrop-filter e ajustes para forced-colors.
 
-1. “Dashboard” passa a “Hoje”. Navegação de desktop em uma única linha; navegação inferior preservada no celular. Pesquisa, configurações e perfil continuam acessíveis.
-2. Painel abre com a ação de iniciar a revisão. A fila usa linhas numeradas, contexto do tema e botão Revisar. Editar e registrar aproveitamento integral ficam em opções secundárias.
-3. Próximos encontros aparecem em uma lista lateral no desktop e abaixo no celular. Ferramentas de anotações, metas, simulados, constância, reforço e carga ficam em “Seu caderno”.
-4. Estatísticas usam uma faixa de indicadores, seleção de período e lista de áreas; a classificação por tempo desde o estudo fica em uma seção expansível, com explicação de seu limite.
-5. A página de entrada apresenta o ciclo de aprendizado em sequência, com explicação de funcionamento e perguntas frequentes. Os textos legais existentes foram preservados.
-6. Pesquisa deixa de cobrir a tela com uma mensagem vazia: exibe temas e simulados encontrados, com abertura direta para edição. Escape ou o botão de fechar limpam a busca.
-7. Acervo, agenda e cronograma recebem títulos e contexto de uso, com acesso a “Novo tema” na própria tela. Superfícies e controles antigos usam raios menores; banners decorativos passam a usar cor sólida.
+Isto é uma aproximação visual no navegador. O Mica nativo incorpora o tema e o papel de parede do Windows por APIs do sistema; CSS não dá ao site acesso ao papel de parede nem à área de trabalho atrás do navegador. Não foram adicionados controles falsos de minimizar, maximizar ou fechar uma janela nativa.
 
-## Responsividade e acessibilidade
+Referência: [Microsoft — Mica material](https://learn.microsoft.com/en-us/windows/apps/design/style/mica), particularmente o uso de uma base contínua com uma camada de conteúdo para diferenciar áreas permanentes da aplicação.
 
-As duas métricas operacionais mais importantes ficam no início do celular; o restante está disponível em Estatísticas. Layouts se reorganizam em uma coluna. Existem estilos de foco visível, rótulos na navegação e tabulação por setas nas ferramentas do caderno. Preferência por movimento reduzido continua respeitada. As fontes também entram no precache da PWA.
+## Navegação simultânea
 
-Contrastes calculados entre as cores principais (sem opacidade): texto secundário claro 4,66:1, verde de ação claro 7,05:1 e texto secundário escuro 7,56:1. Isso não substitui uma auditoria completa de todos os estados e componentes antigos.
+No desktop, a lateral e a barra superior ficam disponíveis ao mesmo tempo:
 
-## Referências e limites
+- Lateral: Meu dia, Cronograma, Agenda, Matérias, Simulados e Estatísticas. Ela pode ser recolhida para ícones; a preferência é lembrada no dispositivo.
+- Ferramentas: Anotações, Metas e Temporizador abrem o recurso correspondente no painel, sem remover os demais acessos às ferramentas.
+- Abas superiores: Meu dia/Estatísticas, Cronograma/Agenda ou Matérias/Simulados, conforme o módulo aberto. Ambas as navegações atualizam o mesmo estado de tela.
+- Busca global: comando na barra superior e atalho Ctrl+K/Cmd+K.
+- Criar: menu com Novo tema e Novo simulado. Novo tema também fica disponível na lateral e nos módulos pertinentes.
+- Configurações, ajuda, perfil e sincronização continuam acessíveis pela moldura do aplicativo.
 
-- [Google Design — pesquisa do Material 3 Expressive](https://design.google/library/expressive-material-design-google-research): destacar ações e usar hierarquia de tamanho, forma e cor para orientar a atenção. A proposta do ReviewFlow interpreta esses princípios em uma linguagem editorial; não replica os componentes Material.
-- [Nielsen Norman Group — Cards](https://www.nngroup.com/articles/cards-component/): listas de posição previsível favorecem a procura e a comparação de itens; cartões continuam úteis em outros contextos, mas não precisam organizar toda a interface.
+Em telas estreitas, a lateral vira um painel de navegação acionado pelo menu. Ela tem fechamento por botão, clique externo e Escape, além de contenção de foco. As abas superiores continuam visíveis. Os controles e textos se reorganizam para evitar rolagem horizontal da página.
 
-Conferência em navegador local com temas claro/escuro, viewport de 390 px, fonte carregada, ausência de rolagem horizontal da página inicial, cadastro de tema, início de revisão, busca e abertura de edição, estatísticas e página de entrada. Tipos, testes de domínio e build são verificados antes do envio.
+## Funções preservadas
 
-Não houve pesquisa de usabilidade com estudantes nem teste em aparelhos físicos nesta entrega. A nova hierarquia é uma hipótese de melhoria fundamentada nos princípios acima e deve ser avaliada com uso real. Telas de cronograma, acervo, calendário e modais receberam a tipografia e os tokens comuns; seus fluxos específicos foram preservados, com simplificação das superfícies existentes.
+Os manipuladores de temas, revisões normais/rápidas, edição de histórico, FSRS, cronogramas, calendário, simulados, notas, metas, estatísticas, importação/exportação, notificações, instalação PWA, foco, gamificação e sincronização continuam ligados aos componentes existentes. O estado de estudo não foi migrado nem reformatado por esta mudança de interface.
+
+Os dois caminhos para registrar simulados (menu Criar e botão na tela Simulados) limpam a seleção anterior antes da criação. Os atalhos de ferramentas não mudam as configurações do método de estudo.
+
+## Verificação
+
+Checagem TypeScript, testes de domínio e build de produção fazem parte do envio. A conferência visual realizada mostrou o desktop com navegação lateral expandida/recolhida, abas superiores e menu de criação. A inspeção automatizada do navegador ficou indisponível na etapa final, impedindo concluir a conferência móvel e percorrer todos os formulários. As fontes são incluídas no precache da PWA.
+
+Essa conferência não equivale a uma auditoria completa de acessibilidade, a testes com estudantes nem à homologação em dispositivos físicos. O efeito visual não transforma a PWA em um aplicativo WinUI nativo.

@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
           name: 'ReviewFlow • Estudos e revisões',
           short_name: 'ReviewFlow',
           description: 'Estude qualquer área com inteligência. Repetição espaçada automática e métricas de desempenho.',
-          theme_color: '#f7f5ef',
-          background_color: '#f7f5ef',
+          theme_color: '#eeeef2',
+          background_color: '#eeeef2',
           display: 'standalone',
           start_url: '/',
           icons: [

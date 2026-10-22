@@ -1,3 +1,4 @@
+import type { StudyTool } from '../components/AppShell';
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -94,10 +95,11 @@ const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void
 };
 
 export const HubView = ({ 
-    topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
+    toolRequest, topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
     setSortOrder, setFilterArea, sortOrder, filterArea, searchTerm,
     onAddSimulado, onNavigateToView, onOpenNewTopic, onUpdateTopic, onQuickCompleteReview
 }: { 
+    toolRequest?: { id: StudyTool; nonce: number } | null;
     topics: Topic[], simulados: Simulado[], config: UserConfig, 
     dailyNotes: Record<string, string>, setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>,
     onReview: (id: string, idx: number) => void, onEditTopic: (id: string) => void, onDeleteTopic?: (id: string) => void,
@@ -113,6 +115,15 @@ export const HubView = ({
     const [deepFocusOpen, setDeepFocusOpen] = useState(false);
     const [tool, setTool] = useState('notes');
     const [track, setTrack] = useState('all');
+    useEffect(() => {
+        if (!toolRequest) return;
+        if (toolRequest.id === 'focus') setDeepFocusOpen(true);
+        else {
+            setDeepFocusOpen(false);
+            setTool(toolRequest.id);
+            requestAnimationFrame(() => document.getElementById('notebook-heading')?.scrollIntoView({ block: 'start' }));
+        }
+    }, [toolRequest]);
     const today = getTodayStr();
     const activeTopics = topics.filter(t => !t.deleted);
     const activeSimulados = simulados.filter(s => !s.deleted);
@@ -137,13 +148,13 @@ export const HubView = ({
       <div className="study-journal">
         <header className="journal-intro">
           <div>
-            <p className="journal-eyebrow">Seu espaço de aprendizagem <span aria-hidden="true">/</span> <time dateTime={today}>{dateLabel}</time></p>
-            <h1>Conhecimento se constrói.<br /><em>Um dia de cada vez.</em></h1>
-            <p className="journal-deck">{dueItems.length ? `Você tem ${dueItems.length} ${dueItems.length === 1 ? 'revisão' : 'revisões'} para retomar. Comece por uma.` : 'Um lugar para organizar o que você aprende e voltar ao que importa.'}</p>
+            <p className="journal-eyebrow"><span className="mica-live-dot" aria-hidden="true" /> Seu dia de estudo <span aria-hidden="true">·</span> <time dateTime={today}>{dateLabel}</time></p>
+            <h1>Vamos continuar?</h1>
+            <p className="journal-deck">{dueItems.length ? `Você tem ${dueItems.length} ${dueItems.length === 1 ? 'revisão' : 'revisões'} para retomar. Comece por uma.` : 'Organize seus temas, acompanhe seu progresso e mantenha as revisões em dia.'}</p>
           </div>
           <div className="journal-start">
             <button className="rf-primary" onClick={() => dueItems.length ? onReview(dueItems[0].topic.id, dueItems[0].idx) : onOpenNewTopic?.()}>
-              {dueItems.length ? 'Começar a revisão' : 'Adicionar um tema'} <ArrowRight size={18} />
+              {dueItems.length ? 'Iniciar revisão' : 'Adicionar tema'} <ArrowRight size={18} />
             </button>
             {dueItems.length > 0 && <button className="rf-text-button" onClick={() => setDeepFocusOpen(true)}><Clock size={16} /> Estudar com temporizador</button>}
           </div>
@@ -158,7 +169,7 @@ export const HubView = ({
 
         <div className="journal-layout">
           <section className="journal-today" aria-labelledby="today-heading">
-            <div className="journal-section-heading"><div><p className="journal-eyebrow">A próxima pequena conquista</p><h2 id="today-heading">Para hoje<span className="journal-count">{dueItems.length}</span></h2></div>
+            <div className="journal-section-heading"><div><p className="journal-eyebrow">Sua fila de estudo</p><h2 id="today-heading">Para hoje<span className="journal-count">{dueItems.length}</span></h2></div>
               <label className="journal-filter">Trilha<select aria-label="Filtrar trilha de estudo" value={track} onChange={e => setTrack(e.target.value)}><option value="all">Todas as áreas</option><option value="concurso">Concursos</option><option value="residencia">Residência</option></select></label>
             </div>
             {dueItems.length ? <>
@@ -175,22 +186,22 @@ export const HubView = ({
               {dueItems.length > 6 && <button className="rf-text-button journal-show-more" onClick={() => setExpanded(!expanded)}>{expanded ? 'Mostrar menos' : `Ver todas as ${dueItems.length} revisões`} <ChevronDown size={16} /></button>}
             </> : <div className="journal-empty">
               <span className="journal-empty-mark" aria-hidden="true">{activeTopics.length ? '✓' : 'Aa'}</span>
-              <h3>{searchTerm ? 'Nenhum tema encontrado.' : activeTopics.length ? 'Tudo em dia. Respire.' : 'Todo aprendizado começa com uma curiosidade.'}</h3>
+              <h3>{searchTerm ? 'Nenhum tema encontrado.' : activeTopics.length ? 'Nenhuma revisão pendente' : 'Seu primeiro tema começa aqui'}</h3>
               <p>{searchTerm ? 'Tente buscar por outro nome ou escolha outra trilha.' : activeTopics.length ? 'Você não tem revisões pendentes nesta trilha. Confira os próximos encontros na agenda.' : 'Adicione seu primeiro tema ou encontre um ponto de partida nos cronogramas. Nós ajudamos você a saber quando voltar.'}</p>
               <div className="journal-empty-actions"><button className="rf-text-button" onClick={onOpenNewTopic}>Adicionar tema <Plus size={16} /></button><button className="rf-text-button" onClick={() => onNavigateToView?.('cronograma')}>Explorar cronogramas <ArrowRight size={16} /></button></div>
             </div>}
           </section>
 
           <aside className="journal-horizon" aria-labelledby="horizon-heading">
-            <p className="journal-eyebrow">Devagar, e sempre</p><h2 id="horizon-heading">No horizonte</h2>
+            <p className="journal-eyebrow">Planejamento</p><h2 id="horizon-heading">Próximas revisões</h2>
             {upcoming.length ? <ol>{upcoming.map(r => <li key={r.topic.id + '-' + r.idx}><time dateTime={r.date}>{formatDate(r.date)}</time><button onClick={() => onEditTopic(r.topic.id)}>{r.topic.title}</button><span>{r.targetQ} questões</span></li>)}</ol> : <p className="journal-muted">As próximas revisões aparecem aqui depois de você registrar um estudo.</p>}
             <button className="rf-text-button" onClick={() => onNavigateToView?.('calendar')}>Abrir agenda <ArrowRight size={16} /></button>
-            <div className="journal-footnote"><span aria-hidden="true">✳</span><p>Um pouco hoje.<br />Mais familiar amanhã.</p></div>
+
           </aside>
         </div>
 
         <section className="journal-notebook" aria-labelledby="notebook-heading">
-          <div className="journal-section-heading"><div><p className="journal-eyebrow">Organize o caminho</p><h2 id="notebook-heading">Seu caderno</h2></div><button className="rf-text-button" onClick={() => onNavigateToView?.('database')}>Ver minhas matérias <ArrowRight size={16} /></button></div>
+          <div className="journal-section-heading"><div><p className="journal-eyebrow">Ferramentas</p><h2 id="notebook-heading">Minha rotina</h2></div><button className="rf-text-button" onClick={() => onNavigateToView?.('database')}>Ver minhas matérias <ArrowRight size={16} /></button></div>
           <div className="journal-tool-tabs" role="tablist" aria-label="Ferramentas de estudo">{tools.map(item => <button key={item.id} id={'tool-' + item.id} role="tab" aria-selected={tool === item.id} aria-controls="journal-tool-panel" tabIndex={tool === item.id ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const next = tools[(tools.findIndex(t => t.id === tool) + (e.key === 'ArrowRight' ? 1 : tools.length - 1)) % tools.length]; setTool(next.id); document.getElementById('tool-' + next.id)?.focus(); e.preventDefault(); } }} onClick={() => setTool(item.id)}><item.icon size={16} />{item.label}</button>)}</div>
           <div className="journal-tools" id="journal-tool-panel" role="tabpanel" aria-labelledby={'tool-' + tool}>
             {tool === 'notes' && <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} hideHeader />}
@@ -201,7 +212,7 @@ export const HubView = ({
             {tool === 'load' && <FutureLoadWidget topics={filtered} />}
           </div>
         </section>
-        <footer className="journal-colophon"><span>ReviewFlow</span><p>Aprender. Retomar. Seguir em frente.</p><span>Feito para o seu ritmo.</span></footer>
+        <footer className="journal-colophon"><span>ReviewFlow</span><p>Seu espaço para aprender e revisar.</p></footer>
       </div>
     );
 };

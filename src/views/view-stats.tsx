@@ -25,14 +25,14 @@ export const StatsView = ({ topics = [], simulados = [] }: { topics?: Topic[], s
     return { total, correct, count: entries.length, accuracy: total ? Math.round(correct / total * 100) : null, areas };
   }, [topics, simulados, period]);
   return <div className="rf-statistics study-journal">
-    <header className="journal-intro"><div><p className="journal-eyebrow">Olhar para o caminho</p><h1>Cada retorno<br /><em>conta.</em></h1><p className="journal-deck">Seu progresso, com contexto. Observe o que funciona e encontre espaço para melhorar.</p></div>
+    <header className="journal-intro"><div><p className="journal-eyebrow">Desempenho</p><h1>Seu progresso</h1><p className="journal-deck">Acompanhe questões, acertos e sessões por período.</p></div>
       <div className="rf-period" role="group" aria-label="Período das estatísticas">{[{ n: 7, label: '7 dias' }, { n: 30, label: '30 dias' }, { n: 365, label: '1 ano' }, { n: 0, label: 'Tudo' }].map(p => <button key={p.n} aria-pressed={period === p.n} onClick={() => setPeriod(p.n)}>{p.label}</button>)}</div>
     </header>
     <dl className="journal-measures"><div><dt>Questões praticadas</dt><dd>{metrics.total.toLocaleString('pt-BR')}</dd></div><div><dt>Respostas corretas</dt><dd>{metrics.correct.toLocaleString('pt-BR')}</dd></div><div><dt>Aproveitamento</dt><dd>{metrics.accuracy === null ? '—' : metrics.accuracy + '%'}</dd></div><div><dt>Sessões registradas</dt><dd>{metrics.count}</dd></div></dl>
-    <section className="rf-stat-section"><p className="journal-eyebrow">Distribuição do aprendizado</p><h2>Onde seu estudo acontece</h2>
+    <section className="rf-stat-section"><p className="journal-eyebrow">Distribuição do aprendizado</p><h2>Desempenho por área</h2>
       {metrics.areas.length ? <ul className="rf-area-list">{metrics.areas.map(area => <li key={area.id}><div><h3>{area.full}</h3><span>{area.questions} questões · {area.accuracy}% de acertos</span></div><div className="rf-area-track" aria-label={`${area.accuracy}% de acertos`}><span style={{ width: area.accuracy + '%' }} /></div></li>)}</ul> : <p className="journal-muted">Registre uma revisão ou um simulado para começar a enxergar seu caminho por aqui.</p>}
     </section>
-    <section className="rf-stat-section"><p className="journal-eyebrow">Pequenos passos, repetidos</p><h2>Seu ritmo de estudo</h2><div className="journal-tools"><HeatmapWidget topics={topics} simulados={simulados} /></div></section>
+    <section className="rf-stat-section"><p className="journal-eyebrow">Atividade</p><h2>Histórico de estudo</h2><div className="journal-tools"><HeatmapWidget topics={topics} simulados={simulados} /></div></section>
     <details className="rf-disclosure"><summary>Tempo desde o último estudo <ChevronDown size={18} /></summary><p className="journal-muted">Uma visão do tempo desde a prática de cada tema. Esta classificação não mede nem garante sua retenção de memória.</p><div className="journal-tools"><RetentionWidget topics={topics} /></div></details>
   </div>;
 };

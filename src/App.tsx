@@ -1,3 +1,4 @@
+import { AppShell, type StudyTool } from './components/AppShell';
 import { withNextFSRSReview } from './services/fsrsService';
 
 import React, { useState, useMemo, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
@@ -105,9 +106,7 @@ function AppContent() {
     const [landingView, setLandingView] = useState<'main' | 'privacy' | 'terms'>('main');
     const [view, setView] = useState<'list' | 'cronograma' | 'simulados' | 'calendar' | 'database' | 'stats'>('list');
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
-    const [desktopNewMenuOpen, setDesktopNewMenuOpen] = useState(false);
-    // Modo Foco: barra lateral oculta por padrão
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [homeTool, setHomeTool] = useState<{ id: StudyTool; nonce: number } | null>(null);
     
     // Initialize Notification Service
     useEffect(() => {
@@ -131,8 +130,6 @@ function AppContent() {
     const [sortOrder, setSortOrder] = useState<string>('area');
     const [filterArea, setFilterArea] = useState<string>('all');
     
-    // Mobile Navigation
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Modals
     const [addModalOpen, setAddModalOpen] = useState(false);
@@ -598,19 +595,20 @@ function AppContent() {
         >
             <Toaster position="top-center" richColors />
             
-            <div className="rf-shell">
-              <header className="rf-header">
-                <button className="rf-brand" onClick={() => setView('list')} aria-label="ReviewFlow — início"><BookOpen size={25} strokeWidth={1.3} /><span>ReviewFlow<span className="rf-brand-dot">.</span></span></button>
-                <nav className="rf-desktop-nav" aria-label="Navegação principal">{NAV_ITEMS.map(item => <button key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => setView(item.id as any)}>{item.label}</button>)}</nav>
-                <div className="rf-header-actions">
-                  <button className="rf-icon-button" onClick={() => setIsSearchActive(true)} aria-label="Pesquisar"><Search size={19} strokeWidth={1.6} /></button>
-                  <button className="rf-icon-button rf-sync-button" onClick={() => syncKey ? handleSyncClick() : setSettingsOpen(true)} disabled={status === 'syncing'} aria-label={syncKey ? 'Sincronizar dados' : 'Configurar sincronização'}><RefreshCw size={18} strokeWidth={1.6} className={status === 'syncing' ? 'animate-spin' : ''} /></button>
-                  <button className="rf-icon-button" onClick={() => setSettingsOpen(true)} aria-label="Configurações"><Settings size={19} strokeWidth={1.6} /></button>
-                  <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} userIcon={config.userIcon} onSelectUserIcon={userIcon => setConfig(prev => ({ ...prev, userIcon }))} dropPosition="down" size="sm" />
-                  <button className="rf-header-new" onClick={() => setAddModalOpen(true)}><Plus size={16} /><span>Novo tema</span></button>
-                </div>
-              </header>
-              <nav className="rf-mobile-nav" aria-label="Navegação principal">{NAV_ITEMS.map(item => <button key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => { vibration.tick(); setView(item.id as any); }}><item.icon size={21} strokeWidth={1.6} /><span>{item.label}</span></button>)}</nav>
+            <AppShell
+                view={view}
+                onNavigate={next => { setHomeTool(null); setView(next); setIsSearchActive(false); setSearchTerm(''); }}
+                onSearch={() => setIsSearchActive(true)}
+                onNewTopic={() => setAddModalOpen(true)}
+                onNewExam={() => { setEditingSimulado(null); setSimuladoModalOpen(true); }}
+                onSettings={() => setSettingsOpen(true)}
+                onHelp={() => setTutorialOpen(true)}
+                onTool={id => { setView('list'); setHomeTool({ id, nonce: Date.now() }); }}
+                onSync={() => syncKey ? handleSyncClick() : setSettingsOpen(true)}
+                status={status} hasSyncKey={Boolean(syncKey)}
+                pendingCount={activeTopics.reduce((count, t) => count + t.reviews.filter(r => !r.done && r.date <= getTodayStr()).length, 0)}
+                profile={<UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} userIcon={config.userIcon} onSelectUserIcon={userIcon => setConfig(prev => ({ ...prev, userIcon }))} dropPosition="down" size="sm" />}
+            >
                 <main className="rf-main">
                     <div className="rf-page">
                 {isSearchActive && <section className="rf-search" role="search" aria-label="Buscar temas e simulados">
@@ -628,11 +626,12 @@ function AppContent() {
                             <h1>{view === 'database' ? 'Seu acervo' : view === 'calendar' ? 'Sua agenda' : view === 'cronograma' ? 'Seu cronograma' : 'Seus simulados'}</h1>
                             <p>{view === 'database' ? 'Matérias, materiais e histórico de estudo, reunidos em um só lugar.' : view === 'calendar' ? 'Veja os próximos encontros e organize seu tempo para revisar.' : view === 'cronograma' ? 'Acompanhe suas aulas e transforme cada tema em uma rotina de revisão.' : 'Registre resultados e descubra o que vale a pena retomar.'}</p>
                         </div>
-                        <button className="rf-secondary" onClick={() => view === 'simulados' ? setSimuladoModalOpen(true) : setAddModalOpen(true)}><Plus size={16} />{view === 'simulados' ? 'Novo simulado' : 'Novo tema'}</button>
+                        <button className="rf-secondary" onClick={() => { if (view === 'simulados') { setEditingSimulado(null); setSimuladoModalOpen(true); } else setAddModalOpen(true); }}><Plus size={16} />{view === 'simulados' ? 'Novo simulado' : 'Novo tema'}</button>
                     </header>}
                     <Suspense fallback={<LoadingSpinner />}>
                         {view === 'list' && (
                             <HubView 
+                                toolRequest={homeTool}
                                 topics={activeTopics} 
                                 simulados={activeSimulados}
                                 config={config}
@@ -698,7 +697,7 @@ function AppContent() {
                 </div>
                 </div>
                 </main>
-            </div>
+            </AppShell>
 
             {/* Modals */}
             <EditTopicModal 

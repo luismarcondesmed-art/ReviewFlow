@@ -19,13 +19,6 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
 
     return (
         <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in gap-6">
-             <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                    <h3 className="text-3xl font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-3"><ClipboardList size={28} className="text-purple-500"/> Simulados</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Provas</p>
-                </div>
-            </div>
-
             {/* Performance Chart Section */}
             <div className="glass-panel p-6 rounded-[32px] shadow-sm flex flex-col h-64 relative overflow-hidden mt-2 lg:mt-0">
                 <div className="w-full flex items-center justify-between mb-4 z-10">
