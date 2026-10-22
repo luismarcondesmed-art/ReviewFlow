@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, BrainCircuit, Calendar, CheckCircle2, ChevronRight, Database, LayoutGrid, Map as MapIcon, PieChart, Shield, Star, Zap } from 'lucide-react';
+import { Activity, BrainCircuit, Calendar, CheckCircle2, ChevronRight, Database, LayoutGrid, Map as MapIcon, PieChart, Shield, Star, Zap, BookOpen, ArrowRight } from 'lucide-react';
 
 export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: () => void, currentView: 'main' | 'privacy' | 'terms', onChangeView: (view: 'main' | 'privacy' | 'terms') => void }) => {
     if (currentView === 'privacy') {
@@ -50,157 +50,16 @@ export const LandingView = ({ onStart, currentView, onChangeView }: { onStart: (
         );
     }
 
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0c] text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-500/30 overflow-x-hidden">
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-                            <Activity size={20} strokeWidth={2.5}/>
-                        </div>
-                        <span className="text-xl font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">ReviewFlow</span>
-                    </div>
-                    <nav className="hidden md:flex items-center gap-8">
-                        <a href="#features" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Recursos</a>
-                        <a href="#how-it-works" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Como Funciona</a>
-                        <a href="#faq" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">FAQ</a>
-                    </nav>
-                    <button onClick={onStart} className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-slate-900/20 dark:shadow-white/20">
-                        Acessar o App
-                    </button>
-                </div>
-            </header>
-
-            {/* Hero Section */}
-            <section className="pt-40 pb-20 px-6 relative">
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-widest mb-8 border border-blue-100 dark:border-blue-500/20">
-                        <Star size={14} fill="currentColor" />
-                        O seu planejador de estudos definitivo
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white mb-8 leading-tight">
-                        Domine qualquer assunto com <br className="hidden md:block" />
-                        <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-blue-500 bg-clip-text text-transparent">Repetição Espaçada</span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-                        O ReviewFlow é a plataforma perfeita para estudantes, concurseiros e profissionais. Organize suas revisões, acompanhe seu desempenho em simulados e otimize seu tempo de estudo de forma inteligente.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <button onClick={onStart} className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-2xl font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2">
-                            Começar a Estudar Agora <ChevronRight size={20} />
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            {/* Features Section */}
-            <section id="features" className="py-24 px-6 bg-white dark:bg-zinc-900/50 border-y border-slate-200 dark:border-white/5">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4">Tudo que você precisa para ser aprovado</h2>
-                        <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Uma suíte completa de ferramentas desenvolvidas especificamente para a sua rotina intensa de estudos.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[
-                            { icon: BrainCircuit, title: 'Algoritmo Inteligente', desc: 'Nosso sistema FSRS (Free Spaced Repetition Scheduler) adapta as revisões ao seu ritmo de esquecimento, garantindo retenção máxima.' },
-                            { icon: LayoutGrid, title: 'Dashboard Completo', desc: 'Visualize seu progresso diário, metas semanais e carga de revisão futura em um painel intuitivo e motivador.' },
-                            { icon: MapIcon, title: 'Cronograma Integrado', desc: 'Acompanhe as suas aulas e transforme-as automaticamente em ciclos de revisão.' },
-                            { icon: PieChart, title: 'Estatísticas Detalhadas', desc: 'Analise seu desempenho por grande área e identifique seus pontos fracos e fortes.' },
-                            { icon: Database, title: 'Banco de Dados', desc: 'Organize todos os seus temas de estudo, com tags, links para materiais e histórico completo de revisões.' },
-                            { icon: Zap, title: 'Otimização de Tempo', desc: 'Tem pouco tempo hoje? Use a função Otimizar para focar apenas nos temas mais críticos e atrasados.' }
-                        ].map((feature, i) => (
-                            <div key={i} className="p-8 rounded-3xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/5 hover:border-blue-300 dark:hover:border-blue-500/30 transition-colors group">
-                                <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                    <feature.icon size={28} strokeWidth={2} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{feature.title}</h3>
-                                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Content Section for AdSense Value */}
-            <section className="py-24 px-6">
-                <div className="max-w-4xl mx-auto prose prose-slate dark:prose-invert prose-lg">
-                    <h2 className="text-3xl font-black text-center mb-8">Por que a Repetição Espaçada é essencial?</h2>
-                    <p>
-                        A preparação para provas de alto nível exige a memorização de um volume colossal de informações. Desde conceitos básicos até as fórmulas e protocolos mais complexos, a curva de esquecimento de Ebbinghaus é a maior inimiga do estudante.
-                    </p>
-                    <p>
-                        O <strong>ReviewFlow</strong> foi criado para resolver esse problema. Utilizando algoritmos avançados de repetição espaçada (Spaced Repetition System - SRS), a plataforma agenda suas revisões exatamente no momento em que você está prestes a esquecer o conteúdo. Isso transforma a memória de curto prazo em memória de longo prazo com o mínimo de esforço necessário.
-                    </p>
-                    
-                    <h3>Como o ReviewFlow otimiza seus estudos</h3>
-                    <ul>
-                        <li><strong>Revisões Ativas:</strong> O sistema incentiva o Active Recall (Evocação Ativa), o método de estudo com maior comprovação científica de eficácia.</li>
-                        <li><strong>Foco no que importa:</strong> Com a análise de desempenho em simulados, o ReviewFlow identifica as áreas onde você tem mais dificuldade e ajusta a carga de estudos.</li>
-                        <li><strong>Organização sem estresse:</strong> Diga adeus às planilhas complexas. O agendamento é 100% automático.</li>
-                    </ul>
-
-                    <h3>A Ciência por trás da Aprovação</h3>
-                    <p>
-                        Estudos em neurociência cognitiva demonstram que a leitura passiva e o grifo de textos são métodos ineficientes de estudo. A verdadeira retenção ocorre quando forçamos o cérebro a recuperar uma informação (Active Recall) em intervalos de tempo cada vez maiores (Spaced Repetition).
-                    </p>
-                    <p>
-                        No contexto dos estudos intensos, onde o conhecimento não é apenas para uma prova, mas para a vida, a retenção de longo prazo é inegociável. O ReviewFlow automatiza esse processo científico. Você apenas diz o que estudou hoje, e nós dizemos quando você deve revisar.
-                    </p>
-
-                    <h3>Preparação Estratégica</h3>
-                    <p>
-                        A concorrência nas provas aumenta a cada ano. Não basta apenas estudar muito; é preciso estudar de forma inteligente. O ReviewFlow permite que você integre o seu cronograma preparatório diretamente na plataforma.
-                    </p>
-                    <p>
-                        Além disso, o registro de simulados permite que o algoritmo identifique suas fraquezas. Se você está errando muitas questões de um tema, o sistema automaticamente aumenta a frequência de revisões dessa disciplina, garantindo que você chegue no dia da prova com o conhecimento consolidado.
-                    </p>
-
-                    <p>
-                        Seja você um estudante buscando a aprovação dos sonhos, ou alguém querendo construir uma base sólida de conhecimento, o ReviewFlow é a ferramenta definitiva para o seu sucesso.
-                    </p>
-                </div>
-            </section>
-
-            {/* FAQ Section */}
-            <section id="faq" className="py-24 px-6 bg-slate-50 dark:bg-zinc-900/50 border-t border-slate-200 dark:border-white/5">
-                <div className="max-w-3xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4">Perguntas Frequentes</h2>
-                    </div>
-                    <div className="space-y-4">
-                        {[
-                            { q: 'O ReviewFlow é gratuito?', a: 'Sim! O ReviewFlow possui uma versão gratuita com todas as funcionalidades essenciais para você organizar seus estudos e revisões.' },
-                            { q: 'Como funciona a sincronização?', a: 'Seus dados são salvos localmente no seu navegador para acesso rápido e offline. Você pode gerar uma chave de sincronização para fazer backup na nuvem e acessar em outros dispositivos.' },
-                            { q: 'Posso usar no celular?', a: 'Com certeza. O ReviewFlow foi desenhado com uma interface "Mobile First", funcionando perfeitamente como um aplicativo no seu smartphone. Você pode até adicioná-lo à tela inicial.' },
-                            { q: 'O algoritmo é baseado no Anki?', a: 'Utilizamos uma variação do algoritmo FSRS (Free Spaced Repetition Scheduler), que é mais moderno e eficiente que o algoritmo padrão do Anki (SM-2), adaptando-se melhor ao seu volume de estudos.' }
-                        ].map((faq, i) => (
-                            <div key={i} className="p-6 rounded-2xl bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/5">
-                                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{faq.q}</h4>
-                                <p className="text-slate-600 dark:text-slate-400">{faq.a}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="py-12 px-6 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-[#0a0a0c]">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-2">
-                        <Activity size={20} className="text-blue-500" />
-                        <span className="font-black text-slate-900 dark:text-white">ReviewFlow</span>
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400 text-center md:text-left">
-                        © {new Date().getFullYear()} ReviewFlow. Todos os direitos reservados. <br className="md:hidden" />
-                        Plataforma de estudos e repetição espaçada.
-                    </div>
-                    <div className="flex gap-6">
-                        <button onClick={() => onChangeView('terms')} className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Termos de Uso</button>
-                        <button onClick={() => onChangeView('privacy')} className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">Política de Privacidade</button>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    );
+    return <div className="rf-landing">
+      <header className="rf-landing-header"><button className="rf-brand" onClick={() => onChangeView('main')} aria-label="ReviewFlow — início"><BookOpen size={26} strokeWidth={1.3} /><span>ReviewFlow.</span></button><nav aria-label="Sobre o ReviewFlow"><a href="#como-funciona">Como funciona</a><a href="#duvidas">Dúvidas</a><button className="rf-text-button" onClick={onStart}>Entrar no meu espaço <ArrowRight size={16} /></button></nav></header>
+      <main>
+        <section className="rf-landing-hero"><div><p className="journal-eyebrow">Um caderno para o longo prazo</p><h1>O que você aprende<br /><em>merece ficar.</em></h1><p className="journal-deck">Organize seus estudos e reencontre cada assunto na hora de revisar. Menos decisões sobre o cronograma. Mais espaço para aprender.</p><button className="rf-primary" onClick={onStart}>Começar meu caderno <ArrowRight size={18} /></button><p className="rf-landing-caption">Para medicina, concursos e tudo o que desperta sua curiosidade.</p></div>
+          <div className="rf-routine-example" aria-label="Exemplo de uma rotina de revisão"><p className="journal-eyebrow">Aprender é voltar</p><h2>Um assunto.<br /> Novos encontros.</h2><ol><li><span>01</span><div><small>Primeiro contato</small><h3>Entender o essencial</h3><p>Estude e registre seu tema.</p></div><BookOpen size={18} /></li><li><span>02</span><div><small>Próximo encontro</small><h3>Trazer de volta</h3><p>Pratique, recorde, descubra as lacunas.</p></div><Activity size={18} /></li><li><span>03</span><div><small>No seu ritmo</small><h3>Construir familiaridade</h3><p>O intervalo se adapta ao seu desempenho.</p></div><Calendar size={18} /></li></ol><p className="rf-example-caption">Um exemplo do ciclo de estudo com revisão adaptativa.</p></div>
+        </section>
+        <section className="rf-landing-method" id="como-funciona"><p className="journal-eyebrow">Simples o suficiente para continuar</p><h2>Seu estudo, com um fio condutor.</h2><ol><li><span>01 / Organizar</span><h3>Dê um lugar ao que quer aprender.</h3><p>Crie temas, reúna materiais e acompanhe suas aulas em um cronograma.</p></li><li><span>02 / Praticar</span><h3>Volte ao conteúdo com intenção.</h3><p>Encontre as revisões do dia e registre suas questões e dificuldades.</p></li><li><span>03 / Acompanhar</span><h3>Perceba o caminho que está fazendo.</h3><p>Veja seu histórico, ajuste a carga e mantenha uma rotina que cabe na sua vida.</p></li></ol></section>
+        <section className="rf-landing-faq" id="duvidas"><div><p className="journal-eyebrow">Antes de começar</p><h2>Algumas boas perguntas.</h2></div><div><details className="rf-disclosure"><summary>Preciso estudar medicina para usar?</summary><p>Não. Você pode criar temas em qualquer área do conhecimento. Os cronogramas prontos disponíveis hoje têm foco em medicina e concursos.</p></details><details className="rf-disclosure"><summary>Como o aplicativo escolhe a próxima revisão?</summary><p>No modo adaptativo, o FSRS-6 considera seu histórico e desempenho. Você também pode escolher intervalos fixos e ajustar suas preferências.</p></details><details className="rf-disclosure"><summary>Posso estudar sem internet?</summary><p>Depois do primeiro carregamento da versão instalada, as funções locais podem ser usadas offline. Faça backups dos seus dados; a sincronização entre dispositivos precisa de internet e configuração.</p></details></div></section>
+        <section className="rf-landing-last"><p className="journal-eyebrow">O próximo capítulo é seu</p><h2>Comece pequeno.<br /><em>Continue curioso.</em></h2><button className="rf-primary" onClick={onStart}>Abrir meu espaço de estudo <ArrowRight size={18} /></button></section>
+      </main>
+      <footer className="journal-colophon"><span>ReviewFlow</span><p>Aprender. Retomar. Seguir em frente.</p><div><button onClick={() => onChangeView('privacy')}>Privacidade</button><button onClick={() => onChangeView('terms')}>Termos de uso</button></div></footer>
+    </div>;
 };

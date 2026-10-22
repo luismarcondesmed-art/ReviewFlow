@@ -568,7 +568,7 @@ function AppContent() {
     const historyEditTopic = historyEditData ? topics.find(t => t.id === historyEditData.tId) || null : null;
 
     const NAV_ITEMS = [
-        { id: 'list', label: 'Dashboard', icon: LayoutGrid, title: 'Dashboard' },
+        { id: 'list', label: 'Hoje', icon: Home, title: 'Hoje' },
         { id: 'cronograma', label: 'Cronograma', icon: MapIcon, title: 'Cronograma' },
         { id: 'calendar', label: 'Agenda', icon: Calendar, title: 'Agenda' },
         { id: 'database', label: 'Acervo', icon: Database, title: 'Acervo de Estudos' },
@@ -594,320 +594,33 @@ function AppContent() {
 
     return (
         <div 
-            className="flex h-[100dvh] bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-300 font-sans overflow-hidden touch-manipulation selection:bg-slate-500/30"
+            className="rf-app flex h-[100dvh] bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-300 font-sans overflow-hidden touch-manipulation selection:bg-slate-500/30"
         >
             <Toaster position="top-center" richColors />
             
-            {/* --- DESKTOP SIDEBAR (Focus Mode: hidden by default, animated toggle) --- */}
-            <aside 
-                className={`hidden lg:flex flex-col bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-white/5 z-50 shrink-0 transition-all duration-300 ease-in-out ${
-                    sidebarOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 overflow-hidden border-r-0 pointer-events-none'
-                }`}
-            >
-                <div className="p-4 pb-2 flex items-center justify-between min-w-[16rem]">
-                    <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setView('list')}>
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-                             <Activity size={16} strokeWidth={2.5}/>
-                        </div>
-                        <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 dark:from-cyan-400 dark:to-blue-500 bg-clip-text text-transparent">ReviewFlow</h1>
-                    </div>
-                    <button 
-                        onClick={() => setSidebarOpen(false)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                        title="Ocultar Menu (Modo Foco)"
-                    >
-                        <PanelLeftClose size={18} />
-                    </button>
+            <div className="rf-shell">
+              <header className="rf-header">
+                <button className="rf-brand" onClick={() => setView('list')} aria-label="ReviewFlow — início"><BookOpen size={25} strokeWidth={1.3} /><span>ReviewFlow<span className="rf-brand-dot">.</span></span></button>
+                <nav className="rf-desktop-nav" aria-label="Navegação principal">{NAV_ITEMS.map(item => <button key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => setView(item.id as any)}>{item.label}</button>)}</nav>
+                <div className="rf-header-actions">
+                  <button className="rf-icon-button" onClick={() => setIsSearchActive(true)} aria-label="Pesquisar"><Search size={19} strokeWidth={1.6} /></button>
+                  <button className="rf-icon-button rf-sync-button" onClick={() => syncKey ? handleSyncClick() : setSettingsOpen(true)} disabled={status === 'syncing'} aria-label={syncKey ? 'Sincronizar dados' : 'Configurar sincronização'}><RefreshCw size={18} strokeWidth={1.6} className={status === 'syncing' ? 'animate-spin' : ''} /></button>
+                  <button className="rf-icon-button" onClick={() => setSettingsOpen(true)} aria-label="Configurações"><Settings size={19} strokeWidth={1.6} /></button>
+                  <UserStatsDropdown totalXP={stats.totalXP} totalQuestions={stats.totalAnswered} topics={topics} simulados={simulados} userRole={userRole} userIcon={config.userIcon} onSelectUserIcon={userIcon => setConfig(prev => ({ ...prev, userIcon }))} dropPosition="down" size="sm" />
+                  <button className="rf-header-new" onClick={() => setAddModalOpen(true)}><Plus size={16} /><span>Novo tema</span></button>
                 </div>
-                {config.isPremium && (
-                    <div className="px-4 pb-2 min-w-[16rem]">
-                        <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase tracking-wider">{userRole}</span>
-                    </div>
-                )}
-
-                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2 min-w-[16rem]">
-                    <div className="mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest px-2">Menu</div>
-                    {NAV_ITEMS.map(item => {
-                        const isActive = view === item.id;
-                        return (
-                            <button 
-                                key={item.id}
-                                onClick={() => setView(item.id as any)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'}`}
-                            >
-                                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                                {item.label}
-                            </button>
-                        )
-                    })}
-                </div>
-
-                <div className="p-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between gap-1.5 min-w-[16rem]">
-                    <UserStatsDropdown 
-                        totalXP={stats.totalXP} 
-                        totalQuestions={stats.totalAnswered} 
-                        topics={topics} 
-                        simulados={simulados} 
-                        userRole={userRole}
-                        userIcon={config.userIcon}
-                        onSelectUserIcon={(newIcon) => setConfig(prev => ({ ...prev, userIcon: newIcon }))}
-                    />
-                    
-                    <div className="flex items-center gap-1.5">
-                        <button 
-                            onClick={() => setAddModalOpen(true)}
-                            title="Novo Tema de Estudo"
-                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 transition-all active:scale-95 border border-blue-200/50 dark:border-blue-800/30 shadow-xs"
-                        >
-                            <BookOpen size={16} strokeWidth={2.2} />
-                        </button>
-                        <button 
-                            onClick={() => setSimuladoModalOpen(true)}
-                            title="Novo Simulado"
-                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-600 dark:text-purple-400 transition-all active:scale-95 border border-purple-200/50 dark:border-purple-800/30 shadow-xs"
-                        >
-                            <ClipboardList size={16} strokeWidth={2.2} />
-                        </button>
-                        <button 
-                            onClick={handleSyncClick} 
-                            disabled={status === 'syncing' || !syncKey}
-                            title={syncKey ? "Sincronizar Dados" : "Configurar Sincronização"}
-                            className={`w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors ${status === 'syncing' ? 'opacity-50' : ''}`}
-                        >
-                            <RefreshCw size={15} className={status === 'syncing' ? 'animate-spin text-blue-500' : ''} />
-                        </button>
-                        <button 
-                            onClick={() => setSettingsOpen(true)} 
-                            title="Configurações"
-                            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
-                        >
-                            <Settings size={15} />
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Mobile Top Navigation (Modern & Adapative) */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 z-[80] bg-white/90 dark:bg-[#121214]/90 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 pt-[env(safe-area-inset-top)]">
-                <div className="flex items-center justify-between px-3.5 h-14">
-                    <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                            {React.createElement(NAV_ITEMS.find(n => n.id === view)?.icon || Activity, { size: 17, strokeWidth: 2.5 })}
-                        </div>
-                        <span className="text-base font-black tracking-tight text-slate-900 dark:text-white leading-none truncate">{currentViewTitle}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                         {/* Quick Add Button */}
-                         <div className="relative">
-                             <button 
-                                onClick={() => setDesktopNewMenuOpen(!desktopNewMenuOpen)} 
-                                aria-label="Criar Novo"
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white active:scale-95 transition-all shadow-xs"
-                             >
-                                 <Plus size={16} strokeWidth={2.5} className={`transition-transform duration-300 ${desktopNewMenuOpen ? 'rotate-45' : ''}`} />
-                             </button>
-                             {desktopNewMenuOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setDesktopNewMenuOpen(false)} />
-                                    <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl p-1.5 animate-scale-in z-50 space-y-0.5">
-                                        <button onClick={() => { setAddModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors">
-                                            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0"><BookOpen size={14}/></div>
-                                            <span>Novo Tema</span>
-                                        </button>
-                                        <button onClick={() => { setSimuladoModalOpen(true); setDesktopNewMenuOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl text-left text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors">
-                                            <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0"><ClipboardList size={14}/></div>
-                                            <span>Novo Simulado</span>
-                                        </button>
-                                    </div>
-                                </>
-                             )}
-                         </div>
-
-                         <button 
-                            onClick={() => setIsSearchActive(true)} 
-                            aria-label="Pesquisar"
-                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
-                         >
-                             <Search size={15} />
-                         </button>
-
-                         {/* Mobile User Profile Trigger */}
-                         <UserStatsDropdown 
-                             totalXP={stats.totalXP} 
-                             totalQuestions={stats.totalAnswered} 
-                             topics={topics} 
-                             simulados={simulados} 
-                             userRole={userRole}
-                             userIcon={config.userIcon}
-                             onSelectUserIcon={(newIcon) => setConfig(prev => ({ ...prev, userIcon: newIcon }))}
-                             dropPosition="down"
-                             size="sm"
-                         />
-
-                         <button 
-                            onClick={() => setSettingsOpen(true)} 
-                            aria-label="Configurações"
-                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
-                         >
-                             <Settings size={15} />
-                         </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Bottom Navigation (iOS Style) */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[80] bg-white/90 dark:bg-[#121214]/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
-                <nav className="flex items-center justify-around px-2 h-16 relative">
-                    {NAV_ITEMS.map((item, index) => {
-                        const isActive = view === item.id;
-                        return (
-                            <React.Fragment key={item.id}>
-                                <button 
-                                    onClick={() => { 
-                                        vibration.tick(); 
-                                        setView(item.id as any);
-                                    }} 
-                                    className="flex flex-col items-center justify-center w-[60px] h-full gap-0.5 active:scale-95 transition-all"
-                                >
-                                    <item.icon 
-                                        size={22} 
-                                        strokeWidth={isActive ? 2.5 : 2} 
-                                        className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'} 
-                                    />
-                                    <span className={`text-[10px] leading-none ${isActive ? 'font-bold text-blue-600 dark:text-blue-400' : 'font-medium text-slate-400 dark:text-slate-500'}`}>
-                                        {item.label}
-                                    </span>
-                                </button>
-                            </React.Fragment>
-                        );
-                    })}
-                </nav>
-            </div>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 h-full relative">
-                {/* Desktop Modern Navigation Header */}
-                <header className="hidden lg:flex items-center justify-between h-16 px-6 bg-white dark:bg-zinc-900 border-b border-slate-200/80 dark:border-white/5 z-40 shrink-0">
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setView('list')}>
-                            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
-                                <Activity size={17} strokeWidth={2.5}/>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">ReviewFlow</span>
-                                <span className="text-[11px] text-slate-400 font-medium">Estudos e revisões</span>
-                            </div>
-                        </div>
-
-                        {/* Desktop Navigation Tabs */}
-                        <nav className="flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-white/5">
-                            {NAV_ITEMS.map((item) => {
-                                const isActive = view === item.id;
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => { vibration.tick(); setView(item.id as any); }}
-                                        className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                            isActive
-                                                ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                                        }`}
-                                    >
-                                        <item.icon size={15} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-blue-600 dark:text-blue-400' : ''} />
-                                        <span>{item.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </nav>
-                    </div>
-
-                    {/* Desktop Actions */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsSearchActive(true)}
-                            aria-label="Pesquisar"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-500 dark:text-slate-400 text-xs font-medium transition-colors"
-                        >
-                            <Search size={14} />
-                            <span>Buscar...</span>
-                        </button>
-                        <button
-                            onClick={() => setAddModalOpen(true)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all shadow-xs active:scale-95"
-                        >
-                            <Plus size={14} strokeWidth={2.5} />
-                            <span>Novo Tema</span>
-                        </button>
-                        <button
-                            onClick={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all active:scale-95 border border-slate-200/60 dark:border-white/5"
-                        >
-                            <ClipboardList size={14} className="text-purple-500" />
-                            <span>Simulado</span>
-                        </button>
-                        <button
-                            onClick={handleSyncClick}
-                            disabled={status === 'syncing' || !syncKey}
-                            title={syncKey ? "Sincronizar Dados" : "Configurar Sincronização"}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 transition-all ${status === 'syncing' ? 'opacity-50' : ''}`}
-                        >
-                            <RefreshCw size={14} className={status === 'syncing' ? 'animate-spin text-blue-500' : ''} />
-                        </button>
-                        <button
-                            onClick={() => setSettingsOpen(true)}
-                            title="Configurações"
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 transition-all"
-                        >
-                            <Settings size={14} />
-                        </button>
-                        <UserStatsDropdown
-                            totalXP={stats.totalXP}
-                            totalQuestions={stats.totalAnswered}
-                            topics={topics}
-                            simulados={simulados}
-                            userRole={userRole}
-                            userIcon={config.userIcon}
-                            onSelectUserIcon={(newIcon) => setConfig(prev => ({ ...prev, userIcon: newIcon }))}
-                            dropPosition="down"
-                            size="sm"
-                        />
-                    </div>
-                </header>
-
-                <main className="flex-1 overflow-y-auto w-full pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8 pt-[calc(4.25rem+env(safe-area-inset-top))] lg:pt-6 transition-all duration-300 px-3 sm:px-4 lg:px-8">
-                    <div className="max-w-6xl mx-auto w-full h-full">
-                        {/* Search Overlay (When active) */}
-                {isSearchActive && (
-                    <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-black/95 backdrop-blur-xl animate-fade-in flex flex-col p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="flex-1 bg-slate-100 dark:bg-white/10 rounded-2xl flex items-center px-4 py-3">
-                                <Search className="text-slate-400 mr-3" size={20} />
-                                <input 
-                                    ref={searchInputRef}
-                                    type="text" 
-                                    placeholder="O que você procura?"
-                                    className="w-full bg-transparent outline-none text-base font-semibold text-slate-800 dark:text-white placeholder-slate-400"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
-                                {searchTerm && (
-                                    <button onClick={() => setSearchTerm('')} className="p-1 rounded-full bg-slate-200 dark:bg-white/20">
-                                        <X size={14} className="text-slate-500 dark:text-slate-300"/>
-                                    </button>
-                                )}
-                            </div>
-                            <button onClick={() => { setIsSearchActive(false); setSearchTerm(''); }} className="font-bold text-slate-500 dark:text-slate-400">
-                                Cancelar
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                            <div className="text-center text-slate-400 text-sm mt-10">
-                                <Search size={48} className="mx-auto mb-4 opacity-20"/>
-                                <p>Digite para buscar em {currentViewTitle}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+              </header>
+              <nav className="rf-mobile-nav" aria-label="Navegação principal">{NAV_ITEMS.map(item => <button key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => { vibration.tick(); setView(item.id as any); }}><item.icon size={21} strokeWidth={1.6} /><span>{item.label}</span></button>)}</nav>
+                <main className="rf-main">
+                    <div className="rf-page">
+                {isSearchActive && <section className="rf-search" role="search" aria-label="Buscar temas e simulados">
+                  <div className="rf-search-field"><Search size={20} /><input ref={searchInputRef} aria-label="Buscar temas e simulados" type="search" placeholder="Qual assunto você quer encontrar?" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') { setIsSearchActive(false); setSearchTerm(''); } }} /><button className="rf-icon-button" aria-label="Fechar pesquisa" onClick={() => { setIsSearchActive(false); setSearchTerm(''); }}><X size={18} /></button></div>
+                  {searchTerm.trim() && <div className="rf-search-results" aria-live="polite">
+                    {activeTopics.filter(t => t.title.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())).slice(0, 6).map(t => <button key={t.id} onClick={() => setEditTopic(t)}><span>{t.title}</span><small>Tema de estudo</small><ArrowLeft size={16} className="rotate-180" /></button>)}
+                    {activeSimulados.filter(s => s.name.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())).slice(0, 3).map(s => <button key={s.id} onClick={() => { setEditingSimulado(s); setSimuladoModalOpen(true); }}><span>{s.name}</span><small>Simulado</small><ArrowLeft size={16} className="rotate-180" /></button>)}
+                    {!activeTopics.some(t => t.title.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())) && !activeSimulados.some(s => s.name.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())) && <p>Nenhum tema ou simulado encontrado. Tente outro nome.</p>}
+                  </div>}
+                </section>}
 
                 <div className="flex-1 w-full">
                     <Suspense fallback={<LoadingSpinner />}>

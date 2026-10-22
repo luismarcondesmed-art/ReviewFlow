@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
           name: 'ReviewFlow • Estudos e revisões',
           short_name: 'ReviewFlow',
           description: 'Estude qualquer área com inteligência. Repetição espaçada automática e métricas de desempenho.',
-          theme_color: '#f2f4f7',
-          background_color: '#f2f4f7',
+          theme_color: '#f7f5ef',
+          background_color: '#f7f5ef',
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
           ]
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: false,

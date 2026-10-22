@@ -4,7 +4,7 @@ import {
     Clock, Activity, Flame, CheckCircle2, ChevronRight, PlayCircle, Plus, 
     BarChart2, ChevronDown, ChevronUp, Lightbulb, BookOpen, ClipboardList, 
     AlertCircle, Calendar, X, BrainCircuit, Target, PlusCircle, ArrowRight, 
-    Sparkles, Check, Award, TrendingUp, Layers, ExternalLink, Zap
+    Sparkles, Check, Award, TrendingUp, Layers, ExternalLink, Zap, MoreHorizontal
 } from 'lucide-react';
 import { Topic, Simulado, UserConfig } from '../types';
 import { 
@@ -109,753 +109,99 @@ export const HubView = ({
     onUpdateTopic?: (topic: Topic) => void,
     onQuickCompleteReview?: (id: string, idx: number) => void
 }) => {
-    const [isPendingExpanded, setIsPendingExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(false);
     const [deepFocusOpen, setDeepFocusOpen] = useState(false);
-    
-    // Tab selector for the bottom analytics workstation
-    const [leftWorkstationTab, setLeftWorkstationTab] = useState<'sugestoes' | 'frequencia' | 'retencao'>('sugestoes');
-    const [rightWorkstationTab, setRightWorkstationTab] = useState<'checklist' | 'metas' | 'simulados'>('checklist');
-
-    // Study Track Filter (Concurso vs. Residência vs. Todas)
-    const [trackFilter, setTrackFilter] = useState<'all' | 'concurso' | 'residencia'>(() => {
-        try {
-            return (localStorage.getItem('study_hub_track_filter') as any) || 'all';
-        } catch(e) {
-            return 'all';
-        }
-    });
-
-    const handleSetTrackFilter = (track: 'all' | 'concurso' | 'residencia') => {
-        setTrackFilter(track);
-        try {
-            localStorage.setItem('study_hub_track_filter', track);
-        } catch(e) {}
-    };
-
-    const containerRef = useRef<HTMLDivElement>(null);
-    
+    const [tool, setTool] = useState('notes');
+    const [track, setTrack] = useState('all');
     const today = getTodayStr();
-    const activeTopics = useMemo(() => topics.filter(t => !t.deleted), [topics]);
-    const activeSimulados = useMemo(() => simulados.filter(s => !s.deleted), [simulados]);
+    const activeTopics = topics.filter(t => !t.deleted);
+    const activeSimulados = simulados.filter(s => !s.deleted);
+    const filtered = activeTopics.filter(t => (track === 'all' || getTopicTrack(t) === track) && (!searchTerm || t.title.toLocaleLowerCase().includes(searchTerm.toLocaleLowerCase())));
+    const pending = filtered.flatMap(t => t.reviews.map((r, idx) => ({ ...r, topic: t, idx }))).filter(r => !r.done);
+    const dueItems = pending.filter(r => r.date <= today).sort((a, b) => a.date.localeCompare(b.date));
+    const upcoming = pending.filter(r => r.date > today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
+    const history = filtered.flatMap(t => t.reviews).filter(r => r.done);
+    const total = history.reduce((sum, r) => sum + r.total, 0);
+    const correct = history.reduce((sum, r) => sum + r.correct, 0);
+    const completedToday = history.filter(r => r.completedAt ? new Date(r.completedAt).toLocaleDateString('sv-SE') === today : r.date === today).length;
+    const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+    const tools = [
+      { id: 'notes', label: 'Anotações', icon: BookOpen }, { id: 'goals', label: 'Metas', icon: Target },
+      { id: 'exams', label: 'Simulados', icon: ClipboardList }, { id: 'rhythm', label: 'Constância', icon: Activity },
+      { id: 'suggestions', label: 'Reforço', icon: Lightbulb }, { id: 'load', label: 'Carga futura', icon: Calendar },
+    ];
 
-    // Track counts
-    const trackCounts = useMemo(() => {
-        let concurso = 0;
-        let residencia = 0;
-        for (const t of activeTopics) {
-            const tr = getTopicTrack(t);
-            if (tr === 'concurso') concurso++;
-            else if (tr === 'residencia') residencia++;
-        }
-        return {
-            concurso,
-            residencia,
-            all: activeTopics.length
-        };
-    }, [activeTopics]);
-
-    // Active topics filtered by selected Track
-    const trackFilteredTopics = useMemo(() => {
-        if (trackFilter === 'all') return activeTopics;
-        return activeTopics.filter(t => getTopicTrack(t) === trackFilter);
-    }, [activeTopics, trackFilter]);
-
-    // Sub-filtered by search term
-    const filteredActiveTopics = useMemo(() => {
-        let result = trackFilteredTopics;
-        if (searchTerm) {
-            const lower = searchTerm.toLowerCase();
-            result = result.filter(t => t.title.toLowerCase().includes(lower));
-        }
-        return result;
-    }, [trackFilteredTopics, searchTerm]);
-
-    // Pending reviews for today
-    const dueItems = useMemo(() => {
-        return filteredActiveTopics
-            .flatMap(t => t.reviews.map((r, idx) => ({ ...r, topic: t, idx })))
-            .filter(r => !r.done && r.date <= today)
-            .sort((a,b) => {
-                 if (a.date !== b.date) return a.date.localeCompare(b.date);
-                 const pMap: any = { high: 3, medium: 2, low: 1 };
-                 return (pMap[b.topic.importance] || 2) - (pMap[a.topic.importance] || 2);
-             });
-    }, [filteredActiveTopics, today]);
-
-    // Today's completion stats for current track filter
-    const { todaysDone, todaysTotal } = useMemo(() => {
-        const allUpToToday = filteredActiveTopics.flatMap(t => t.reviews.map((r, idx) => ({ ...r, topic: t, idx }))).filter(r => r.date <= today);
-        return {
-            todaysDone: allUpToToday.filter(r => r.done).length,
-            todaysTotal: allUpToToday.length
-        };
-    }, [filteredActiveTopics, today]);
-
-    const todaysProgress = todaysTotal > 0 ? Math.round((todaysDone / todaysTotal) * 100) : 0;
-
-    // KPI Metrics calculation
-    const kpiMetrics = useMemo(() => {
-        let totalQuestions = 0;
-        let totalCorrect = 0;
-        let completedReviews = 0;
-
-        for (const t of trackFilteredTopics) {
-            for (const r of t.reviews) {
-                if (r.done) {
-                    completedReviews++;
-                    totalQuestions += (r.total || 0);
-                    totalCorrect += (r.correct || 0);
-                }
-            }
-        }
-
-        const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-        // Days until target exam
-        let daysToExam: number | null = null;
-        if (config?.examDate) {
-            const examD = new Date(config.examDate).getTime();
-            const nowD = new Date(today).getTime();
-            const diff = Math.ceil((examD - nowD) / (1000 * 3600 * 24));
-            if (diff >= 0) daysToExam = diff;
-        }
-
-        return {
-            totalQuestions,
-            totalCorrect,
-            overallAccuracy,
-            completedReviews,
-            daysToExam
-        };
-    }, [trackFilteredTopics, config?.examDate, today]);
-
-    const startQuickSession = () => {
-        if (dueItems.length > 0) {
-            onReview(dueItems[0].topic.id, dueItems[0].idx);
-        }
-    };
-
-    if (deepFocusOpen) {
-        return (
-            <div ref={containerRef} className="flex flex-col gap-6 min-h-full pb-4 lg:pb-0 w-full relative">
-                <DeepFocusContent onClose={() => setDeepFocusOpen(false)} dueItems={dueItems} onReview={onReview} />
-            </div>
-        );
-    }
+    if (deepFocusOpen) return <DeepFocusContent onClose={() => setDeepFocusOpen(false)} dueItems={dueItems} onReview={onReview} />;
 
     return (
-        <div ref={containerRef} className="flex flex-col gap-5 sm:gap-6 min-h-full pb-6 w-full relative animate-fade-in">
-            
-            {/* 1. CLEAN WORKSPACE HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-slate-200/80 dark:border-white/5">
-                <div>
-                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                        <Activity size={22} className="text-blue-600 dark:text-blue-400" />
-                        <span>Painel de Estudos</span>
-                    </h2>
-                </div>
+      <div className="study-journal">
+        <header className="journal-intro">
+          <div>
+            <p className="journal-eyebrow">Seu espaço de aprendizagem <span aria-hidden="true">/</span> <time dateTime={today}>{dateLabel}</time></p>
+            <h1>Conhecimento se constrói.<br /><em>Um dia de cada vez.</em></h1>
+            <p className="journal-deck">{dueItems.length ? `Você tem ${dueItems.length} ${dueItems.length === 1 ? 'revisão' : 'revisões'} para retomar. Comece por uma.` : 'Um lugar para organizar o que você aprende e voltar ao que importa.'}</p>
+          </div>
+          <div className="journal-start">
+            <button className="rf-primary" onClick={() => dueItems.length ? onReview(dueItems[0].topic.id, dueItems[0].idx) : onOpenNewTopic?.()}>
+              {dueItems.length ? 'Começar a revisão' : 'Adicionar um tema'} <ArrowRight size={18} />
+            </button>
+            {dueItems.length > 0 && <button className="rf-text-button" onClick={() => setDeepFocusOpen(true)}><Clock size={16} /> Estudar com temporizador</button>}
+          </div>
+        </header>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* Track Selection Switcher */}
-                    <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-zinc-800/80 rounded-xl border border-slate-200/60 dark:border-white/5">
-                        <button 
-                            onClick={() => handleSetTrackFilter('all')}
-                            title="Todas as matérias cadastradas"
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                trackFilter === 'all'
-                                    ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                            }`}
-                        >
-                            <span>Geral</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200/60 dark:bg-zinc-600 text-slate-600 dark:text-slate-300 font-bold">{trackCounts.all}</span>
-                        </button>
-                        <button 
-                            onClick={() => handleSetTrackFilter('concurso')}
-                            title="Trilha do Concurso FAFIPA"
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                trackFilter === 'concurso'
-                                    ? 'bg-emerald-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                            }`}
-                        >
-                            <span>🎯 FAFIPA</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/15 text-inherit font-bold">{trackCounts.concurso}</span>
-                        </button>
-                        <button 
-                            onClick={() => handleSetTrackFilter('residencia')}
-                            title="Trilha de Residência Médica"
-                            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                trackFilter === 'residencia'
-                                    ? 'bg-indigo-600 text-white shadow-xs'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                            }`}
-                        >
-                            <span>🩺 Residência</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/15 text-inherit font-bold">{trackCounts.residencia}</span>
-                        </button>
-                    </div>
+        <dl className="journal-measures" aria-label="Resumo dos estudos">
+          <div><dt>Para revisar</dt><dd>{dueItems.length}<span>tema{dueItems.length === 1 ? '' : 's'}</span></dd></div>
+          <div><dt>Concluídas hoje</dt><dd>{completedToday}<span>{completedToday === 1 ? 'revisão' : 'revisões'}</span></dd></div>
+          <div><dt>Seu aproveitamento</dt><dd>{total ? Math.round(correct / total * 100) + '%' : '—'}<span>{total ? 'de acertos' : 'aguardando estudo'}</span></dd></div>
+          <div><dt>Questões praticadas</dt><dd>{total.toLocaleString('pt-BR')}<span>no total</span></dd></div>
+        </dl>
 
-                    {/* Quick navigation bridges */}
-                    {onNavigateToView && (
-                        <div className="flex items-center gap-1">
-                            <button 
-                                onClick={() => onNavigateToView('cronograma')}
-                                title="Abrir Cronograma"
-                                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-all active:scale-95"
-                            >
-                                <Calendar size={15} className="text-amber-500" />
-                            </button>
-                            <button 
-                                onClick={() => onNavigateToView('database')}
-                                title="Abrir Acervo"
-                                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-all active:scale-95"
-                            >
-                                <BookOpen size={15} className="text-blue-500" />
-                            </button>
-                        </div>
-                    )}
-
-                    {onOpenNewTopic && (
-                        <button 
-                            onClick={onOpenNewTopic}
-                            title="Novo Tema de Estudo"
-                            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
-                        >
-                            <Plus size={14} />
-                            <span>Novo</span>
-                        </button>
-                    )}
-                </div>
+        <div className="journal-layout">
+          <section className="journal-today" aria-labelledby="today-heading">
+            <div className="journal-section-heading"><div><p className="journal-eyebrow">A próxima pequena conquista</p><h2 id="today-heading">Para hoje<span className="journal-count">{dueItems.length}</span></h2></div>
+              <label className="journal-filter">Trilha<select aria-label="Filtrar trilha de estudo" value={track} onChange={e => setTrack(e.target.value)}><option value="all">Todas as áreas</option><option value="concurso">Concursos</option><option value="residencia">Residência</option></select></label>
             </div>
+            {dueItems.length ? <>
+              <ol className="journal-review-list">
+                {(expanded ? dueItems : dueItems.slice(0, 6)).map((review, i) => <li key={review.topic.id + '-' + review.idx} className="journal-review">
+                  <span className="journal-index">{String(i + 1).padStart(2, '0')}</span>
+                  <div className="journal-review-info"><p className="journal-review-meta">{AREAS.find(a => a.id === review.topic.area)?.name || 'Geral'} <span>·</span> {review.targetQ} questões {review.date < today && <span className="journal-overdue">· Retomar de {formatDate(review.date)}</span>}</p>
+                    <button className="journal-topic-title" onClick={() => onEditTopic(review.topic.id)}>{review.topic.title}</button><p className="journal-review-stage">{review.label}</p>
+                  </div>
+                  <button className="rf-secondary journal-review-action" onClick={() => onReview(review.topic.id, review.idx)}>Revisar <ArrowRight size={15} /></button>
+                  <details className="journal-row-menu"><summary aria-label={`Opções de ${review.topic.title}`}><MoreHorizontal size={20} /></summary><div><button onClick={() => onEditTopic(review.topic.id)}>Editar tema</button>{onQuickCompleteReview && <button onClick={() => onQuickCompleteReview(review.topic.id, review.idx)}>Registrar 100% de acertos</button>}</div></details>
+                </li>)}
+              </ol>
+              {dueItems.length > 6 && <button className="rf-text-button journal-show-more" onClick={() => setExpanded(!expanded)}>{expanded ? 'Mostrar menos' : `Ver todas as ${dueItems.length} revisões`} <ChevronDown size={16} /></button>}
+            </> : <div className="journal-empty">
+              <span className="journal-empty-mark" aria-hidden="true">{activeTopics.length ? '✓' : 'Aa'}</span>
+              <h3>{searchTerm ? 'Nenhum tema encontrado.' : activeTopics.length ? 'Tudo em dia. Respire.' : 'Todo aprendizado começa com uma curiosidade.'}</h3>
+              <p>{searchTerm ? 'Tente buscar por outro nome ou escolha outra trilha.' : activeTopics.length ? 'Você não tem revisões pendentes nesta trilha. Confira os próximos encontros na agenda.' : 'Adicione seu primeiro tema ou encontre um ponto de partida nos cronogramas. Nós ajudamos você a saber quando voltar.'}</p>
+              <div className="journal-empty-actions"><button className="rf-text-button" onClick={onOpenNewTopic}>Adicionar tema <Plus size={16} /></button><button className="rf-text-button" onClick={() => onNavigateToView?.('cronograma')}>Explorar cronogramas <ArrowRight size={16} /></button></div>
+            </div>}
+          </section>
 
-            {/* 2. UNIFIED METRIC BAR (COMPACT & ICON-DRIVEN) */}
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-white/5 rounded-2xl p-3.5 sm:p-4 shadow-xs">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-white/5">
-                    
-                    {/* METRIC 1: Progresso Diário */}
-                    <div className="flex flex-col justify-between pt-1 md:pt-0 md:px-2 first:px-0">
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span className="flex items-center gap-1.5"><Target size={14} className="text-blue-600 dark:text-blue-400" /> Meta</span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">{todaysProgress}%</span>
-                        </div>
-                        <div className="flex items-baseline gap-1 my-1">
-                            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">{todaysDone}</span>
-                            <span className="text-xs text-slate-400 font-medium">/ {todaysTotal}</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                            <div 
-                                className={`h-full transition-all duration-300 ${todaysProgress === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`} 
-                                style={{ width: `${todaysProgress}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* METRIC 2: Aproveitamento Geral */}
-                    <div className="flex flex-col justify-between pt-2.5 md:pt-0 md:px-3">
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span className="flex items-center gap-1.5"><TrendingUp size={14} className="text-emerald-500" /> Acertos</span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getPerformanceBgLight(kpiMetrics.overallAccuracy, 80)}`}>
-                                {kpiMetrics.overallAccuracy >= 80 ? 'Excelente' : kpiMetrics.overallAccuracy >= 65 ? 'Bom' : 'Atenção'}
-                            </span>
-                        </div>
-                        <div className="flex items-baseline gap-1 my-1">
-                            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">{kpiMetrics.overallAccuracy}%</span>
-                        </div>
-                        <span className="text-[11px] text-slate-400 truncate">
-                            {kpiMetrics.totalCorrect} / {kpiMetrics.totalQuestions} questões
-                        </span>
-                    </div>
-
-                    {/* METRIC 3: Questões Feitas */}
-                    <div className="flex flex-col justify-between pt-2.5 md:pt-0 md:px-3">
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-indigo-500" /> Resolvidas</span>
-                            <span className="text-[11px] font-semibold text-slate-400">{kpiMetrics.completedReviews} ciclos</span>
-                        </div>
-                        <div className="flex items-baseline gap-1 my-1">
-                            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">{kpiMetrics.totalQuestions}</span>
-                        </div>
-                        <span className="text-[11px] text-slate-400 truncate">
-                            Total acumulado
-                        </span>
-                    </div>
-
-                    {/* METRIC 4: Contagem Regressiva / Fila */}
-                    <div className="flex flex-col justify-between pt-2.5 md:pt-0 md:pl-3">
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span className="flex items-center gap-1.5"><Clock size={14} className="text-amber-500" /> 
-                                {kpiMetrics.daysToExam !== null ? 'Prova' : 'Pendentes'}
-                            </span>
-                            {dueItems.length > 0 && (
-                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded">
-                                    {dueItems.length}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-baseline gap-1 my-1">
-                            {kpiMetrics.daysToExam !== null ? (
-                                <>
-                                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">{kpiMetrics.daysToExam}</span>
-                                    <span className="text-xs text-slate-400 font-medium">dias</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums">{dueItems.length}</span>
-                                    <span className="text-xs text-slate-400 font-medium">a revisar</span>
-                                </>
-                            )}
-                        </div>
-                        <span className="text-[11px] text-slate-400 truncate">
-                            {config?.examDate ? formatDate(config.examDate) : `${dueItems.length} na fila`}
-                        </span>
-                    </div>
-
-                </div>
-            </div>
-
-            {/* 3. PRIMARY ACTION ZONE: "FOCO DE HOJE" (CLEAN, DIRECT, 1-CLICK ACTIONS) */}
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-white/5 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-3.5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                                <Clock size={18} className="text-blue-600 dark:text-blue-400" />
-                                <span>{dueItems.length > 0 ? `Revisões de Hoje (${dueItems.length})` : 'Revisões em Dia'}</span>
-                            </h3>
-                            {trackFilter !== 'all' && (
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
-                                    {trackFilter === 'concurso' ? '🎯 FAFIPA' : '🩺 Residência'}
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            {dueItems.length > 0 
-                                ? `${todaysDone} de ${todaysTotal} concluídas hoje` 
-                                : 'Excelente! Nenhuma revisão acumulada para o dia de hoje.'}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                        {dueItems.length > 0 && (
-                            <>
-                                <button 
-                                    onClick={startQuickSession}
-                                    title="Iniciar primeira revisão da fila"
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
-                                >
-                                    <PlayCircle size={14} />
-                                    <span>Iniciar</span>
-                                </button>
-                                <button 
-                                    onClick={() => setDeepFocusOpen(true)}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-purple-600 dark:text-purple-400 rounded-xl transition-all active:scale-95"
-                                    title="Modo Foco Profundo (Pomodoro)"
-                                    aria-label="Modo Foco"
-                                >
-                                    <BrainCircuit size={15} />
-                                </button>
-                            </>
-                        )}
-                        {config.studyLink && (
-                            <a 
-                                href={config.studyLink} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                title="Abrir Plataforma de Estudos"
-                                aria-label="Plataforma de Estudos"
-                                className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded-xl transition-all"
-                            >
-                                <ExternalLink size={15} />
-                            </a>
-                        )}
-                    </div>
-                </div>
-
-                {/* Items List */}
-                {dueItems.length > 0 ? (
-                    <div className="flex flex-col gap-2">
-                        {/* First 4 items */}
-                        <div className="flex flex-col gap-1.5">
-                            {dueItems.slice(0, 4).map((item: any) => {
-                                const isOverdue = item.date < today;
-                                const numQuestions = item.topic.reviews[item.idx]?.targetQ || 10;
-                                const tr = getTopicTrack(item.topic);
-                                const areaObj = AREAS.find(a => a.id === item.topic.area);
-                                const areaName = item.topic.subarea || areaObj?.name || item.topic.area;
-
-                                return (
-                                    <div 
-                                        key={`${item.topic.id}-${item.idx}`} 
-                                        className="bg-slate-50/80 hover:bg-slate-50 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 p-2.5 sm:p-3 rounded-xl border border-slate-200/70 hover:border-slate-300 dark:border-white/5 dark:hover:border-zinc-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group"
-                                    >
-                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                                                <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
-                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                        {tr === 'concurso' ? '🎯 FAFIPA' : tr === 'residencia' ? '🩺 Residência' : 'Geral'}
-                                                    </span>
-                                                    <span>·</span>
-                                                    <span className="truncate max-w-[150px]">{areaName}</span>
-                                                    <span>·</span>
-                                                    <span>{item.label.split(':')[0]} ({numQuestions}q)</span>
-                                                </div>
-
-                                                <h4 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-                                                    {item.topic.title}
-                                                </h4>
-                                            </div>
-                                        </div>
-
-                                        {/* Status & Action Buttons */}
-                                        <div className="flex items-center gap-1.5 justify-end shrink-0 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-white/5">
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                                                isOverdue 
-                                                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' 
-                                                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                                            }`}>
-                                                {isOverdue ? 'Atrasada' : 'Hoje'}
-                                            </span>
-
-                                            {/* Fast 1-Click Complete */}
-                                            {onQuickCompleteReview && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onQuickCompleteReview(item.topic.id, item.idx);
-                                                    }}
-                                                    title="Concluir revisão em 1 clique (100% de aproveitamento)"
-                                                    aria-label="Concluir revisão"
-                                                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-100 dark:bg-zinc-800 dark:hover:bg-emerald-950/60 text-slate-600 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-400 flex items-center justify-center transition-colors active:scale-95"
-                                                >
-                                                    <Check size={14} strokeWidth={2.5} />
-                                                </button>
-                                            )}
-
-                                            {/* Primary Review Button */}
-                                            <button 
-                                                onClick={() => onReview(item.topic.id, item.idx)}
-                                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs flex items-center gap-1 transition-all shadow-xs active:scale-95"
-                                            >
-                                                <span>Revisar</span>
-                                                <ArrowRight size={13} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Expander for remaining items */}
-                        {dueItems.length > 4 && (
-                            <div className="flex flex-col gap-2 mt-1">
-                                <button 
-                                    onClick={() => setIsPendingExpanded(!isPendingExpanded)}
-                                    className="w-full py-2.5 px-3 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800 rounded-xl border border-slate-200/60 dark:border-white/5 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2 transition-colors"
-                                >
-                                    <span>{isPendingExpanded ? 'Ocultar revisões adicionais' : `Ver todas as outras revisões (${dueItems.length - 4} restantes)`}</span>
-                                    {isPendingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-
-                                <AnimatePresence>
-                                    {isPendingExpanded && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            className="flex flex-col gap-2 overflow-hidden"
-                                        >
-                                            {dueItems.slice(4).map((item: any) => {
-                                                const tr = getTopicTrack(item.topic);
-                                                const isOverdue = item.date < today;
-                                                const numQuestions = item.topic.reviews[item.idx]?.targetQ || 10;
-                                                const areaObj = AREAS.find(a => a.id === item.topic.area);
-                                                const areaName = item.topic.subarea || areaObj?.name || item.topic.area;
-
-                                                return (
-                                                    <div 
-                                                        key={`${item.topic.id}-${item.idx}`} 
-                                                        className="bg-slate-50/80 hover:bg-slate-50 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/70 hover:border-slate-300 dark:border-white/5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                                                    >
-                                                        <div className="flex flex-col min-w-0 flex-1">
-                                                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                                                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                                    {tr === 'concurso' ? '🎯 FAFIPA' : tr === 'residencia' ? '🩺 Residência' : 'Geral'}
-                                                                </span>
-                                                                <span aria-hidden="true">·</span>
-                                                                <span className="truncate">{areaName}</span>
-                                                                <span aria-hidden="true">·</span>
-                                                                <span>{item.label.split(':')[0]} ({numQuestions} questões)</span>
-                                                            </div>
-                                                            <h5 className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate mt-0.5">
-                                                                {item.topic.title}
-                                                            </h5>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-2 justify-end shrink-0">
-                                                            {onQuickCompleteReview && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        onQuickCompleteReview(item.topic.id, item.idx);
-                                                                    }}
-                                                                    title="Concluir em 1 clique"
-                                                                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 dark:bg-zinc-800 dark:hover:bg-emerald-950/60 text-slate-600 hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-400 text-xs font-semibold transition-colors flex items-center gap-1 active:scale-95"
-                                                                >
-                                                                    <Check size={13} strokeWidth={2.5} />
-                                                                    <span>Concluir</span>
-                                                                </button>
-                                                            )}
-                                                            <button 
-                                                                onClick={() => onReview(item.topic.id, item.idx)}
-                                                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
-                                                            >
-                                                                Revisar
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    /* Zero Due Items Clean State */
-                    <div className="p-6 bg-slate-50/60 dark:bg-zinc-800/30 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                <CheckCircle2 size={22} />
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-slate-900 dark:text-white text-sm">
-                                    Todas as revisões de hoje estão completas!
-                                </h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Sua retenção de memória está protegida. Você pode adiantar temas ou treinar simulados.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                            {onNavigateToView && (
-                                <button 
-                                    onClick={() => onNavigateToView('cronograma')}
-                                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-xl font-semibold text-xs transition-colors"
-                                >
-                                    Ver Cronograma
-                                </button>
-                            )}
-                            {onAddSimulado && (
-                                <button 
-                                    onClick={onAddSimulado}
-                                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs transition-colors shadow-xs"
-                                >
-                                    Fazer Simulado
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* 4. MODERN 2-PANEL WORKSPACE (REPLACES FRAGMENTED BENTOS) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 items-start">
-                
-                {/* LEFT 2 COLUMNS: Intelligent Studies & Analytics Workspace */}
-                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-white/5 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-                    
-                    {/* Header with Segmented Workspace Tabs */}
-                    <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <Sparkles size={16} className="text-amber-500" />
-                                <span>Análise & Reforço</span>
-                            </h3>
-                        </div>
-
-                        {/* Tabs */}
-                        <div className="flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-zinc-800/80 rounded-xl border border-slate-200/50 dark:border-white/5">
-                            <button 
-                                onClick={() => setLeftWorkstationTab('sugestoes')}
-                                title="Sugestões de reforço"
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                    leftWorkstationTab === 'sugestoes'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <Lightbulb size={13} className="text-amber-500" />
-                                <span>Reforço</span>
-                            </button>
-                            <button 
-                                onClick={() => setLeftWorkstationTab('frequencia')}
-                                title="Mapa de constância"
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                    leftWorkstationTab === 'frequencia'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <Flame size={13} className="text-orange-500" />
-                                <span>Constância</span>
-                            </button>
-                            <button 
-                                onClick={() => setLeftWorkstationTab('retencao')}
-                                title="Retenção de memória e carga"
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                    leftWorkstationTab === 'retencao'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <BrainCircuit size={13} className="text-purple-500" />
-                                <span>Retenção</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="p-4 sm:p-5">
-                        {leftWorkstationTab === 'sugestoes' && (
-                            <div>
-                                <SmartSuggestions topics={trackFilteredTopics} onReview={onReview} />
-                            </div>
-                        )}
-
-                        {leftWorkstationTab === 'frequencia' && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between text-xs text-slate-500">
-                                    <span>Mapa de frequência nos últimos meses</span>
-                                    <span className="font-semibold text-slate-700 dark:text-slate-300">Cada bloco representa um dia de estudo</span>
-                                </div>
-                                <div 
-                                    className="flex justify-center overflow-x-auto py-2 custom-scrollbar"
-                                    onPointerDownCapture={(e) => e.stopPropagation()}
-                                >
-                                    <HeatmapWidget topics={trackFilteredTopics} simulados={activeSimulados} />
-                                </div>
-                            </div>
-                        )}
-
-                        {leftWorkstationTab === 'retencao' && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="p-4 bg-slate-50/70 dark:bg-black/20 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col justify-between">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-semibold text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                            <BrainCircuit size={14} className="text-purple-500" /> Curva de Retenção
-                                        </h4>
-                                    </div>
-                                    <div className="h-36 sm:h-40">
-                                        <RetentionWidget topics={trackFilteredTopics} />
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-slate-50/70 dark:bg-black/20 rounded-xl border border-slate-200/60 dark:border-white/5 flex flex-col justify-between">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-semibold text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                            <Activity size={14} className="text-blue-500" /> Previsão de Carga
-                                        </h4>
-                                    </div>
-                                    <div className="h-36 sm:h-40">
-                                        <FutureLoadWidget topics={trackFilteredTopics} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-
-                {/* RIGHT 1 COLUMN: Daily Execution & Goals */}
-                <div className="flex flex-col gap-4 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-white/5 rounded-2xl shadow-xs overflow-hidden">
-                    
-                    {/* Header with Segmented Tabs */}
-                    <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-zinc-800/80 rounded-xl border border-slate-200/50 dark:border-white/5 w-full">
-                            <button 
-                                onClick={() => setRightWorkstationTab('checklist')}
-                                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                                    rightWorkstationTab === 'checklist'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <ClipboardList size={13} className="text-emerald-500" />
-                                <span>Checklist</span>
-                            </button>
-                            <button 
-                                onClick={() => setRightWorkstationTab('metas')}
-                                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                                    rightWorkstationTab === 'metas'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <Target size={13} className="text-blue-500" />
-                                <span>Metas</span>
-                            </button>
-                            <button 
-                                onClick={() => setRightWorkstationTab('simulados')}
-                                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                                    rightWorkstationTab === 'simulados'
-                                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-xs'
-                                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-                                }`}
-                            >
-                                <Award size={13} className="text-purple-500" />
-                                <span>Simulados</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-4">
-                        {rightWorkstationTab === 'checklist' && (
-                            <div className="h-[340px] overflow-hidden flex flex-col">
-                                <DailyTodoContent 
-                                    dailyNotes={dailyNotes} 
-                                    setDailyNotes={setDailyNotes} 
-                                    hideHeader={true}
-                                />
-                            </div>
-                        )}
-
-                        {rightWorkstationTab === 'metas' && (
-                            <WeeklyGoalsWidget 
-                                config={config} 
-                                topics={trackFilteredTopics} 
-                                simulados={activeSimulados} 
-                            />
-                        )}
-
-                        {rightWorkstationTab === 'simulados' && (
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className="text-xs text-slate-400">Histórico de provas simuladas</span>
-                                    {onAddSimulado && (
-                                        <button 
-                                            onClick={onAddSimulado}
-                                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                        >
-                                            <Plus size={12} /> Novo Simulado
-                                        </button>
-                                    )}
-                                </div>
-                                <SimuladosMiniWidget 
-                                    simulados={activeSimulados} 
-                                    targetAccuracy={config?.targetAccuracy || 80} 
-                                    onAdd={onAddSimulado || (() => {})} 
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-
-            </div>
-
+          <aside className="journal-horizon" aria-labelledby="horizon-heading">
+            <p className="journal-eyebrow">Devagar, e sempre</p><h2 id="horizon-heading">No horizonte</h2>
+            {upcoming.length ? <ol>{upcoming.map(r => <li key={r.topic.id + '-' + r.idx}><time dateTime={r.date}>{formatDate(r.date)}</time><button onClick={() => onEditTopic(r.topic.id)}>{r.topic.title}</button><span>{r.targetQ} questões</span></li>)}</ol> : <p className="journal-muted">As próximas revisões aparecem aqui depois de você registrar um estudo.</p>}
+            <button className="rf-text-button" onClick={() => onNavigateToView?.('calendar')}>Abrir agenda <ArrowRight size={16} /></button>
+            <div className="journal-footnote"><span aria-hidden="true">✳</span><p>Um pouco hoje.<br />Mais familiar amanhã.</p></div>
+          </aside>
         </div>
+
+        <section className="journal-notebook" aria-labelledby="notebook-heading">
+          <div className="journal-section-heading"><div><p className="journal-eyebrow">Organize o caminho</p><h2 id="notebook-heading">Seu caderno</h2></div><button className="rf-text-button" onClick={() => onNavigateToView?.('database')}>Ver minhas matérias <ArrowRight size={16} /></button></div>
+          <div className="journal-tool-tabs" role="tablist" aria-label="Ferramentas de estudo">{tools.map(item => <button key={item.id} id={'tool-' + item.id} role="tab" aria-selected={tool === item.id} aria-controls="journal-tool-panel" tabIndex={tool === item.id ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const next = tools[(tools.findIndex(t => t.id === tool) + (e.key === 'ArrowRight' ? 1 : tools.length - 1)) % tools.length]; setTool(next.id); document.getElementById('tool-' + next.id)?.focus(); e.preventDefault(); } }} onClick={() => setTool(item.id)}><item.icon size={16} />{item.label}</button>)}</div>
+          <div className="journal-tools" id="journal-tool-panel" role="tabpanel" aria-labelledby={'tool-' + tool}>
+            {tool === 'notes' && <DailyTodoContent dailyNotes={dailyNotes} setDailyNotes={setDailyNotes} hideHeader />}
+            {tool === 'goals' && <WeeklyGoalsWidget topics={activeTopics} simulados={activeSimulados} config={config} />}
+            {tool === 'exams' && <><button className="rf-text-button" onClick={onAddSimulado}><Plus size={16} /> Registrar simulado</button><SimuladosMiniWidget simulados={activeSimulados} targetAccuracy={config.targetAccuracy || 80} onAdd={onAddSimulado || (() => {})} /></>}
+            {tool === 'rhythm' && <HeatmapWidget topics={activeTopics} simulados={activeSimulados} />}
+            {tool === 'suggestions' && <SmartSuggestions topics={filtered} onReview={onReview} />}
+            {tool === 'load' && <FutureLoadWidget topics={filtered} />}
+          </div>
+        </section>
+        <footer className="journal-colophon"><span>ReviewFlow</span><p>Aprender. Retomar. Seguir em frente.</p><span>Feito para o seu ritmo.</span></footer>
+      </div>
     );
 };

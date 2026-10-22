@@ -53,4 +53,6 @@ A PWA verifica novas versões e apresenta um aviso para aplicar a atualização 
 
 ## Análise e próximos passos
 
+A nova interface usa Source Serif 4 local, paleta de papel e verde, listas de revisão e seções abertas. Veja [as decisões de design](docs/DESIGN.md) para os critérios de hierarquia, responsividade e referências de UX.
+
 Veja [a análise global](docs/ANALISE-GLOBAL.md) para a avaliação da arquitetura, interface, segurança, desempenho, limitações e prioridades de evolução. iOS/Android físicos, autorização Firestore, IndexedDB, cronogramas autorais e flashcards completos permanecem itens de validação/desenvolvimento.
