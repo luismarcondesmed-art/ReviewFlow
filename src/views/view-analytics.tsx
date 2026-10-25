@@ -102,7 +102,7 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col justify-between items-center h-64 relative overflow-hidden">
+                <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col justify-between items-center relative">
                     <div className="w-full flex items-center justify-between mb-2 z-10">
                         <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><Flame size={16} className="text-orange-500"/> Atividade Recente</h4>
                     </div>
@@ -112,12 +112,12 @@ export const AnalyticsHub = ({ topics, simulados, config, onEditTopic, onEditHis
                     <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none"></div>
                 </div>
                 
-                <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col h-64 relative overflow-visible">
+                <div className="glass-panel rounded-[32px] p-6 shadow-sm flex flex-col relative overflow-visible">
                     <div className="w-full flex items-center justify-between mb-2 z-10">
                         <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><GraduationCap size={16} className="text-purple-500"/> Evolução nos Simulados</h4>
                     </div>
                     <div className="flex-1 w-full relative z-10">
-                        <div className="absolute inset-0">
+                        <div>
                             <EvolutionChart simulados={filteredSimuladosForChart} targetAccuracy={config.targetAccuracy} />
                         </div>
                     </div>

@@ -18,24 +18,17 @@ export const SimuladosView = ({ simulados, topics, config, onDelete, onEdit, sea
     }, [simulados, searchTerm]);
 
     return (
-        <div className="h-full flex flex-col pb-4 lg:pb-0 animate-scale-in gap-6">
-            {/* Performance Chart Section */}
-            <div className="glass-panel p-6 rounded-[32px] shadow-sm flex flex-col h-64 relative overflow-hidden mt-2 lg:mt-0">
-                <div className="w-full flex items-center justify-between mb-4 z-10">
-                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-widest flex items-center gap-2"><BarChart2 size={16} className="text-purple-500"/> Desempenho Recente</h4>
-                    <div className="flex bg-slate-100 dark:bg-slate-200/10 p-1 rounded-lg">
-                        <button onClick={() => setChartLimit(5)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartLimit === 5 ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-800 dark:text-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Últimos 5</button>
-                        <button onClick={() => setChartLimit(10)} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${chartLimit === 10 ? 'bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>Últimos 10</button>
+        <div className="min-h-full flex flex-col pb-4 lg:pb-0 animate-scale-in gap-6">
+            <section className="rf-exam-chart">
+                <div className="rf-chart-toolbar">
+                    <h2>Seu caminho nos simulados</h2>
+                    <div className="rf-period" role="group" aria-label="Quantidade de simulados no gráfico">
+                        {[5, 10].map(n => <button key={n} aria-pressed={chartLimit === n} onClick={() => setChartLimit(n as 5 | 10)}>Últimos {n}</button>)}
                     </div>
                 </div>
-                <div className="flex-1 w-full relative z-10">
-                    <div className="absolute inset-0">
-                        <EvolutionChart simulados={simulados.filter(s => !s.deleted)} targetAccuracy={config.targetAccuracy} limit={chartLimit} />
-                    </div>
-                </div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-            </div>
-
+                <p className="rf-chart-footnote">Aproveitamento por prova, com sua meta como referência.</p>
+                <EvolutionChart simulados={simulados} targetAccuracy={config.targetAccuracy} limit={chartLimit} />
+            </section>
             <div className="flex-1 bg-white dark:bg-zinc-900 rounded-[24px] border border-black/5 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">

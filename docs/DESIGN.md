@@ -52,3 +52,18 @@ Nesta atualização, foram conferidos no navegador os formulários no desktop e 
 O controle de cores foi substituído por **Cor de fundo**; o seletor anterior de destaque não é mais exibido. A paleta de ações permanece estável, e o tema do texto acompanha a luminância do fundo escolhido. To-Do Today aparece diretamente em Meu dia; Anotações tem uma tela própria com lista de matérias e leitor Notion. O tutorial foi refeito em 12 passos, com seletor para ir direto a uma função. Veja [o registro da versão](REVIEWFLOW-2.0.md) e [o guia do usuário](GUIA-REVIEWFLOW-2.0.md).
 
 Nesta rodada foram conferidos no navegador o tutorial inicial, a criação/conclusão/edição de tarefas e sua persistência ao navegar, a seleção de matérias em Anotações, a abertura da edição do vínculo, a rejeição de links inválidos e a mudança do fundo sem alteração do destaque. Meu dia e Anotações foram percorridos em 390 px. A leitura de um caderno real do Notion e testes físicos permanecem pendentes.
+
+## Atualização dos gráficos — 25/10/2026
+
+- Estatísticas com evolução por período, alternância questões/acertos e agrupamento explícito para históricos longos.
+- Gráficos compartilhados entre Meu dia, Simulados e Estatísticas, sem biblioteca adicional.
+- Escala de acertos de 0 a 100%, meta identificada e períodos sem questões sem percentual inventado.
+- Calendário de atividade selecionável por toque/teclado, usando a data real de conclusão e ignorando registros excluídos.
+- Carga futura com horizonte de 1/7/30/90 dias; totais limitados ao intervalo e atrasos mostrados separadamente.
+- Recência distingue temas nunca revisados de temas antigos, sem chamar isso de retenção.
+- Tabelas alternativas, foco visível, anúncios dos pontos selecionados e movimento reduzido.
+- Tipografia, navegação e espaçamento refinados, mantendo o fundo configurável e a estrutura Mica.
+
+Referências: [Fluent 2 — acessibilidade](https://fluent2.microsoft.design/accessibility) e [Microsoft — visualização de dados](https://learn.microsoft.com/en-us/office/dev/add-ins/design/data-visualization-guidelines).
+
+Validação: TypeScript, 33 testes Vitest e 2 testes desktop; build/PWA. Conferência no navegador em temas claro/escuro e largura de 390 px, com dados fictícios isolados, seleção de ponto pelo teclado, seleção de dia e tabela de valores. Sem teste físico de iOS/Android. Nenhum dado fictício foi gravado na conta ou incluído no aplicativo.
