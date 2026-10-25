@@ -1,7 +1,7 @@
 import { Activity,BookOpen,Calendar,Check,ChevronDown,ChevronRight,CircleHelp,ClipboardList,Cloud,Database,Home,Menu,PanelLeftClose,PanelLeftOpen,PieChart,Plus,RefreshCw,Search,Settings,StickyNote,Target,Timer,X } from 'lucide-react';
 import React,{ useEffect,useState } from 'react';
 
-export type WorkspaceView = 'list' | 'cronograma' | 'calendar' | 'database' | 'simulados' | 'stats' | 'notes';
+export type WorkspaceView = 'list' | 'cronograma' | 'calendar' | 'database' | 'simulados' | 'stats' | 'notes' | 'assistant';
 export type StudyTool = 'notes' | 'goals' | 'focus' | 'today';
 interface Props {
   view: WorkspaceView;
@@ -30,13 +30,14 @@ const navigation = [
   { id: 'simulados', label: 'Simulados', icon: ClipboardList },
   { id: 'stats', label: 'Estatísticas', icon: PieChart },
   { id: 'notes', label: 'Anotações', icon: StickyNote },
+  { id: 'assistant', label: 'ChatGPT', icon: BookOpen },
 ] as const;
 
 export function AppShell(props: Props) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('reviewflow_nav_collapsed') === 'true');
   const [mobileOpen, setMobileOpen] = useState(false);
   const active = navigation.find(item => item.id === props.view)!;
-  const context = props.view === 'notes' ? navigation.filter(item => ['notes', 'database'].includes(item.id)) : ['database', 'simulados'].includes(props.view)
+  const context = ['notes', 'assistant'].includes(props.view) ? navigation.filter(item => ['notes', 'assistant', 'database'].includes(item.id)) : ['database', 'simulados'].includes(props.view)
     ? navigation.filter(item => ['database', 'simulados'].includes(item.id))
     : ['cronograma', 'calendar'].includes(props.view)
       ? navigation.filter(item => ['cronograma', 'calendar'].includes(item.id))
@@ -114,7 +115,7 @@ export function AppShell(props: Props) {
         <nav aria-label="Navegação lateral">{navigation.filter(item => item.id !== 'notes').map(item => <button key={item.id} className="mica-nav-item" onClick={() => navigate(item.id)} aria-label={item.label} aria-current={props.view === item.id ? 'page' : undefined} title={collapsed ? item.label : undefined}><item.icon size={18} strokeWidth={1.65} /><span>{item.label}</span>{item.id === 'list' && props.pendingCount > 0 && <small>{props.pendingCount}</small>}</button>)}</nav>
         <p className="mica-nav-heading mica-tools-heading">Ferramentas</p>
         <nav aria-label="Ferramentas de estudo">
-          <button className="mica-nav-item" onClick={() => navigate('notes')} aria-label="Anotações" title={collapsed ? 'Anotações' : undefined}><StickyNote size={18} strokeWidth={1.65} /><span>Anotações</span></button>
+          <button className="mica-nav-item" onClick={() => navigate('notes')} aria-label="Anotações" aria-current={props.view === 'notes' ? 'page' : undefined} title={collapsed ? 'Anotações' : undefined}><StickyNote size={18} strokeWidth={1.65} /><span>Anotações</span></button>
           <button className="mica-nav-item" onClick={() => openTool('today')} aria-label="To-Do Today" title="To-Do Today"><ClipboardList size={18} strokeWidth={1.65} /><span>To-Do Today</span></button>
           <button className="mica-nav-item" onClick={() => openTool('goals')} aria-label="Metas" title={collapsed ? 'Metas' : undefined}><Target size={18} strokeWidth={1.65} /><span>Metas</span></button>
           <button className="mica-nav-item" onClick={() => openTool('focus')} aria-label="Temporizador" title={collapsed ? 'Temporizador' : undefined}><Timer size={18} strokeWidth={1.65} /><span>Temporizador</span></button>

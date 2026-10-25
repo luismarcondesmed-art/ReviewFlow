@@ -32,6 +32,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import React,{ useEffect,useRef,useState } from "react";
 import { toast } from 'sonner';
 import { BackgroundPicker } from "../components/BackgroundPicker";
+import { SurfacePicker } from "../components/SurfacePicker";
 import { TodoToday } from "../components/TodoToday";
 import { TutorialContent } from "../components/TutorialContent";
 import { validSyncCode } from "../services/syncPolicy";
@@ -79,7 +80,7 @@ export const Modal = ({
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!isOpen || !creator) return;
+    if (!isOpen) return;
     const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -88,7 +89,7 @@ export const Modal = ({
       // History editing opens another dialog above this creator.
       const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
       if (dialogs[dialogs.length - 1] !== dialogRef.current?.closest('[role="dialog"]')) return;
-      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, [tabindex="0"]') || []).filter(el => el.getClientRects().length > 0);
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], summary, [tabindex="0"]') || []).filter(el => el.getClientRects().length > 0);
       const first = controls[0]; const last = controls[controls.length - 1];
       if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
@@ -97,12 +98,13 @@ export const Modal = ({
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', trapFocus);
-      if (previousFocus?.isConnected) previousFocus.focus();
+      if (previousFocus?.isConnected) previousFocus.focus({preventScroll:true});
     };
   }, [isOpen, creator]);
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+      if (e.key === "Escape" && dialogs[dialogs.length - 1] === dialogRef.current?.closest('[role="dialog"]')) onClose();
     };
     if (isOpen) window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
@@ -1105,6 +1107,7 @@ export const SettingsModal = ({
                   <p className="rf-field-hint">Cada matéria pode ter um caderno diferente. Configure na edição da matéria → Anotações no Notion.</p>
                 </div></details>
                 <BackgroundPicker value={tempConfig.backgroundColor} onChange={backgroundColor => setTempConfig(prev => ({ ...prev, backgroundColor }))} />
+                <SurfacePicker value={tempConfig.surfaceStyle} onChange={surfaceStyle => setTempConfig(prev => ({ ...prev, surfaceStyle }))} />
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300">

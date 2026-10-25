@@ -3,6 +3,8 @@ import { validateBackup } from './services/backup';
 import { withNextFSRSReview } from './services/fsrsService';
 import { updateDifficultyFlags,updateTopicSchedule } from './services/topicEditing';
 import { applyAccent } from './utils/accent';
+import { WorkspaceActions, type WorkspaceAction, planTopic, viewFromHash } from './services/workspace';
+import { safeNotionURL } from './utils/notion';
 import { applyBackground,backgroundIsDark,validBackground } from './utils/background';
 
 import {
@@ -45,6 +47,7 @@ const StatsView = lazy(() => import('./views/view-stats').then(module => ({ defa
 const LandingView = lazy(() => import('./views/view-landing').then(module => ({ default: module.LandingView })));
 
 const NotesView = lazy(() => import('./views/view-notes').then(module => ({ default: module.NotesView })));
+const AssistantView = lazy(() => import('./views/view-assistant').then(module => ({ default: module.AssistantView })));
 
 // --- Loading Skeleton ---
 const LoadingSpinner = () => (
@@ -115,13 +118,21 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 }
 
 function AppContent() {
-    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, userRole, lastSyncAt, syncIntervalMs } = useSync();
+    const { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, syncNow, syncError, userRole, lastSyncAt, syncIntervalMs } = useSync();
     const vibration = useVibration();
     
     // UI State
     const [hasStarted, setHasStarted] = useState(() => localStorage.getItem('reviewflow_has_started') === 'true');
     const [landingView, setLandingView] = useState<'main' | 'privacy' | 'terms'>('main');
-    const [view, setView] = useState<WorkspaceView>('list');
+    const [view, updateView] = useState<WorkspaceView>(() => viewFromHash(location.hash));
+    const [assistantTopicId, setAssistantTopicId] = useState<string>();
+    const setView = (next: WorkspaceView) => { updateView(next); if (location.hash !== '#' + next) location.hash = next; };
+    useEffect(() => {
+        const changed = () => updateView(viewFromHash(location.hash));
+        window.addEventListener('hashchange', changed);
+        return () => window.removeEventListener('hashchange', changed);
+    }, []);
+    useEffect(() => { document.documentElement.dataset.surface = config.surfaceStyle || 'mica'; }, [config.surfaceStyle]);
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => (localStorage.getItem('theme') as any) || 'system');
     const [homeTool, setHomeTool] = useState<{ id: StudyTool; nonce: number } | null>(null);
     
@@ -168,6 +179,35 @@ function AppContent() {
 
     const handleSyncClick = () => {
         void syncNow(true);
+    };
+    useEffect(() => {
+        setSearchTerm(''); setIsSearchActive(false);
+        document.querySelector('.rf-main')?.scrollTo({ top: 0 });
+    }, [view]);
+    const dispatch = (action: WorkspaceAction) => {
+        switch (action.type) {
+            case 'navigate': setHomeTool(null); setView(action.view); break;
+            case 'tool': setView(action.tool === 'notes' ? 'notes' : 'list'); setHomeTool({ id: action.tool, nonce: Date.now() }); break;
+            case 'new-topic': setAddModalOpen(true); break;
+            case 'new-exam': setEditingSimulado(null); setSimuladoModalOpen(true); break;
+            case 'settings': setSettingsOpen(true); break;
+            case 'help': setTutorialOpen(true); break;
+            case 'search': setIsSearchActive(true); break;
+            case 'sync': syncKey ? handleSyncClick() : setSettingsOpen(true); break;
+            case 'assistant': setAssistantTopicId(action.topicId); setView('assistant'); break;
+            case 'notion': {
+                const topic = topics.find(t => t.id === action.topicId && !t.deleted);
+                const url = safeNotionURL(topic?.notionLink || topic?.notionEmbedUrl) || safeNotionURL(config.notionHomeUrl) || 'https://www.notion.so/';
+                window.open(url, '_blank', 'noopener,noreferrer'); break;
+            }
+            case 'plan-topic': {
+                const topic = topics.find(t => t.id === action.topicId && !t.deleted);
+                if (!topic) return;
+                setDailyNotes(notes => planTopic(notes, getTodayStr(), topic));
+                setView('list'); setHomeTool({ id: 'today', nonce: Date.now() });
+                toast.success('Tema incluído no plano de hoje.'); break;
+            }
+        }
     };
 
     useEffect(() => {
@@ -584,15 +624,15 @@ function AppContent() {
         >
             <Toaster position="top-center" richColors />
             
-            <AppShell
+            <WorkspaceActions.Provider value={dispatch}><AppShell
                 view={view}
-                onNavigate={next => { setHomeTool(null); setView(next); setIsSearchActive(false); setSearchTerm(''); }}
+                onNavigate={view => dispatch({type:'navigate',view})}
                 onSearch={() => setIsSearchActive(true)}
                 onNewTopic={() => setAddModalOpen(true)}
                 onNewExam={() => { setEditingSimulado(null); setSimuladoModalOpen(true); }}
                 onSettings={() => setSettingsOpen(true)}
                 onHelp={() => setTutorialOpen(true)}
-                onTool={id => { setView(id === 'notes' ? 'notes' : 'list'); setHomeTool({ id, nonce: Date.now() }); }}
+                onTool={tool => dispatch({type:'tool',tool})}
                 onSync={() => syncKey ? handleSyncClick() : setSettingsOpen(true)}
                 status={status} hasSyncKey={Boolean(syncKey)} lastSyncAt={lastSyncAt} syncIntervalMs={syncIntervalMs}
                 pendingCount={activeTopics.reduce((count, t) => count + t.reviews.filter(r => !r.done && r.date <= getTodayStr()).length, 0)}
@@ -600,6 +640,7 @@ function AppContent() {
             >
                 <main className="rf-main">
                     <div className="rf-page">
+                    {syncError && <div className="rf-sync-error" role="status">{syncError}<button className="rf-text-button" onClick={() => setSettingsOpen(true)}>Configurações e backup</button></div>}
                 {isSearchActive && <section className="rf-search" role="search" aria-label="Buscar temas e simulados">
                   <div className="rf-search-field"><Search size={20} /><input ref={searchInputRef} aria-label="Buscar temas e simulados" type="search" placeholder="Qual assunto você quer encontrar?" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') { setIsSearchActive(false); setSearchTerm(''); } }} /><button className="rf-icon-button" aria-label="Fechar pesquisa" onClick={() => { setIsSearchActive(false); setSearchTerm(''); }}><X size={18} /></button></div>
                   {searchTerm.trim() && <div className="rf-search-results" aria-live="polite">
@@ -610,7 +651,7 @@ function AppContent() {
                 </section>}
 
                 <div className="flex-1 w-full">
-                    {view !== 'list' && view !== 'stats' && view !== 'notes' && <header className="rf-view-heading">
+                    {view !== 'list' && view !== 'stats' && view !== 'notes' && view !== 'assistant' && <header className="rf-view-heading">
                         <div><p className="journal-eyebrow">{view === 'database' ? 'Tudo o que você vem aprendendo' : view === 'calendar' ? 'Um encontro de cada vez' : view === 'cronograma' ? 'Encontre seu fio condutor' : 'Prática com propósito'}</p>
                             <h1>{view === 'database' ? 'Seu acervo' : view === 'calendar' ? 'Sua agenda' : view === 'cronograma' ? 'Seu cronograma' : 'Seus simulados'}</h1>
                             <p>{view === 'database' ? 'Matérias, materiais e histórico de estudo, reunidos em um só lugar.' : view === 'calendar' ? 'Veja os próximos encontros e organize seu tempo para revisar.' : view === 'cronograma' ? 'Acompanhe suas aulas e transforme cada tema em uma rotina de revisão.' : 'Registre resultados e descubra o que vale a pena retomar.'}</p>
@@ -624,6 +665,9 @@ function AppContent() {
                                 topics={activeTopics} 
                                 simulados={activeSimulados}
                                 config={config}
+                                completedLessons={Object.values(scheduleProgress).filter(Boolean).length}
+                                syncStatus={status}
+                                lastSyncAt={lastSyncAt}
                                 dailyNotes={dailyNotes}
                                 setDailyNotes={setDailyNotes}
                                 onReview={(id, idx) => setReviewData({tId: id, rIdx: idx})}
@@ -639,7 +683,7 @@ function AppContent() {
                                 filterArea={filterArea}
                                 setFilterArea={setFilterArea}
                                 onAddSimulado={() => { setSimuladoModalOpen(true); setEditingSimulado(null); }}
-                                onNavigateToView={(v) => setView(v as any)}
+                                onNavigateToView={view => dispatch({type:'navigate',view})}
                                 onOpenNewTopic={() => setAddModalOpen(true)}
                                 onUpdateTopic={handleUpdateTopic}
                             />
@@ -682,12 +726,13 @@ function AppContent() {
                         )}
 
                         {view === 'notes' && <NotesView topics={topics} config={config} onEditTopic={setEditTopic} onSettings={() => setSettingsOpen(true)} />}
+                        {view === 'assistant' && <AssistantView key={assistantTopicId || 'general'} topics={activeTopics} initialTopicId={assistantTopicId} />}
                         {view === 'stats' && <StatsView topics={activeTopics} simulados={activeSimulados} />}
                     </Suspense>
                 </div>
                 </div>
                 </main>
-            </AppShell>
+            </AppShell></WorkspaceActions.Provider>
 
             {/* Modals */}
             <EditTopicModal 

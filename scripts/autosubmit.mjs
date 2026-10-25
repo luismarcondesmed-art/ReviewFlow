@@ -20,12 +20,14 @@ const forbidden = /(?:^|\/)(?:\.env(?!\.example$)|credentials|secrets|id_rsa|id_
 const permitted = path => (allowed.test(path) || !existsSync(path)) && !forbidden.test(path);
 let busy = false;
 let timer;
+const targetArgument = process.argv.find(argument => argument.startsWith('--target='))?.slice('--target='.length);
 function submit() {
   if (busy) return;
   busy = true;
   try {
-    const branch = run('git', ['branch', '--show-current'], true);
-    if (!branch) throw new Error('HEAD destacado; envio interrompido.');
+    const branch = targetArgument || run('git', ['branch', '--show-current'], true);
+    if (!branch) throw new Error('HEAD destacado. Informe --target=main para enviar ao destino autorizado.');
+    run('git', ['check-ref-format', '--branch', branch], true);
     const staged = run('git', ['diff', '--cached', '--name-only'], true);
     if (staged) throw new Error('Há arquivos preparados manualmente. Faça o commit ou retire-os do stage antes do envio automático.');
     const output = run('git', ['ls-files', '--modified', '--others', '--exclude-standard', '-z'], true);
@@ -33,7 +35,7 @@ function submit() {
     if (!files.length) {
       // Retry a previously committed update after a transient push failure.
       const ahead = run('git', ['rev-list', '--count', `origin/${branch}..HEAD`], true);
-      if (Number(ahead) > 0) run('git', ['push', 'origin', branch]);
+      if (Number(ahead) > 0) run('git', ['push', 'origin', `HEAD:refs/heads/${branch}`]);
       return;
     }
     for (const file of files) {
@@ -56,7 +58,7 @@ function submit() {
     if (created.length) run('git', ['add', '--', ...created]);
     if (!run('git', ['diff', '--cached', '--name-only'], true)) return;
     run('git', ['commit', '-m', `chore: validated ReviewFlow update ${new Date().toISOString()}`]);
-    run('git', ['push', 'origin', branch]);
+    run('git', ['push', 'origin', `HEAD:refs/heads/${branch}`]);
     console.log('Atualização validada e enviada ao GitHub.');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
   finally { busy = false; }

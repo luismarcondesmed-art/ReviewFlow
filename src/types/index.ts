@@ -84,6 +84,7 @@ export interface WeeklyGoal {
 }
 
 export interface UserConfig {
+  surfaceStyle?: 'mica' | 'solid' | 'contrast';
   backgroundColor?: string;
   notionHomeUrl?: string;
   notionHomeEmbedUrl?: string;

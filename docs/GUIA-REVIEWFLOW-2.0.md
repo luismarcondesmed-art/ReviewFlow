@@ -100,3 +100,15 @@ Não precisa configurar tudo de uma vez. Repita estes quatro passos nos dias de 
 - 3. Consulte seu resumo em Anotações quando precisar.
 - 4. Confira a Agenda e sincronize antes de mudar de aparelho.
 - Geração por IA e flashcards individuais completos seguem planejados; não são necessários para usar as funções atuais. Reabra este guia no botão Ajuda.
+
+## Hub e integrações — atualização de outubro de 2026
+
+Meu dia reúne os atalhos de todos os módulos. Use o menu de uma revisão para adicioná-la ao plano do dia, abrir seu caderno do Notion ou preparar um resumo do assunto.
+
+**ChatGPT:** abra Resumos e guidelines, escolha uma matéria e o formato. Clique em Copiar pedido e depois em Abrir ChatGPT; cole o texto na conversa. A resposta será exibida no ChatGPT, não dentro do ReviewFlow. Confira as referências e copie o que for útil para o seu caderno. Nenhuma chave de API é necessária e nada é enviado automaticamente.
+
+**Notion:** Abrir Notion abre o caderno configurado (ou o Notion, se ainda não houver vínculo). Use Anotações para escolher o caderno de cada assunto. Configure links nas matérias e o caderno inicial nos ajustes.
+
+**Aparência:** em Ajustes → Geral, escolha Mica suave, Editorial ou Contraste. Salve para aplicar. O modo Mica usa transparência onde o navegador suporta; campos e módulos mantêm superfícies de leitura.
+
+**Sincronização:** os dados são salvos no aparelho e enviados em lotes. Avisos mostram falta de rede, configuração ou permissão. Exporte um backup em Ajustes → Dados quando necessário. O relógio de foco continua contando ao navegar entre os módulos durante a mesma sessão.

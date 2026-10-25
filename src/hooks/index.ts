@@ -1,7 +1,8 @@
 import { useEffect,useMemo,useRef,useState } from 'react';
 import { toast } from 'sonner';
 import { syncCloud } from '../services/cloudSync';
-import { preserveInFlightChanges,type StudyData } from '../services/syncMerge';
+import { mergeStudyData,preserveInFlightChanges,type StudyData } from '../services/syncMerge';
+import { syncErrorMessage } from '../services/syncSafety';
 import { emptySyncMeta,fastSync,nextSyncTime, prioritySyncProfile,stableJSON,syncInterval,validSyncCode,type SyncMeta } from '../services/syncPolicy';
 import { ScheduleProgress,Simulado,Topic,UserConfig } from '../types';
 import { getTodayStr } from '../utils';
@@ -23,6 +24,7 @@ function readLocal(): StudyData {
     } catch {
       try { localStorage.setItem(key + '_backup_' + Date.now(), raw); } catch { /* Do not destroy the original entry. */ }
       toast.error('Dados locais inválidos: ' + field, { description: 'Exporte um backup antes de continuar.' });
+      throw new Error('Dados locais inválidos. Use a recuperação de backup antes de continuar.');
     }
   }
   return result;
@@ -38,6 +40,8 @@ function readMeta(code: string): SyncMeta {
 }
 export const useSync = () => {
   const [initial] = useState(readLocal);
+  const [initialStorage] = useState(() => new Map(Object.values(storage).map(key => [key, readText(key)])));
+  const persistedStorage = useRef(initialStorage);
   const [topics, setTopics] = useState<Topic[]>(initial.topics);
   const [simulados, setSimulados] = useState<Simulado[]>(initial.simulados);
   const [config, setConfig] = useState<UserConfig>(initial.config);
@@ -51,10 +55,13 @@ export const useSync = () => {
   const priorityRef = useRef(false);
   const [lastSyncAt, setLastSyncAt] = useState(() => readMeta(syncKey).lastSuccess);
   const stateRef = useRef<StudyData>(initial);
+  const persisted = useRef<StudyData>(initial);
+  const [syncError, setSyncError] = useState('');
   const keyRef = useRef(syncKey);
   const syncing = useRef(false);
   const staleAccount = useRef(false);
-  const lastSynced = useRef(loadBase());
+  const [initialBase] = useState(loadBase);
+  const lastSynced = useRef(initialBase);
   const adminRef = useRef(false);
   const syncRef = useRef<(manual?: boolean, pull?: boolean) => Promise<void>>(async () => {});
   const state = { topics, simulados, config, scheduleProgress, dailyNotes };
@@ -79,12 +86,16 @@ export const useSync = () => {
     try {
       if (keyRef.current) localStorage.setItem('reviewflow_account_backup_' + Date.now(), JSON.stringify({ key: keyRef.current, ...stateRef.current }));
       localStorage.setItem('reviewflow_sync_key', key);
-      if (keyRef.current && key) apply(emptyData());
+      if (keyRef.current && key) {
+        const next = emptyData();
+        for (const [field, storageKey] of Object.entries(storage)) localStorage.setItem(storageKey, JSON.stringify(next[field]));
+        persisted.current = next; apply(next);
+      }
       lastSynced.current = { config: { ...defaults } };
       localStorage.removeItem('reviewflow_last_synced_state');
       keyRef.current = key; updateKey(key); staleAccount.current = false;
       adminRef.current = false; setVerifiedAdmin(false); priorityRef.current = false; setPriorityProfile(false); setLastSyncAt(readMeta(key).lastSuccess);
-      setStatus('offline');
+      setSyncError(''); setStatus('offline');
     } catch { toast.error('Não foi possível trocar o código. Libere espaço ou exporte um backup.'); }
   };
   const syncNow = async (manual = false, pull = false) => {
@@ -105,7 +116,7 @@ export const useSync = () => {
       // Persist the throttle before starting network activity, including failures.
       try { localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify(attempt)); }
       catch { setStatus('error'); if (manual) toast.error('Armazenamento indisponível. Exporte um backup.'); return; }
-      setStatus('syncing');
+      setSyncError(''); setStatus('syncing');
       const snapshot = structuredClone(stateRef.current);
       try {
         const { merged, verifiedAdmin: admin } = await syncCloud(snapshot, lastSynced.current, key);
@@ -120,20 +131,26 @@ export const useSync = () => {
         setStatus(stableJSON(current) === stableJSON(merged) ? 'online' : 'pending');
         if (manual) toast.success('Sincronização concluída.');
       } catch (error) {
-        localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify({ ...attempt, failures: meta.failures + 1 }));
+        try { localStorage.setItem('reviewflow_sync_meta:' + key, JSON.stringify({ ...attempt, failures: meta.failures + 1 })); } catch { /* Preserve the original network error. */ }
+        const message = syncErrorMessage(error); setSyncError(message);
         setStatus('error');
-        if (manual) toast.error('Não foi possível sincronizar', { description: error instanceof Error ? error.message : 'Seus dados locais foram mantidos.' });
+        if (manual) toast.error('Não foi possível sincronizar', { description: message });
       }
     };
     syncing.current = true;
     try {
-      if (navigator.locks) await navigator.locks.request('reviewflow-sync:' + key, { ifAvailable: true }, async lock => { if (lock) await execute(); });
+      if (navigator.locks) await navigator.locks.request('reviewflow-sync:' + key, { ifAvailable: true }, async lock => { if (lock) await execute(); else if (manual) toast.info('Outra aba já está sincronizando.'); });
       else {
         // Older webviews: best-effort expiring lease, without a polling listener.
         const leaseKey = 'reviewflow_sync_lease:' + key;
-        if (Number(readText(leaseKey)) > Date.now()) return;
-        localStorage.setItem(leaseKey, String(Date.now() + 120_000));
-        try { await execute(); } finally { localStorage.removeItem(leaseKey); }
+        const rawLease = readText(leaseKey);
+        let expires = Number(rawLease);
+        try { expires = JSON.parse(rawLease || 'null')?.expires || expires; } catch { /* Legacy numeric lease. */ }
+        if (expires > Date.now()) { if (manual) toast.info('Outra aba já está sincronizando.'); return; }
+        const lease = JSON.stringify({ expires: Date.now() + 300_000, owner: crypto.randomUUID() });
+        localStorage.setItem(leaseKey, lease);
+        if (readText(leaseKey) !== lease) return;
+        try { await execute(); } finally { if (readText(leaseKey) === lease) localStorage.removeItem(leaseKey); }
       }
     } catch { setStatus('error'); if (manual) toast.error('Não foi possível iniciar a sincronização. Seus dados locais foram mantidos.'); }
     finally { syncing.current = false; }
@@ -142,34 +159,57 @@ export const useSync = () => {
   useEffect(() => {
     if (!accountUnchanged()) return;
     try {
+      const diskChanged = Object.values(storage).some(key => readText(key) !== persistedStorage.current.get(key));
+      const combined = diskChanged ? mergeStudyData(stateRef.current, readLocal(), persisted.current) : stateRef.current;
+      if (stableJSON(combined) !== stableJSON(stateRef.current)) apply(combined);
       for (const [field, key] of Object.entries(storage)) {
-        const encoded = JSON.stringify(state[field]);
+        const encoded = JSON.stringify(combined[field]);
         if (readText(key) !== encoded) localStorage.setItem(key, encoded);
+        persistedStorage.current.set(key, encoded);
       }
+      persisted.current = combined;
     } catch { setStatus('error'); toast.error('Armazenamento cheio ou indisponível. Exporte um backup nas configurações.'); }
     if (syncKey && stableJSON(stateRef.current) !== stableJSON(lastSynced.current)) setStatus(previous => previous === 'syncing' || previous === 'error' ? previous : 'pending');
   }, [syncKey, topics, simulados, config, scheduleProgress, dailyNotes]);
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      if (event.key === 'reviewflow_sync_key' && (event.newValue || '') !== keyRef.current) {
+        staleAccount.current = true; setStatus('error');
+        setSyncError('O código mudou em outra aba. Recarregue esta aba antes de continuar.');
+        toast.info('O código mudou em outra aba. Recarregue para continuar.'); return;
+      }
+      if (!accountUnchanged()) return;
+      if (Object.values(storage).includes(event.key || '')) {
+        try {
+          const disk = readLocal();
+          const combined = mergeStudyData(stateRef.current, disk, persisted.current);
+          persisted.current = disk;
+          if (stableJSON(combined) !== stableJSON(stateRef.current)) apply(combined);
+        } catch { setStatus('error'); setSyncError('Não foi possível ler os dados da outra aba. Exporte um backup.'); }
+      }
+      if (event.key === 'reviewflow_last_synced_state') {
+        lastSynced.current = loadBase();
+        setLastSyncAt(readMeta(keyRef.current).lastSuccess);
+      }
+    };
+    window.addEventListener('storage', changed);
+    return () => window.removeEventListener('storage', changed);
+  }, []);
   useEffect(() => {
     if (!syncKey) return;
     // Delay the first pull slightly so StrictMode does not double-submit on mount.
     const startup = setTimeout(() => void syncRef.current(false, true), 1000);
     const offline = () => setStatus('offline');
     const pull = () => { if (document.visibilityState === 'visible') void syncRef.current(false, true); };
-    const accountChanged = (event: StorageEvent) => {
-      if (event.key === 'reviewflow_sync_key' && (event.newValue || '') !== keyRef.current) {
-        staleAccount.current = true; setStatus('offline');
-        toast.info('O código mudou em outra aba. Recarregue esta aba antes de continuar.');
-      }
-    };
     // Idle tabs do not poll Firestore. Changed data is batched at the policy interval.
     const tick = setInterval(() => void syncRef.current(), fastSync(syncKey, verifiedAdmin || priorityProfile) ? 5000 : 30_000);
     window.addEventListener('offline', offline); window.addEventListener('online', pull);
     window.addEventListener('focus', pull); document.addEventListener('visibilitychange', pull);
-    window.addEventListener('storage', accountChanged);
-    return () => { clearTimeout(startup); clearInterval(tick); window.removeEventListener('offline', offline); window.removeEventListener('online', pull); window.removeEventListener('focus', pull); document.removeEventListener('visibilitychange', pull); window.removeEventListener('storage', accountChanged); };
+
+    return () => { clearTimeout(startup); clearInterval(tick); window.removeEventListener('offline', offline); window.removeEventListener('online', pull); window.removeEventListener('focus', pull); document.removeEventListener('visibilitychange', pull); };
   }, [syncKey, verifiedAdmin, priorityProfile]);
   const userRole = verifiedAdmin ? 'admin' as const : 'usuario' as const;
-  return { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, appId: 'reviewflow', syncNow, userRole, lastSyncAt, syncIntervalMs: syncInterval(syncKey, verifiedAdmin || priorityProfile) };
+  return { topics, setTopics, simulados, setSimulados, config, setConfig, scheduleProgress, setScheduleProgress, dailyNotes, setDailyNotes, loaded, status, syncKey, setSyncKey, appId: 'reviewflow', syncNow, syncError, userRole, lastSyncAt, syncIntervalMs: syncInterval(syncKey, verifiedAdmin || priorityProfile) };
 };
 
 export const useVibration = () => {

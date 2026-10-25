@@ -1,3 +1,7 @@
+import { HubLaunchpad } from '../components/HubLaunchpad';
+import { useWorkspaceActions } from '../services/workspace';
+import { studyEntries } from '../services/chartData';
+import { useFocusClock } from '../hooks/useFocusClock';
 import {
 Activity,
 ArrowRight,
@@ -18,7 +22,7 @@ HeatmapWidget,SimuladosMiniWidget,
 SmartSuggestions,
 WeeklyGoalsWidget
 } from '../components';
-import type { StudyTool } from '../components/AppShell';
+import type { StudyTool, WorkspaceView } from '../components/AppShell';
 import { TodoToday } from '../components/TodoToday';
 import { Simulado,Topic,UserConfig } from '../types';
 import {
@@ -29,41 +33,14 @@ getTopicTrack
 } from '../utils';
 
 const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void; dueItems: any[]; onReview: (id: string, idx: number) => void }) => {
-    const [timeLeft, setTimeLeft] = useState(25 * 60);
-    const [isActive, setIsActive] = useState(false);
-    const [mode, setMode] = useState<'focus' | 'break'>('focus');
-
-    useEffect(() => {
-        let interval: any = null;
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((t) => t - 1);
-            }, 1000);
-        } else if (timeLeft === 0 && isActive) {
-            setIsActive(false);
-            const nextMode = mode === 'focus' ? 'break' : 'focus';
-            setMode(nextMode);
-            setTimeLeft(nextMode === 'focus' ? 25 * 60 : 5 * 60);
-            try {
-                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-            } catch(e) {}
-        }
-        return () => clearInterval(interval);
-    }, [isActive, timeLeft, mode]);
-
-    const toggleTimer = () => setIsActive(!isActive);
-    const setTimerMode = (newMode: 'focus' | 'break') => {
-        setIsActive(false);
-        setMode(newMode);
-        setTimeLeft(newMode === 'focus' ? 25 * 60 : 5 * 60);
-    };
+    const { timeLeft, mode, isActive, pause, toggle: toggleTimer, setMode: setTimerMode } = useFocusClock();
 
     const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
     const secs = (timeLeft % 60).toString().padStart(2, '0');
 
     return (
         <div className="flex flex-col items-center justify-start flex-1 h-full w-full bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-white/5 rounded-2xl relative pt-12 sm:pt-16 pb-8 animate-fade-in shadow-xs">
-            <button onClick={() => { setIsActive(false); onClose(); }} className="absolute top-4 right-4 p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-all active:scale-95 text-slate-500 font-semibold text-xs flex items-center gap-2">
+            <button onClick={() => { pause(); onClose(); }} className="absolute top-4 right-4 p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl transition-all active:scale-95 text-slate-500 font-semibold text-xs flex items-center gap-2">
                 <span>Encerrar Foco</span>
                 <X size={15} />
             </button>
@@ -84,14 +61,14 @@ const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void
                     {isActive ? <><Activity size={18} className="animate-pulse" /><span>Pausar</span></> : <><PlayCircle size={18} /><span>Iniciar Cronômetro</span></>}
                 </button>
             </div>
-            
+
             {mode === 'focus' && dueItems.length > 0 && (
                 <div className="w-full max-w-md mx-auto shrink-0 px-4">
                     <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">Foco da Sessão ({dueItems.length} restantes)</h3>
-                    <div 
-                        className="bg-slate-50 hover:bg-white dark:bg-zinc-800/80 p-3.5 rounded-xl border border-slate-200/80 dark:border-white/5 flex items-center justify-between group cursor-pointer transition-all" 
+                    <div
+                        className="bg-slate-50 hover:bg-white dark:bg-zinc-800/80 p-3.5 rounded-xl border border-slate-200/80 dark:border-white/5 flex items-center justify-between group cursor-pointer transition-all"
                         onClick={() => {
-                            setIsActive(false);
+                            pause();
                             onReview(dueItems[0].topic.id, dueItems[0].idx);
                         }}
                     >
@@ -104,23 +81,25 @@ const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void
     );
 };
 
-export const HubView = ({ 
-    toolRequest, topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
+export const HubView = ({
+    toolRequest, syncStatus, lastSyncAt, completedLessons, topics, simulados, config, dailyNotes, setDailyNotes, onReview, onEditTopic, onDeleteTopic,
     setSortOrder, setFilterArea, sortOrder, filterArea, searchTerm,
     onAddSimulado, onNavigateToView, onOpenNewTopic, onUpdateTopic, onQuickCompleteReview
-}: { 
+}: {
+    syncStatus: string; lastSyncAt: number; completedLessons: number;
     toolRequest?: { id: StudyTool; nonce: number } | null;
-    topics: Topic[], simulados: Simulado[], config: UserConfig, 
+    topics: Topic[], simulados: Simulado[], config: UserConfig,
     dailyNotes: Record<string, string>, setDailyNotes: React.Dispatch<React.SetStateAction<Record<string, string>>>,
     onReview: (id: string, idx: number) => void, onEditTopic: (id: string) => void, onDeleteTopic?: (id: string) => void,
-    setSortOrder?: any, setFilterArea?: any, 
+    setSortOrder?: any, setFilterArea?: any,
     sortOrder?: string, filterArea?: string, searchTerm?: string,
     onAddSimulado?: () => void,
-    onNavigateToView?: (view: string) => void,
+    onNavigateToView?: (view: WorkspaceView) => void,
     onOpenNewTopic?: () => void,
     onUpdateTopic?: (topic: Topic) => void,
     onQuickCompleteReview?: (id: string, idx: number) => void
 }) => {
+    const dispatch = useWorkspaceActions();
     const [expanded, setExpanded] = useState(false);
     const [deepFocusOpen, setDeepFocusOpen] = useState(false);
     const [tool, setTool] = useState('goals');
@@ -143,8 +122,9 @@ export const HubView = ({
     const dueItems = pending.filter(r => r.date <= today).sort((a, b) => a.date.localeCompare(b.date));
     const upcoming = pending.filter(r => r.date > today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
     const history = filtered.flatMap(t => t.reviews).filter(r => r.done);
-    const total = history.reduce((sum, r) => sum + r.total, 0);
-    const correct = history.reduce((sum, r) => sum + r.correct, 0);
+    const scored = studyEntries(filtered, activeSimulados);
+    const total = scored.reduce((sum, r) => sum + r.total, 0);
+    const correct = scored.reduce((sum, r) => sum + r.correct, 0);
     const completedToday = history.filter(r => r.completedAt ? new Date(r.completedAt).toLocaleDateString('sv-SE') === today : r.date === today).length;
     const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
     const tools = [
@@ -160,8 +140,8 @@ export const HubView = ({
         <header className="journal-intro">
           <div>
             <p className="journal-eyebrow"><span className="mica-live-dot" aria-hidden="true" /> Seu dia de estudo <span aria-hidden="true">·</span> <time dateTime={today}>{dateLabel}</time></p>
-            <h1>Vamos continuar?</h1>
-            <p className="journal-deck">{dueItems.length ? `Você tem ${dueItems.length} ${dueItems.length === 1 ? 'revisão' : 'revisões'} para retomar. Comece por uma.` : 'Organize seus temas, acompanhe seu progresso e mantenha as revisões em dia.'}</p>
+            <h1>Seu espaço de estudo</h1>
+
           </div>
           <div className="journal-start">
             <button className="rf-primary" onClick={() => dueItems.length ? onReview(dueItems[0].topic.id, dueItems[0].idx) : onOpenNewTopic?.()}>
@@ -178,6 +158,8 @@ export const HubView = ({
           <div><dt>Questões praticadas</dt><dd>{total.toLocaleString('pt-BR')}<span>no total</span></dd></div>
         </dl>
 
+        <HubLaunchpad topics={activeTopics.length} exams={activeSimulados.length} completedLessons={completedLessons} status={syncStatus} lastSyncAt={lastSyncAt} />
+
         <TodoToday notes={dailyNotes} onChange={setDailyNotes} />
 
         <div className="journal-layout">
@@ -193,21 +175,21 @@ export const HubView = ({
                     <button className="journal-topic-title" onClick={() => onEditTopic(review.topic.id)}>{review.topic.title}</button><p className="journal-review-stage">{review.label}</p>
                   </div>
                   <button className="rf-secondary journal-review-action" onClick={() => onReview(review.topic.id, review.idx)}>Revisar <ArrowRight size={15} /></button>
-                  <details className="journal-row-menu"><summary aria-label={`Opções de ${review.topic.title}`}><MoreHorizontal size={20} /></summary><div><button onClick={() => onEditTopic(review.topic.id)}>Editar tema</button>{onQuickCompleteReview && <button onClick={() => onQuickCompleteReview(review.topic.id, review.idx)}>Registrar 100% de acertos</button>}</div></details>
+                  <details className="journal-row-menu"><summary aria-label={`Opções de ${review.topic.title}`}><MoreHorizontal size={20} /></summary><div><button onClick={() => onEditTopic(review.topic.id)}>Editar tema</button><button onClick={() => dispatch({type:"plan-topic",topicId:review.topic.id})}>Adicionar ao plano de hoje</button><button onClick={() => dispatch({type:"notion",topicId:review.topic.id})}>Abrir Notion</button><button onClick={() => dispatch({type:"assistant",topicId:review.topic.id})}>Preparar resumo no ChatGPT</button>{onQuickCompleteReview && <button onClick={() => onQuickCompleteReview(review.topic.id, review.idx)}>Registrar 100% de acertos</button>}</div></details>
                 </li>)}
               </ol>
               {dueItems.length > 6 && <button className="rf-text-button journal-show-more" onClick={() => setExpanded(!expanded)}>{expanded ? 'Mostrar menos' : `Ver todas as ${dueItems.length} revisões`} <ChevronDown size={16} /></button>}
             </> : <div className="journal-empty">
               <span className="journal-empty-mark" aria-hidden="true">{activeTopics.length ? '✓' : 'Aa'}</span>
               <h3>{searchTerm ? 'Nenhum tema encontrado.' : activeTopics.length ? 'Nenhuma revisão pendente' : 'Seu primeiro tema começa aqui'}</h3>
-              <p>{searchTerm ? 'Tente buscar por outro nome ou escolha outra trilha.' : activeTopics.length ? 'Você não tem revisões pendentes nesta trilha. Confira os próximos encontros na agenda.' : 'Adicione seu primeiro tema ou encontre um ponto de partida nos cronogramas. Nós ajudamos você a saber quando voltar.'}</p>
+
               <div className="journal-empty-actions"><button className="rf-text-button" onClick={onOpenNewTopic}>Adicionar tema <Plus size={16} /></button><button className="rf-text-button" onClick={() => onNavigateToView?.('cronograma')}>Explorar cronogramas <ArrowRight size={16} /></button></div>
             </div>}
           </section>
 
           <aside className="journal-horizon" aria-labelledby="horizon-heading">
             <p className="journal-eyebrow">Planejamento</p><h2 id="horizon-heading">Próximas revisões</h2>
-            {upcoming.length ? <ol>{upcoming.map(r => <li key={r.topic.id + '-' + r.idx}><time dateTime={r.date}>{formatDate(r.date)}</time><button onClick={() => onEditTopic(r.topic.id)}>{r.topic.title}</button><span>{r.targetQ} questões</span></li>)}</ol> : <p className="journal-muted">As próximas revisões aparecem aqui depois de você registrar um estudo.</p>}
+            {upcoming.length ? <ol>{upcoming.map(r => <li key={r.topic.id + '-' + r.idx}><time dateTime={r.date}>{formatDate(r.date)}</time><button onClick={() => onEditTopic(r.topic.id)}>{r.topic.title}</button><span>{r.targetQ} questões</span></li>)}</ol> : <p className="journal-muted">Sem revisões agendadas.</p>}
             <button className="rf-text-button" onClick={() => onNavigateToView?.('calendar')}>Abrir agenda <ArrowRight size={16} /></button>
 
           </aside>
@@ -224,7 +206,7 @@ export const HubView = ({
             {tool === 'load' && <FutureLoadWidget topics={filtered} />}
           </div>
         </section>
-        <footer className="journal-colophon"><span>ReviewFlow</span><p>Seu espaço para aprender e revisar.</p></footer>
+
       </div>
     );
 };
