@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { emptySyncMeta, fastSync, nextSyncTime, NORMAL_SYNC_INTERVAL, stableJSON, syncInterval, validSyncCode } from './syncPolicy';
+import { emptySyncMeta, fastSync, nextSyncTime, NORMAL_SYNC_INTERVAL, parseSyncMeta, stableJSON, syncInterval, validSyncCode } from './syncPolicy';
 import { syncPayload } from './cloudSync';
 import type { StudyData } from './syncMerge';
 const data = (): StudyData => ({ topics: [], simulados: [], config: { targetAccuracy: 80 }, scheduleProgress: {}, dailyNotes: {} });
 describe('sync cost policy', () => {
+  it('recovers corrupt persisted metadata without blocking synchronization', () => {
+    for (const raw of ['{', 'null', '[]', '{"lastAttempt":"1000","failures":-1}', '{"lastAttempt":999999999999999}']) {
+      expect(parseSyncMeta(raw, 10000)).toEqual(emptySyncMeta());
+      expect(nextSyncTime(parseSyncMeta(raw, 10000), 'student')).toBe(0);
+    }
+    expect(parseSyncMeta('{"lastAttempt":1000,"lastSuccess":900,"failures":20}', 10000)).toEqual({lastAttempt:1000,lastSuccess:900,failures:6});
+  });
   it('accepts simple and legacy codes but rejects Firestore path separators', () => {
     for (const key of ['', 'a', 'usuario-2', 'old_key_12345678901234567890']) expect(validSyncCode(key)).toBe(true);
     for (const key of ['../user', 'a/b', 'a b', 'x'.repeat(129)]) expect(validSyncCode(key)).toBe(false);

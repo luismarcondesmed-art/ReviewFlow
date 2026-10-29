@@ -1,4 +1,5 @@
 import './styles.css';
+import './styles/acrylic.css';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import React from 'react';
 import ReactDOM from 'react-dom/client';

@@ -2,6 +2,15 @@ export const NORMAL_SYNC_INTERVAL = 10 * 60_000;
 export const FAST_SYNC_INTERVAL = 30_000;
 export interface SyncMeta { lastAttempt: number; lastSuccess: number; failures: number }
 export const emptySyncMeta = (): SyncMeta => ({ lastAttempt: 0, lastSuccess: 0, failures: 0 });
+export function parseSyncMeta(raw: string | null, now = Date.now()): SyncMeta {
+  try {
+    const value: unknown = JSON.parse(raw || '{}');
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return emptySyncMeta();
+    const saved = value as Record<string, unknown>;
+    const timestamp = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 && v <= now ? v : 0;
+    return { lastAttempt: timestamp(saved.lastAttempt), lastSuccess: timestamp(saved.lastSuccess), failures: typeof saved.failures === 'number' && Number.isSafeInteger(saved.failures) && saved.failures >= 0 ? Math.min(saved.failures, 6) : 0 };
+  } catch { return emptySyncMeta(); }
+}
 export const validSyncCode = (value: string) => !value || /^[A-Za-z0-9_-]{1,128}$/.test(value);
 // This is a frequency preference, never an authorization or an admin credential.
 export const fastSync = (_code: string, priorityProfile = false) => priorityProfile;

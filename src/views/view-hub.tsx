@@ -24,7 +24,7 @@ WeeklyGoalsWidget
 } from '../components';
 import type { StudyTool, WorkspaceView } from '../components/AppShell';
 import { TodoToday } from '../components/TodoToday';
-import { Simulado,Topic,UserConfig } from '../types';
+import { Review,Simulado,Topic,UserConfig } from '../types';
 import {
 AREAS,
 formatDate,
@@ -32,7 +32,8 @@ getTodayStr,
 getTopicTrack
 } from '../utils';
 
-const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void; dueItems: any[]; onReview: (id: string, idx: number) => void }) => {
+type DueReview = Review & { topic: Topic; idx: number };
+const DeepFocusContent = ({ onClose, dueItems, onReview }: { onClose: () => void; dueItems: DueReview[]; onReview: (id: string, idx: number) => void }) => {
     const { timeLeft, mode, isActive, pause, toggle: toggleTimer, setMode: setTimerMode } = useFocusClock();
 
     const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
@@ -103,6 +104,7 @@ export const HubView = ({
     const [expanded, setExpanded] = useState(false);
     const [deepFocusOpen, setDeepFocusOpen] = useState(false);
     const [tool, setTool] = useState('goals');
+    const [routineOpen, setRoutineOpen] = useState(false);
     const [track, setTrack] = useState('all');
     useEffect(() => {
         if (!toolRequest) return;
@@ -110,6 +112,7 @@ export const HubView = ({
         else if (toolRequest.id === 'focus') setDeepFocusOpen(true);
         else {
             setDeepFocusOpen(false);
+            setRoutineOpen(true);
             setTool(toolRequest.id);
             requestAnimationFrame(() => document.getElementById('notebook-heading')?.scrollIntoView({ block: 'start' }));
         }
@@ -140,7 +143,7 @@ export const HubView = ({
         <header className="journal-intro">
           <div>
             <p className="journal-eyebrow"><span className="mica-live-dot" aria-hidden="true" /> Seu dia de estudo <span aria-hidden="true">·</span> <time dateTime={today}>{dateLabel}</time></p>
-            <h1>Seu espaço de estudo</h1>
+            <h1>Um dia de cada vez.</h1>
 
           </div>
           <div className="journal-start">
@@ -157,10 +160,6 @@ export const HubView = ({
           <div><dt>Seu aproveitamento</dt><dd>{total ? Math.round(correct / total * 100) + '%' : '—'}<span>{total ? 'de acertos' : 'aguardando estudo'}</span></dd></div>
           <div><dt>Questões praticadas</dt><dd>{total.toLocaleString('pt-BR')}<span>no total</span></dd></div>
         </dl>
-
-        <HubLaunchpad topics={activeTopics.length} exams={activeSimulados.length} completedLessons={completedLessons} status={syncStatus} lastSyncAt={lastSyncAt} />
-
-        <TodoToday notes={dailyNotes} onChange={setDailyNotes} />
 
         <div className="journal-layout">
           <section className="journal-today" aria-labelledby="today-heading">
@@ -195,8 +194,13 @@ export const HubView = ({
           </aside>
         </div>
 
-        <section className="journal-notebook" aria-labelledby="notebook-heading">
-          <div className="journal-section-heading"><div><p className="journal-eyebrow">Ferramentas</p><h2 id="notebook-heading">Minha rotina</h2></div><button className="rf-text-button" onClick={() => onNavigateToView?.('database')}>Ver minhas matérias <ArrowRight size={16} /></button></div>
+        <TodoToday notes={dailyNotes} onChange={setDailyNotes} />
+
+        <HubLaunchpad topics={activeTopics.length} exams={activeSimulados.length} completedLessons={completedLessons} status={syncStatus} lastSyncAt={lastSyncAt} />
+
+        <details className="journal-notebook rf-routine-disclosure" open={routineOpen} onToggle={event => setRoutineOpen(event.currentTarget.open)}>
+          <summary id="notebook-heading">Minha rotina <span>Metas e acompanhamento</span></summary>
+          {routineOpen && <>
           <div className="journal-tool-tabs" role="tablist" aria-label="Ferramentas de estudo">{tools.map(item => <button key={item.id} id={'tool-' + item.id} role="tab" aria-selected={tool === item.id} aria-controls="journal-tool-panel" tabIndex={tool === item.id ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const next = tools[(tools.findIndex(t => t.id === tool) + (e.key === 'ArrowRight' ? 1 : tools.length - 1)) % tools.length]; setTool(next.id); document.getElementById('tool-' + next.id)?.focus(); e.preventDefault(); } }} onClick={() => setTool(item.id)}><item.icon size={16} />{item.label}</button>)}</div>
           <div className="journal-tools" id="journal-tool-panel" role="tabpanel" aria-labelledby={'tool-' + tool}>
             {tool === 'goals' && <WeeklyGoalsWidget topics={activeTopics} simulados={activeSimulados} config={config} />}
@@ -205,7 +209,8 @@ export const HubView = ({
             {tool === 'suggestions' && <SmartSuggestions topics={filtered} onReview={onReview} />}
             {tool === 'load' && <FutureLoadWidget topics={filtered} />}
           </div>
-        </section>
+          </>}
+        </details>
 
       </div>
     );

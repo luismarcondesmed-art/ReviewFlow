@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { syncCloud } from '../services/cloudSync';
 import { mergeStudyData,preserveInFlightChanges,type StudyData } from '../services/syncMerge';
 import { syncErrorMessage } from '../services/syncSafety';
-import { emptySyncMeta,fastSync,nextSyncTime, prioritySyncProfile,stableJSON,syncInterval,validSyncCode,type SyncMeta } from '../services/syncPolicy';
+import { parseSyncMeta,fastSync,nextSyncTime, prioritySyncProfile,stableJSON,syncInterval,validSyncCode,type SyncMeta } from '../services/syncPolicy';
 import { ScheduleProgress,Simulado,Topic,UserConfig } from '../types';
 import { getTodayStr } from '../utils';
 
@@ -36,7 +36,7 @@ function loadBase(): Partial<StudyData> {
   } catch { return {}; }
 }
 function readMeta(code: string): SyncMeta {
-  try { return { ...emptySyncMeta(), ...JSON.parse(readText('reviewflow_sync_meta:' + code) || '{}') }; } catch { return emptySyncMeta(); }
+  return parseSyncMeta(readText('reviewflow_sync_meta:' + code));
 }
 export const useSync = () => {
   const [initial] = useState(readLocal);
